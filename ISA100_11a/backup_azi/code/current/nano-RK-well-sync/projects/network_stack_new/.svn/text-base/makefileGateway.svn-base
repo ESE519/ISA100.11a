@@ -1,0 +1,21 @@
+OBJS = NetworkGateway.o TopologyGeneration.o NGPack.o slipstream.o
+SRCS = NetworkGateway.c TopologyGeneration.c NGPack.c slipstream.c
+
+CC = gcc
+
+ROOT_DIR = /home/ayb/nano-RK
+
+INCL = -I$(ROOT_DIR)/projects/network_stack_new/
+#INCL += -I$(ROOT_DIR)/tools/SLIPstream/SLIPstream-client/
+
+CFLAGS = 
+CFLAGS += $(INCL)
+
+all:
+	clear 
+	$(CC) $(CFLAGS) -o networkgateway $(SRCS) 
+
+.PHONY : clean
+clean:
+	rm -f networkgateway $(OBJS) 
+	 

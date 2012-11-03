@@ -1,0 +1,150 @@
+   1               		.file	"hal_wait.c"
+   2               		.arch msp430x1611
+   3               	
+   4               	/* Hardware multiplier registers: */
+   5               	__MPY=0x130
+   6               	__MPYS=0x132
+   7               	__MAC=0x134
+   8               	__MACS=0x136
+   9               	__OP2=0x138
+  10               	__RESLO=0x13a
+  11               	__RESHI=0x13c
+  12               	__SUMEXT=0x13e
+  13               	
+  16               		.text
+  17               	.Ltext0:
+ 183               		.p2align 1,0
+ 186               	.global	halWait
+ 188               	/***********************
+ 189               	 * Function `halWait' 
+ 190               	 ***********************/
+ 191               	halWait:
+   1:../../src/platform/tmote/source/hal_wait.c **** /**************************************************************************************************
+   2:../../src/platform/tmote/source/hal_wait.c ****  *                                                                                                 
+   3:../../src/platform/tmote/source/hal_wait.c ****  *        **********                                                                               
+   4:../../src/platform/tmote/source/hal_wait.c ****  *       ************                                                                              
+   5:../../src/platform/tmote/source/hal_wait.c ****  *      ***        ***                                                                             
+   6:../../src/platform/tmote/source/hal_wait.c ****  *      ***   +++   ***                                                                            
+   7:../../src/platform/tmote/source/hal_wait.c ****  *      ***   + +   ***                                                                            
+   8:../../src/platform/tmote/source/hal_wait.c ****  *      ***   +                        CHIPCON HARDWARE ABSTRACTION LIBRARY FOR THE CC2420         
+   9:../../src/platform/tmote/source/hal_wait.c ****  *      ***   + +   ***                                   Idle looping                             
+  10:../../src/platform/tmote/source/hal_wait.c ****  *      ***   +++   ***                                                                            
+  11:../../src/platform/tmote/source/hal_wait.c ****  *      ***        ***                                                                             
+  12:../../src/platform/tmote/source/hal_wait.c ****  *       ************                                                                              
+  13:../../src/platform/tmote/source/hal_wait.c ****  *        **********                                                                               
+  14:../../src/platform/tmote/source/hal_wait.c ****  *                                                                                                 
+  15:../../src/platform/tmote/source/hal_wait.c ****  **************************************************************************************************
+  16:../../src/platform/tmote/source/hal_wait.c ****  * The Chipcon Hardware Abstraction Library is a collection of functions, macros and constants, whi
+  17:../../src/platform/tmote/source/hal_wait.c ****  * can be used to ease access to the hardware on the CC2420 and the target microcontroller.        
+  18:../../src/platform/tmote/source/hal_wait.c ****  *                                                                                                 
+  19:../../src/platform/tmote/source/hal_wait.c ****  * This function contains a function for idle looping with millisecond resolution.                 
+  20:../../src/platform/tmote/source/hal_wait.c ****  **************************************************************************************************
+  21:../../src/platform/tmote/source/hal_wait.c ****  * Compiler: AVR-GCC                                                                               
+  22:../../src/platform/tmote/source/hal_wait.c ****  * Target platform: CC2420DB, CC2420 + any ATMEGA MCU                                              
+  23:../../src/platform/tmote/source/hal_wait.c ****  **************************************************************************************************
+  24:../../src/platform/tmote/source/hal_wait.c ****  * Revision history:                                                                               
+  25:../../src/platform/tmote/source/hal_wait.c ****  * $Log: hal_wait.c,v $
+  26:../../src/platform/tmote/source/hal_wait.c ****  * Revision 1.1  2006/09/03 03:02:10  agr
+  27:../../src/platform/tmote/source/hal_wait.c ****  * added firefly2 platform dir
+  28:../../src/platform/tmote/source/hal_wait.c ****  *
+  29:../../src/platform/tmote/source/hal_wait.c ****  * Revision 1.2  2006/08/17 21:19:48  agr
+  30:../../src/platform/tmote/source/hal_wait.c ****  * Refactored Code... This was huge... MAJOR Problems could happen...
+  31:../../src/platform/tmote/source/hal_wait.c ****  *
+  32:../../src/platform/tmote/source/hal_wait.c ****  * Revision 1.1.1.1  2006/06/29 16:16:15  agr
+  33:../../src/platform/tmote/source/hal_wait.c ****  * Import from Source
+  34:../../src/platform/tmote/source/hal_wait.c ****  *
+  35:../../src/platform/tmote/source/hal_wait.c ****  * Revision 1.1.1.1  2006/02/02 04:41:48  agr
+  36:../../src/platform/tmote/source/hal_wait.c ****  * Import From Source
+  37:../../src/platform/tmote/source/hal_wait.c ****  *
+  38:../../src/platform/tmote/source/hal_wait.c ****  * Revision 1.1  2005/03/25 07:32:22  rtml
+  39:../../src/platform/tmote/source/hal_wait.c ****  * Added updated rf library with sample app.
+  40:../../src/platform/tmote/source/hal_wait.c ****  *
+  41:../../src/platform/tmote/source/hal_wait.c ****  * Revision 1.1.1.1  2005/03/23 18:50:51  agr
+  42:../../src/platform/tmote/source/hal_wait.c ****  * Import wispernet
+  43:../../src/platform/tmote/source/hal_wait.c ****  *
+  44:../../src/platform/tmote/source/hal_wait.c ****  * Revision 1.2  2004/03/30 14:59:50  mbr
+  45:../../src/platform/tmote/source/hal_wait.c ****  * Release for web
+  46:../../src/platform/tmote/source/hal_wait.c ****  *  
+  47:../../src/platform/tmote/source/hal_wait.c ****  *
+  48:../../src/platform/tmote/source/hal_wait.c ****  *
+  49:../../src/platform/tmote/source/hal_wait.c ****  **************************************************************************************************
+  50:../../src/platform/tmote/source/hal_wait.c **** #include <include.h>
+  51:../../src/platform/tmote/source/hal_wait.c **** 
+  52:../../src/platform/tmote/source/hal_wait.c **** 
+  53:../../src/platform/tmote/source/hal_wait.c **** //-------------------------------------------------------------------------------------------------
+  54:../../src/platform/tmote/source/hal_wait.c **** //	void halWait(uint16_t timeout)
+  55:../../src/platform/tmote/source/hal_wait.c **** //
+  56:../../src/platform/tmote/source/hal_wait.c **** //	DESCRIPTION:
+  57:../../src/platform/tmote/source/hal_wait.c **** //		Runs an idle loop for [timeout] microseconds.
+  58:../../src/platform/tmote/source/hal_wait.c **** //
+  59:../../src/platform/tmote/source/hal_wait.c **** //  ARGUMENTS:
+  60:../../src/platform/tmote/source/hal_wait.c **** //      uint16_t timeout
+  61:../../src/platform/tmote/source/hal_wait.c **** //          The timeout in microseconds
+  62:../../src/platform/tmote/source/hal_wait.c **** //-------------------------------------------------------------------------------------------------
+  63:../../src/platform/tmote/source/hal_wait.c **** void halWait(uint16_t timeout) {
+ 193               	.LM1:
+ 194               		/* prologue: frame size = 0 */
+ 195               	.L__FrameSize_halWait=0x0
+ 196               	.L__FrameOffset_halWait=0x0
+ 197               		/* prologue end (size=0) */
+ 198               	
+ 199               	.L2:
+  64:../../src/platform/tmote/source/hal_wait.c **** imeout) {
+  65:../../src/platform/tmote/source/hal_wait.c **** 
+  66:../../src/platform/tmote/source/hal_wait.c ****     // This sequence uses exactly 8 clock cycle for each round
+  67:../../src/platform/tmote/source/hal_wait.c ****     do {
+ 201               	.LM2:
+ 202               	/* #APP */
+ 203 0000 0343      		nop
+ 204               		
+  68:../../src/platform/tmote/source/hal_wait.c ****   do {
+ 206               	.LM3:
+ 207 0002 0343      		nop
+ 208               		
+  69:../../src/platform/tmote/source/hal_wait.c ****   do {
+ 210               	.LM4:
+ 211 0004 0343      		nop
+ 212               		
+  70:../../src/platform/tmote/source/hal_wait.c ****   do {
+ 214               	.LM5:
+ 215 0006 0343      		nop
+ 216               		
+  71:../../src/platform/tmote/source/hal_wait.c ****   do {
+ 218               	.LM6:
+ 219               	/* #NOAPP */
+ 220 0008 3F53      		add	#llo(-1), r15
+ 221 000a FA23      		jne	.L2
+  72:../../src/platform/tmote/source/hal_wait.c ****   do {
+  73:../../src/platform/tmote/source/hal_wait.c ****         NOP();
+ 223               	.LM7:
+ 224 000c 3041      		ret
+ 225               	
+ 226               		/* epilogue: not required */
+ 227               		/* function halWait size 19 (18) */
+ 228               	.Lfe1:
+ 230               	/********* End of function ******/
+ 231               	
+ 232               	.Lscope0:
+ 234               		.comm _nrk_signal_list,4,2
+ 451               		.text
+ 453               	Letext:
+ 454               	
+ 455               	/*********************************************************************
+ 456               	 * File ../../src/platform/tmote/source/hal_wait.c: code size: 19 words (0x13)
+ 457               	 * incl. words in prologues: 0, epilogues: 1
+ 458               	 *********************************************************************/
+DEFINED SYMBOLS
+                            *ABS*:00000000 hal_wait.c
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:5      *ABS*:00000130 __MPY
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:6      *ABS*:00000132 __MPYS
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:7      *ABS*:00000134 __MAC
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:8      *ABS*:00000136 __MACS
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:9      *ABS*:00000138 __OP2
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:10     *ABS*:0000013a __RESLO
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:11     *ABS*:0000013c __RESHI
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:12     *ABS*:0000013e __SUMEXT
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:191    .text:00000000 halWait
+                            *COM*:00000004 _nrk_signal_list
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccmFIhuv.s:453    .text:0000000e Letext
+
+NO UNDEFINED SYMBOLS

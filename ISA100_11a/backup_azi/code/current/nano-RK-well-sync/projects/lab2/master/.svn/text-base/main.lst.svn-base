@@ -1,0 +1,1479 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 140               	.global	nrk_create_taskset
+ 142               	nrk_create_taskset:
+ 143               		.stabd	46,0,0
+   1:main.c        **** #include <nrk.h>
+   2:main.c        **** #include <include.h>
+   3:main.c        **** #include <ulib.h>
+   4:main.c        **** #include <stdio.h>
+   5:main.c        **** #include <avr/sleep.h>
+   6:main.c        **** #include <hal.h>
+   7:main.c        **** #include <rt_link.h>
+   8:main.c        **** #include <nrk_error.h>
+   9:main.c        **** //#include <sys/time.h>
+  10:main.c        **** 
+  11:main.c        **** // Change this to your group channel
+  12:main.c        **** #define MY_CHANNEL 13 
+  13:main.c        **** 
+  14:main.c        **** #define MAX_MOLES  3 //for five nodes it should be 5
+  15:main.c        **** 
+  16:main.c        **** #define MY_TX_SLOT  0
+  17:main.c        **** #define MOLE_1_RX   2 
+  18:main.c        **** #define MOLE_2_RX   4 
+  19:main.c        **** #define MOLE_3_RX   6 
+  20:main.c        **** #define MOLE_4_RX   8 
+  21:main.c        **** #define MOLE_5_RX   10 
+  22:main.c        **** #define ROUNDS      50
+  23:main.c        **** 
+  24:main.c        **** #define MOLE_INIT_STATUS 0x07 //for five nodes it should be 0x1f
+  25:main.c        **** 
+  26:main.c        **** NRK_STK Stack1[NRK_APP_STACKSIZE];
+  27:main.c        **** nrk_task_type TaskOne;
+  28:main.c        **** void Task1(void);
+  29:main.c        **** 
+  30:main.c        **** 
+  31:main.c        **** void nrk_create_taskset();
+  32:main.c        **** 
+  33:main.c        **** uint8_t tx_buf[RF_MAX_PAYLOAD_SIZE];
+  34:main.c        **** uint8_t rx_buf[RF_MAX_PAYLOAD_SIZE];
+  35:main.c        **** 
+  36:main.c        **** nrk_time_t timestart;
+  37:main.c        **** nrk_time_t timeend;
+  38:main.c        **** nrk_time_t newtime;
+  39:main.c        **** nrk_time_t timeout;
+  40:main.c        **** 
+  41:main.c        **** 
+  42:main.c        **** 
+  43:main.c        **** int
+  44:main.c        **** main ()
+  45:main.c        **** {
+  46:main.c        ****   uint16_t div;
+  47:main.c        ****   nrk_setup_ports();
+  48:main.c        ****   nrk_setup_uart(UART_BAUDRATE_115K2);
+  49:main.c        **** 
+  50:main.c        ****   nrk_kprintf( PSTR("Starting up...\r\n") );
+  51:main.c        **** 	
+  52:main.c        ****   nrk_init();
+  53:main.c        **** 
+  54:main.c        ****   nrk_led_clr(0);
+  55:main.c        ****   nrk_led_clr(1);
+  56:main.c        ****   nrk_led_clr(2);
+  57:main.c        ****   nrk_led_clr(3);
+  58:main.c        ****   
+  59:main.c        ****   nrk_time_set(0,0);
+  60:main.c        **** 
+  61:main.c        ****   
+  62:main.c        ****   rtl_task_config();
+  63:main.c        ****   
+  64:main.c        ****   nrk_create_taskset ();
+  65:main.c        **** 
+  66:main.c        ****   nrk_start();
+  67:main.c        ****   
+  68:main.c        ****   return 0;
+  69:main.c        **** }
+  70:main.c        **** 
+  71:main.c        **** 
+  72:main.c        **** void Task1()
+  73:main.c        **** {
+  74:main.c        **** 
+  75:main.c        ****   uint8_t j, i;
+  76:main.c        ****   uint8_t length;
+  77:main.c        ****   uint8_t rssi,slot,oldMole,newMole=0,Rounds =0;
+  78:main.c        ****   uint8_t pre_slot_detect = MOLE_INIT_STATUS;//used for recording previous slot status
+  79:main.c        ****   uint8_t cur_slot_detect = MOLE_INIT_STATUS;//used for recording current slot status
+  80:main.c        ****   uint8_t tmp = 0x01;
+  81:main.c        ****   uint8_t mole_remove = 0;
+  82:main.c        ****   uint8_t number_timeouts =0;
+  83:main.c        ****   uint8_t number_moles = 0;
+  84:main.c        ****   uint8_t user_limit_timeout = 0; //used for recording user's limited responding timeout
+  85:main.c        ****   uint8_t *local_rx_buf;
+  86:main.c        ****   uint16_t counter;
+  87:main.c        ****   uint32_t Score = 0;
+  88:main.c        ****   char c = -1;
+  89:main.c        ****   nrk_sig_t uart_rx_signal;
+  90:main.c        ****   uint8_t finished = 0;
+  91:main.c        **** 
+  92:main.c        ****   printf( "Task1 PID=%d\r\n",nrk_get_pid());
+  93:main.c        ****   counter=0;
+  94:main.c        ****   
+  95:main.c        ****   nrk_led_set(RED_LED);
+  96:main.c        ****   
+  97:main.c        ****   rtl_init (RTL_COORDINATOR);
+  98:main.c        ****   
+  99:main.c        ****   rtl_set_schedule( RTL_TX, MY_TX_SLOT, 1 );
+ 100:main.c        **** //  rtl_set_schedule( RTL_RX, MOLE_1_RX, 1 );
+ 101:main.c        **** //  rtl_set_schedule( RTL_RX, MOLE_2_RX, 1 );
+ 102:main.c        **** //  rtl_set_schedule( RTL_RX, MOLE_3_RX, 1 );
+ 103:main.c        ****   rtl_set_schedule( RTL_RX, MOLE_4_RX, 1 );
+ 104:main.c        **** //  rtl_set_schedule( RTL_RX, MOLE_5_RX, 1 );
+ 105:main.c        **** 
+ 106:main.c        ****   rtl_set_channel(MY_CHANNEL);
+ 107:main.c        ****   rtl_start();
+ 108:main.c        ****   rtl_rx_pkt_set_buffer(rx_buf, RF_MAX_PAYLOAD_SIZE);
+ 109:main.c        ****   
+ 110:main.c        ****   while(!rtl_ready())  nrk_wait_until_next_period(); 
+ 111:main.c        **** 
+ 112:main.c        ****   // Get the signal for UART RX
+ 113:main.c        ****   uart_rx_signal=nrk_uart_rx_signal_get();
+ 114:main.c        ****   // Register task to wait on signal
+ 115:main.c        ****   nrk_signal_register(uart_rx_signal); 
+ 116:main.c        **** 
+ 117:main.c        **** 
+ 118:main.c        ****   // This shows you how to wait until a key is pressed to start
+ 119:main.c        ****   nrk_kprintf( PSTR("Press any key to start\r\n" ));
+ 120:main.c        **** 
+ 121:main.c        **** 
+ 122:main.c        ****   do{
+ 123:main.c        ****   	if(nrk_uart_data_ready(NRK_DEFAULT_UART))
+ 124:main.c        ****   		c=getchar();
+ 125:main.c        ****   	else nrk_event_wait(SIG(uart_rx_signal));
+ 126:main.c        ****   		nrk_time_get(&timestart);
+ 127:main.c        ****   } while(c==-1);
+ 128:main.c        ****   c = -1;
+ 129:main.c        ****   //generate the first mole
+ 130:main.c        ****   newMole = rand()%MAX_MOLES;
+ 131:main.c        **** 
+ 132:main.c        ****   //at the very beginning, master has to wait for nodes finishing scheduling their slots
+ 133:main.c        ****   j=0;
+ 134:main.c        ****   while(rtl_rx_pkt_check()==0){
+ 135:main.c        ****   	printf("Waiting for connection, time %d \r\n",j++);
+ 136:main.c        ****   	sprintf( &tx_buf[PKT_DATA_START],"Master count is S and new mole is S and Round = S");
+ 137:main.c        **** 	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
+ 138:main.c        **** 	rtl_tx_pkt( tx_buf, length, MY_TX_SLOT);
+ 139:main.c        **** 	rtl_rx_pkt_release();
+ 140:main.c        **** 	rtl_wait_until_rx_or_tx();	
+ 141:main.c        ****   }
+ 142:main.c        **** 
+ 143:main.c        ****   //record the timeout for timing out
+ 144:main.c        ****   nrk_time_get(&timeout);
+ 145:main.c        ****   //initial timeout interval
+ 146:main.c        ****   user_limit_timeout = 5;
+ 147:main.c        ****   printf("\r\nGame starts!");
+ 148:main.c        ****   while(finished==0){
+ 149:main.c        ****   //begin the game round
+ 150:main.c        ****   while(Rounds<=ROUNDS){
+ 151:main.c        **** 	if( rtl_tx_pkt_check(MY_TX_SLOT)!=0 ){
+ 152:main.c        **** 		//printf( "Pending on slot %d\r\n",MY_TX_SLOT );
+ 153:main.c        **** 	}
+ 154:main.c        **** 	else {
+ 155:main.c        **** 		//printf("\r\nslot detect value:%d.\r\n",cur_slot_detect);
+ 156:main.c        **** 	        nrk_time_get(&timeend);
+ 157:main.c        **** 		//game round continues
+ 158:main.c        **** 		if (Rounds<=ROUNDS){
+ 159:main.c        **** 			if(timeend.secs-timeout.secs > user_limit_timeout/*ROUNDS/2-Rounds/2*/){
+ 160:main.c        **** 			//a round times out (extra credit)
+ 161:main.c        **** 				nrk_time_get(&timeout);
+ 162:main.c        **** 				oldMole = newMole;
+ 163:main.c        **** 				if(cur_slot_detect==0x00){
+ 164:main.c        **** 					while(oldMole==newMole)
+ 165:main.c        **** 		     			newMole = rand()%MAX_MOLES;
+ 166:main.c        **** 				}else{
+ 167:main.c        **** 					if(cur_slot_detect==0x01)
+ 168:main.c        **** 						mole_remove = 0;
+ 169:main.c        **** 					else if(cur_slot_detect==0x02)
+ 170:main.c        **** 						mole_remove = 1;
+ 171:main.c        **** 					else if(cur_slot_detect==0x04)
+ 172:main.c        **** 						mole_remove = 2;
+ 173:main.c        **** 					else if(cur_slot_detect==0x08)
+ 174:main.c        **** 						mole_remove = 3;
+ 175:main.c        **** 					else if(cur_slot_detect==0x10)
+ 176:main.c        **** 						mole_remove = 4;
+ 177:main.c        **** 					while(oldMole==newMole||mole_remove==newMole)
+ 178:main.c        **** 						newMole = rand()%MAX_MOLES;					
+ 179:main.c        **** 				}
+ 180:main.c        **** 				
+ 181:main.c        **** 				cur_slot_detect = MOLE_INIT_STATUS;
+ 182:main.c        **** 				Rounds++;
+ 183:main.c        **** 				Score -= 10;
+ 184:main.c        **** 				//printf("\nRounds = %d \nnumber_timeouts = %d \npresent time = %d\n", Rounds, number_timeouts,
+ 185:main.c        **** 				printf("\r\nRound %d times out! Get a penalty of 10! Score is %d",Rounds,Score);
+ 186:main.c        **** 			}
+ 187:main.c        **** 		}
+ 188:main.c        **** //		if(pre_slot_detect!=cur_slot_detect)
+ 189:main.c        **** //			cur_slot_detect = MOLE_INIT_STATUS;
+ 190:main.c        **** 		pre_slot_detect = cur_slot_detect;
+ 191:main.c        **** 		cur_slot_detect = MOLE_INIT_STATUS;
+ 192:main.c        **** 		 // added the next mole to light up into the buffer
+ 193:main.c        **** 		sprintf( &tx_buf[PKT_DATA_START],"Master count is %d and new mole is %d and Round = %d",counter,n
+ 194:main.c        **** 		// PKT_DATA_START + length of string + 1 for null at end of string
+ 195:main.c        **** 		//if(Rounds>=ROUNDS){		  
+ 196:main.c        **** 		//	Rounds++;
+ 197:main.c        **** 		//	sprintf( &tx_buf[PKT_DATA_START],"Master count is %d and new mole is %d and Round = %d",counte
+ 198:main.c        **** 		//}
+ 199:main.c        **** 
+ 200:main.c        **** 		length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
+ 201:main.c        **** 		rtl_tx_pkt( tx_buf, length, MY_TX_SLOT);
+ 202:main.c        ****                 //printf( "\nTX on slot %d\r\n",MY_TX_SLOT);
+ 203:main.c        ****                 //for(i=PKT_DATA_START;i<length;i++)
+ 204:main.c        ****                    //printf("%c",tx_buf[i]);
+ 205:main.c        **** 		nrk_led_toggle(BLUE_LED);
+ 206:main.c        **** 		//printf("\n\n");
+ 207:main.c        **** 	}
+ 208:main.c        ****  
+ 209:main.c        **** 
+ 210:main.c        **** 	  // Check for received packet	
+ 211:main.c        ****   	if( rtl_rx_pkt_check()!=0 ){
+ 212:main.c        **** 		tmp = 0x01;
+ 213:main.c        **** 		uint8_t mole_index,state;
+ 214:main.c        **** 		local_rx_buf=rtl_rx_pkt_get(&length, &rssi, &slot);
+ 215:main.c        **** 		//printf( "RX slot %d %d: ",slot,length );
+ 216:main.c        ****   		
+ 217:main.c        **** 		//To detect if the node is turned off
+ 218:main.c        **** 		//printf("\n\rtmp:%d");		
+ 219:main.c        **** 		tmp <<= (slot-2)/2;
+ 220:main.c        **** 		cur_slot_detect &= ~tmp;
+ 221:main.c        ****  		  
+ 222:main.c        ****                 //buffer position 11 stores the value of the moleid from the slaves
+ 223:main.c        ****                 //buffer position 19 stores the value of light 
+ 224:main.c        ****                 // '1' indicates mole whacked (light closed)
+ 225:main.c        ****                 // '0' indicates mole not whacked yet (light open)
+ 226:main.c        **** 		if(((
+ 227:main.c        **** 			local_rx_buf[11]-48) == newMole) &&
+ 228:main.c        **** 			(local_rx_buf[19]=='1') &&
+ 229:main.c        **** 			(Rounds <=ROUNDS)
+ 230:main.c        **** 		){
+ 231:main.c        **** 			//printf("NEW MOLE:%d",newMole);
+ 232:main.c        **** 			oldMole = newMole;
+ 233:main.c        **** 			if(pre_slot_detect==0x00){
+ 234:main.c        **** 				while(oldMole==newMole)
+ 235:main.c        **** 		     		newMole = rand()%MAX_MOLES;
+ 236:main.c        **** 			}else{
+ 237:main.c        **** 				if(pre_slot_detect==0x01)
+ 238:main.c        **** 					mole_remove = 0;
+ 239:main.c        **** 				else if(pre_slot_detect==0x2)
+ 240:main.c        **** 					mole_remove = 1;
+ 241:main.c        **** 				else if(pre_slot_detect==0x04)
+ 242:main.c        **** 					mole_remove = 2;
+ 243:main.c        **** 				else if(pre_slot_detect==0x08)
+ 244:main.c        **** 					mole_remove = 3;
+ 245:main.c        **** 				else if(pre_slot_detect==0x10)
+ 246:main.c        **** 					mole_remove = 4;
+ 247:main.c        **** 				while(oldMole==newMole||mole_remove==newMole)
+ 248:main.c        **** 					newMole = rand()%MAX_MOLES;					
+ 249:main.c        **** 			}                     
+ 250:main.c        **** 			Rounds++;
+ 251:main.c        **** 			user_limit_timeout -= 1;
+ 252:main.c        **** 			if(user_limit_timeout<1)
+ 253:main.c        **** 				user_limit_timeout = 1;		     
+ 254:main.c        **** 			nrk_time_get(&timeend);
+ 255:main.c        **** 			nrk_time_get(&timeout);
+ 256:main.c        **** 			Score += 100;//timeend.secs-timestart.secs; //+ number_timeouts * 10;
+ 257:main.c        **** 			//number_timeouts = 0;
+ 258:main.c        **** 			printf("\r\n You got it. Round: %d, Score : %d",Rounds, Score);
+ 259:main.c        **** 			//cur_slot_detect = MOLE_INIT_STATUS;
+ 260:main.c        **** 		}
+ 261:main.c        **** 		   //printf( "\r\n" ); 
+ 262:main.c        **** 		   rtl_rx_pkt_release();
+ 263:main.c        **** 	} 
+ 264:main.c        **** 	rtl_wait_until_rx_or_tx();		  
+ 265:main.c        ****   }//while(Rounds<=ROUNDS)
+ 266:main.c        **** 
+ 267:main.c        ****   printf("\r\nDONE and Score = %d \r\n",Score);
+ 268:main.c        **** 
+ 269:main.c        ****     // This shows you how to continue this game or not
+ 270:main.c        ****   printf("\r\ncontinue this game or not? (y/n)\r\n");
+ 271:main.c        ****   
+ 272:main.c        ****   // Get the signal for UART RX
+ 273:main.c        ****   uart_rx_signal=nrk_uart_rx_signal_get();
+ 274:main.c        ****   // Register task to wait on signal
+ 275:main.c        ****   nrk_signal_register(uart_rx_signal);
+ 276:main.c        ****   //c = -1;
+ 277:main.c        ****   do{
+ 278:main.c        ****   	if(nrk_uart_data_ready(NRK_DEFAULT_UART))
+ 279:main.c        ****   		c=getchar();
+ 280:main.c        ****   	else nrk_event_wait(SIG(uart_rx_signal));
+ 281:main.c        ****   		nrk_time_get(&timestart);
+ 282:main.c        ****   } while(c==-1);
+ 283:main.c        **** 
+ 284:main.c        ****   if(c=='y'||c=='Y'){
+ 285:main.c        **** 	c = -1;
+ 286:main.c        **** 	newMole = 0;
+ 287:main.c        **** 	pre_slot_detect = MOLE_INIT_STATUS;//used for recording previous slot status
+ 288:main.c        **** 	cur_slot_detect = MOLE_INIT_STATUS;//used for recording current slot status
+ 289:main.c        **** 	tmp = 0x01;
+ 290:main.c        **** 	mole_remove = 0;
+ 291:main.c        **** 	number_timeouts =0;
+ 292:main.c        **** 	number_moles = 0;
+ 293:main.c        **** 	Score = 0;
+ 294:main.c        **** 	Rounds = 0;	  
+ 295:main.c        **** 	//at the very beginning, master has to wait for nodes finishing scheduling their slots
+ 296:main.c        ****   	j=0;
+ 297:main.c        **** 	rtl_rx_pkt_release();
+ 298:main.c        ****  	while(rtl_rx_pkt_check()==0){
+ 299:main.c        ****   		printf("Waiting for nodes scheduling their slots, time %d \r\n",j++);
+ 300:main.c        ****   		sprintf( &tx_buf[PKT_DATA_START],"Master count is S and new mole is S and Round = S");
+ 301:main.c        **** 		length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
+ 302:main.c        **** 		rtl_tx_pkt( tx_buf, length, MY_TX_SLOT);
+ 303:main.c        **** 		rtl_rx_pkt_release();
+ 304:main.c        **** 		rtl_wait_until_rx_or_tx();	
+ 305:main.c        ****   	}
+ 306:main.c        ****   }else if(c=='n'||c=='N'){
+ 307:main.c        **** 	printf("Game ends");
+ 308:main.c        **** 	nrk_terminate_task();
+ 309:main.c        ****   }
+ 310:main.c        **** }//while(finished)
+ 311:main.c        **** }
+ 312:main.c        **** 
+ 313:main.c        **** 
+ 314:main.c        **** void
+ 315:main.c        **** nrk_create_taskset()
+ 316:main.c        **** {
+ 145               	.LM0:
+ 146               	.LFBB1:
+ 147               	/* prologue: frame size=0 */
+ 148               	/* prologue end (size=0) */
+ 317:main.c        **** 
+ 318:main.c        **** 
+ 319:main.c        ****   TaskOne.task = Task1;
+ 150               	.LM1:
+ 151 0000 80E0      		ldi r24,lo8(pm(Task1))
+ 152 0002 90E0      		ldi r25,hi8(pm(Task1))
+ 153 0004 9093 0000 		sts (TaskOne+5)+1,r25
+ 154 0008 8093 0000 		sts TaskOne+5,r24
+ 320:main.c        ****   TaskOne.Ptos = (void *) &Stack1[NRK_APP_STACKSIZE-1];
+ 156               	.LM2:
+ 157 000c 80E0      		ldi r24,lo8(Stack1+127)
+ 158 000e 90E0      		ldi r25,hi8(Stack1+127)
+ 159 0010 9093 0000 		sts (TaskOne+1)+1,r25
+ 160 0014 8093 0000 		sts TaskOne+1,r24
+ 321:main.c        ****   TaskOne.Pbos = (void *) &Stack1[0];
+ 162               	.LM3:
+ 163 0018 80E0      		ldi r24,lo8(Stack1)
+ 164 001a 90E0      		ldi r25,hi8(Stack1)
+ 165 001c 9093 0000 		sts (TaskOne+3)+1,r25
+ 166 0020 8093 0000 		sts TaskOne+3,r24
+ 322:main.c        ****   TaskOne.prio = 2;
+ 168               	.LM4:
+ 169 0024 82E0      		ldi r24,lo8(2)
+ 170 0026 8093 0000 		sts TaskOne+8,r24
+ 323:main.c        ****   TaskOne.FirstActivation = TRUE;
+ 172               	.LM5:
+ 173 002a 81E0      		ldi r24,lo8(1)
+ 174 002c 8093 0000 		sts TaskOne+7,r24
+ 324:main.c        ****   TaskOne.Type = BASIC_TASK;
+ 176               	.LM6:
+ 177 0030 8093 0000 		sts TaskOne+9,r24
+ 325:main.c        ****   TaskOne.SchType = PREEMPTIVE;
+ 179               	.LM7:
+ 180 0034 8093 0000 		sts TaskOne+10,r24
+ 326:main.c        ****   TaskOne.period.secs = 1;
+ 182               	.LM8:
+ 183 0038 81E0      		ldi r24,lo8(1)
+ 184 003a 90E0      		ldi r25,hi8(1)
+ 185 003c A0E0      		ldi r26,hlo8(1)
+ 186 003e B0E0      		ldi r27,hhi8(1)
+ 187 0040 8093 0000 		sts TaskOne+11,r24
+ 188 0044 9093 0000 		sts (TaskOne+11)+1,r25
+ 189 0048 A093 0000 		sts (TaskOne+11)+2,r26
+ 190 004c B093 0000 		sts (TaskOne+11)+3,r27
+ 327:main.c        ****   TaskOne.period.nano_secs = 0;
+ 192               	.LM9:
+ 193 0050 1092 0000 		sts TaskOne+15,__zero_reg__
+ 194 0054 1092 0000 		sts (TaskOne+15)+1,__zero_reg__
+ 195 0058 1092 0000 		sts (TaskOne+15)+2,__zero_reg__
+ 196 005c 1092 0000 		sts (TaskOne+15)+3,__zero_reg__
+ 328:main.c        ****   TaskOne.cpu_reserve.secs = 0;
+ 198               	.LM10:
+ 199 0060 1092 0000 		sts TaskOne+19,__zero_reg__
+ 200 0064 1092 0000 		sts (TaskOne+19)+1,__zero_reg__
+ 201 0068 1092 0000 		sts (TaskOne+19)+2,__zero_reg__
+ 202 006c 1092 0000 		sts (TaskOne+19)+3,__zero_reg__
+ 329:main.c        ****   TaskOne.cpu_reserve.nano_secs = 100*NANOS_PER_MS;
+ 204               	.LM11:
+ 205 0070 80E0      		ldi r24,lo8(100000000)
+ 206 0072 91EE      		ldi r25,hi8(100000000)
+ 207 0074 A5EF      		ldi r26,hlo8(100000000)
+ 208 0076 B5E0      		ldi r27,hhi8(100000000)
+ 209 0078 8093 0000 		sts TaskOne+23,r24
+ 210 007c 9093 0000 		sts (TaskOne+23)+1,r25
+ 211 0080 A093 0000 		sts (TaskOne+23)+2,r26
+ 212 0084 B093 0000 		sts (TaskOne+23)+3,r27
+ 330:main.c        ****   TaskOne.offset.secs = 0;
+ 214               	.LM12:
+ 215 0088 1092 0000 		sts TaskOne+27,__zero_reg__
+ 216 008c 1092 0000 		sts (TaskOne+27)+1,__zero_reg__
+ 217 0090 1092 0000 		sts (TaskOne+27)+2,__zero_reg__
+ 218 0094 1092 0000 		sts (TaskOne+27)+3,__zero_reg__
+ 331:main.c        ****   TaskOne.offset.nano_secs= 0;
+ 220               	.LM13:
+ 221 0098 1092 0000 		sts TaskOne+31,__zero_reg__
+ 222 009c 1092 0000 		sts (TaskOne+31)+1,__zero_reg__
+ 223 00a0 1092 0000 		sts (TaskOne+31)+2,__zero_reg__
+ 224 00a4 1092 0000 		sts (TaskOne+31)+3,__zero_reg__
+ 332:main.c        ****   nrk_activate_task (&TaskOne);
+ 226               	.LM14:
+ 227 00a8 80E0      		ldi r24,lo8(TaskOne)
+ 228 00aa 90E0      		ldi r25,hi8(TaskOne)
+ 229 00ac 0E94 0000 		call nrk_activate_task
+ 333:main.c        **** 
+ 334:main.c        **** 
+ 335:main.c        ****   nrk_kprintf( PSTR("Create Done\r\n") );
+ 231               	.LM15:
+ 232 00b0 80E0      		ldi r24,lo8(__c.2523)
+ 233 00b2 90E0      		ldi r25,hi8(__c.2523)
+ 234 00b4 0E94 0000 		call nrk_kprintf
+ 235               	/* epilogue: frame size=0 */
+ 236 00b8 0895      		ret
+ 237               	/* epilogue end (size=1) */
+ 238               	/* function nrk_create_taskset size 93 (92) */
+ 240               	.Lscope1:
+ 242               		.stabd	78,0,0
+ 243               		.data
+ 244               	.LC0:
+ 245 0000 5461 736B 		.string	"Task1 PID=%d\r\n"
+ 245      3120 5049 
+ 245      443D 2564 
+ 245      0D0A 00
+ 246               	.LC1:
+ 247 000f 5761 6974 		.string	"Waiting for connection, time %d \r\n"
+ 247      696E 6720 
+ 247      666F 7220 
+ 247      636F 6E6E 
+ 247      6563 7469 
+ 248               	.LC2:
+ 249 0032 4D61 7374 		.string	"Master count is S and new mole is S and Round = S"
+ 249      6572 2063 
+ 249      6F75 6E74 
+ 249      2069 7320 
+ 249      5320 616E 
+ 250               	.LC3:
+ 251 0064 0D0A 4761 		.string	"\r\nGame starts!"
+ 251      6D65 2073 
+ 251      7461 7274 
+ 251      7321 00
+ 252               	.LC4:
+ 253 0073 0D0A 526F 		.string	"\r\nRound %d times out! Get a penalty of 10! Score is %d"
+ 253      756E 6420 
+ 253      2564 2074 
+ 253      696D 6573 
+ 253      206F 7574 
+ 254               	.LC5:
+ 255 00aa 4D61 7374 		.string	"Master count is %d and new mole is %d and Round = %d"
+ 255      6572 2063 
+ 255      6F75 6E74 
+ 255      2069 7320 
+ 255      2564 2061 
+ 256               	.LC6:
+ 257 00df 0D0A 2059 		.string	"\r\n You got it. Round: %d, Score : %d"
+ 257      6F75 2067 
+ 257      6F74 2069 
+ 257      742E 2052 
+ 257      6F75 6E64 
+ 258               	.LC7:
+ 259 0104 0D0A 444F 		.string	"\r\nDONE and Score = %d \r\n"
+ 259      4E45 2061 
+ 259      6E64 2053 
+ 259      636F 7265 
+ 259      203D 2025 
+ 260               	.LC8:
+ 261 011d 0D0A 636F 		.string	"\r\ncontinue this game or not? (y/n)\r"
+ 261      6E74 696E 
+ 261      7565 2074 
+ 261      6869 7320 
+ 261      6761 6D65 
+ 262               	.LC9:
+ 263 0141 5761 6974 		.string	"Waiting for nodes scheduling their slots, time %d \r\n"
+ 263      696E 6720 
+ 263      666F 7220 
+ 263      6E6F 6465 
+ 263      7320 7363 
+ 264               	.LC10:
+ 265 0176 4761 6D65 		.string	"Game ends"
+ 265      2065 6E64 
+ 265      7300 
+ 266               		.text
+ 268               	.global	Task1
+ 270               	Task1:
+ 271               		.stabd	46,0,0
+ 273               	.LM16:
+ 274               	.LFBB2:
+ 275               	/* prologue: frame size=3 */
+ 276 00ba 3F92      		push r3
+ 277 00bc 4F92      		push r4
+ 278 00be 5F92      		push r5
+ 279 00c0 6F92      		push r6
+ 280 00c2 7F92      		push r7
+ 281 00c4 8F92      		push r8
+ 282 00c6 9F92      		push r9
+ 283 00c8 AF92      		push r10
+ 284 00ca BF92      		push r11
+ 285 00cc CF92      		push r12
+ 286 00ce DF92      		push r13
+ 287 00d0 EF92      		push r14
+ 288 00d2 FF92      		push r15
+ 289 00d4 0F93      		push r16
+ 290 00d6 1F93      		push r17
+ 291 00d8 CF93      		push r28
+ 292 00da DF93      		push r29
+ 293 00dc CDB7      		in r28,__SP_L__
+ 294 00de DEB7      		in r29,__SP_H__
+ 295 00e0 2397      		sbiw r28,3
+ 296 00e2 0FB6      		in __tmp_reg__,__SREG__
+ 297 00e4 F894      		cli
+ 298 00e6 DEBF      		out __SP_H__,r29
+ 299 00e8 0FBE      		out __SREG__,__tmp_reg__
+ 300 00ea CDBF      		out __SP_L__,r28
+ 301               	/* prologue end (size=25) */
+ 303               	.LM17:
+ 304 00ec 0E94 0000 		call nrk_get_pid
+ 305 00f0 9927      		clr r25
+ 306 00f2 9F93      		push r25
+ 307 00f4 8F93      		push r24
+ 308 00f6 80E0      		ldi r24,lo8(.LC0)
+ 309 00f8 90E0      		ldi r25,hi8(.LC0)
+ 310 00fa 9F93      		push r25
+ 311 00fc 8F93      		push r24
+ 312 00fe 0E94 0000 		call printf
+ 314               	.LM18:
+ 315 0102 83E0      		ldi r24,lo8(3)
+ 316 0104 90E0      		ldi r25,hi8(3)
+ 317 0106 0E94 0000 		call nrk_led_set
+ 319               	.LM19:
+ 320 010a 82E0      		ldi r24,lo8(2)
+ 321 010c 0E94 0000 		call rtl_init
+ 323               	.LM20:
+ 324 0110 41E0      		ldi r20,lo8(1)
+ 325 0112 60E0      		ldi r22,lo8(0)
+ 326 0114 81E0      		ldi r24,lo8(1)
+ 327 0116 0E94 0000 		call rtl_set_schedule
+ 329               	.LM21:
+ 330 011a 41E0      		ldi r20,lo8(1)
+ 331 011c 68E0      		ldi r22,lo8(8)
+ 332 011e 80E0      		ldi r24,lo8(0)
+ 333 0120 0E94 0000 		call rtl_set_schedule
+ 335               	.LM22:
+ 336 0124 8DE0      		ldi r24,lo8(13)
+ 337 0126 0E94 0000 		call rtl_set_channel
+ 339               	.LM23:
+ 340 012a 0E94 0000 		call rtl_start
+ 342               	.LM24:
+ 343 012e 64E7      		ldi r22,lo8(116)
+ 344 0130 80E0      		ldi r24,lo8(rx_buf)
+ 345 0132 90E0      		ldi r25,hi8(rx_buf)
+ 346 0134 0E94 0000 		call rtl_rx_pkt_set_buffer
+ 348               	.LM25:
+ 349 0138 0F90      		pop __tmp_reg__
+ 350 013a 0F90      		pop __tmp_reg__
+ 351 013c 0F90      		pop __tmp_reg__
+ 352 013e 0F90      		pop __tmp_reg__
+ 353 0140 00C0      		rjmp .L4
+ 354               	.L5:
+ 356               	.LM26:
+ 357 0142 0E94 0000 		call nrk_wait_until_next_period
+ 358               	.L4:
+ 359 0146 0E94 0000 		call rtl_ready
+ 360 014a 8823      		tst r24
+ 361 014c 01F0      		breq .L5
+ 363               	.LM27:
+ 364 014e 0E94 0000 		call nrk_uart_rx_signal_get
+ 365 0152 182F      		mov r17,r24
+ 367               	.LM28:
+ 368 0154 0E94 0000 		call nrk_signal_register
+ 370               	.LM29:
+ 371 0158 80E0      		ldi r24,lo8(__c.2421)
+ 372 015a 90E0      		ldi r25,hi8(__c.2421)
+ 373 015c 0E94 0000 		call nrk_kprintf
+ 375               	.LM30:
+ 376 0160 81E0      		ldi r24,lo8(1)
+ 377 0162 0E94 0000 		call nrk_uart_data_ready
+ 378 0166 8823      		tst r24
+ 379 0168 01F0      		breq .L7
+ 381               	.LM31:
+ 382 016a 8091 0000 		lds r24,__iob
+ 383 016e 9091 0000 		lds r25,(__iob)+1
+ 384 0172 0E94 0000 		call fgetc
+ 385 0176 00C0      		rjmp .L9
+ 386               	.L7:
+ 388               	.LM32:
+ 389 0178 61E0      		ldi r22,lo8(1)
+ 390 017a 70E0      		ldi r23,hi8(1)
+ 391 017c 80E0      		ldi r24,hlo8(1)
+ 392 017e 90E0      		ldi r25,hhi8(1)
+ 393 0180 00C0      		rjmp 2f
+ 394 0182 660F      	1:	lsl r22
+ 395 0184 771F      		rol r23
+ 396 0186 881F      		rol r24
+ 397 0188 991F      		rol r25
+ 398 018a 1A95      	2:	dec r17
+ 399 018c 02F4      		brpl 1b
+ 400 018e 0E94 0000 		call nrk_event_wait
+ 401               	.L9:
+ 403               	.LM33:
+ 404 0192 80E0      		ldi r24,lo8(timestart)
+ 405 0194 90E0      		ldi r25,hi8(timestart)
+ 406 0196 0E94 0000 		call nrk_time_get
+ 408               	.LM34:
+ 409 019a 0E94 0000 		call rand
+ 410 019e 63E0      		ldi r22,lo8(3)
+ 411 01a0 70E0      		ldi r23,hi8(3)
+ 412 01a2 0E94 0000 		call __divmodhi4
+ 413 01a6 5C01      		movw r10,r24
+ 414 01a8 CC24      		clr r12
+ 415 01aa DD24      		clr r13
+ 417               	.LM35:
+ 418 01ac 40E0      		ldi r20,lo8(.LC1)
+ 419 01ae 442E      		mov r4,r20
+ 420 01b0 40E0      		ldi r20,hi8(.LC1)
+ 421 01b2 542E      		mov r5,r20
+ 423               	.LM36:
+ 424 01b4 30E0      		ldi r19,lo8(tx_buf+3)
+ 425 01b6 E32E      		mov r14,r19
+ 426 01b8 30E0      		ldi r19,hi8(tx_buf+3)
+ 427 01ba F32E      		mov r15,r19
+ 428 01bc 20E0      		ldi r18,lo8(.LC2)
+ 429 01be 622E      		mov r6,r18
+ 430 01c0 20E0      		ldi r18,hi8(.LC2)
+ 431 01c2 722E      		mov r7,r18
+ 432 01c4 9DEF      		ldi r25,lo8(-3)
+ 433 01c6 892E      		mov r8,r25
+ 434 01c8 9FEF      		ldi r25,hi8(-3)
+ 435 01ca 992E      		mov r9,r25
+ 436 01cc 8E0C      		add r8,r14
+ 437 01ce 9F1C      		adc r9,r15
+ 438 01d0 00C0      		rjmp .L10
+ 439               	.L11:
+ 441               	.LM37:
+ 442 01d2 812F      		mov r24,r17
+ 443 01d4 9927      		clr r25
+ 444 01d6 9F93      		push r25
+ 445 01d8 8F93      		push r24
+ 446 01da 5F92      		push r5
+ 447 01dc 4F92      		push r4
+ 448 01de 0E94 0000 		call printf
+ 450               	.LM38:
+ 451 01e2 B301      		movw r22,r6
+ 452 01e4 C701      		movw r24,r14
+ 453 01e6 0E94 0000 		call strcpy
+ 455               	.LM39:
+ 456 01ea F701      		movw r30,r14
+ 457 01ec 0190      		ld __tmp_reg__,Z+
+ 458 01ee 0020      		tst __tmp_reg__
+ 459 01f0 01F4      		brne .-6
+ 460 01f2 E050      		subi r30,lo8(tx_buf+4)
+ 461 01f4 F040      		sbci r31,hi8(tx_buf+4)
+ 462 01f6 EC5F      		subi r30,lo8(-(4))
+ 463 01f8 E983      		std Y+1,r30
+ 465               	.LM40:
+ 466 01fa 40E0      		ldi r20,lo8(0)
+ 467 01fc 6E2F      		mov r22,r30
+ 468 01fe C401      		movw r24,r8
+ 469 0200 0E94 0000 		call rtl_tx_pkt
+ 471               	.LM41:
+ 472 0204 0E94 0000 		call rtl_rx_pkt_release
+ 474               	.LM42:
+ 475 0208 0E94 0000 		call rtl_wait_until_rx_or_tx
+ 476 020c 0F90      		pop __tmp_reg__
+ 477 020e 0F90      		pop __tmp_reg__
+ 478 0210 0F90      		pop __tmp_reg__
+ 479 0212 0F90      		pop __tmp_reg__
+ 480               	.L10:
+ 481 0214 1C2D      		mov r17,r12
+ 483               	.LM43:
+ 484 0216 0E94 0000 		call rtl_rx_pkt_check
+ 485 021a 0894      		sec
+ 486 021c C11C      		adc r12,__zero_reg__
+ 487 021e D11C      		adc r13,__zero_reg__
+ 488 0220 8823      		tst r24
+ 489 0222 01F0      		breq .L11
+ 491               	.LM44:
+ 492 0224 0A2D      		mov r16,r10
+ 494               	.LM45:
+ 495 0226 80E0      		ldi r24,lo8(timeout)
+ 496 0228 90E0      		ldi r25,hi8(timeout)
+ 497 022a 0E94 0000 		call nrk_time_get
+ 499               	.LM46:
+ 500 022e 80E0      		ldi r24,lo8(.LC3)
+ 501 0230 90E0      		ldi r25,hi8(.LC3)
+ 502 0232 9F93      		push r25
+ 503 0234 8F93      		push r24
+ 504 0236 0E94 0000 		call printf
+ 505 023a CC24      		clr r12
+ 506 023c DD24      		clr r13
+ 507 023e 7601      		movw r14,r12
+ 508 0240 5524      		clr r5
+ 509 0242 5A94      		dec r5
+ 510 0244 AA24      		clr r10
+ 511 0246 87E0      		ldi r24,lo8(7)
+ 512 0248 B82E      		mov r11,r24
+ 513 024a 17E0      		ldi r17,lo8(7)
+ 514 024c 412E      		mov r4,r17
+ 515 024e 7724      		clr r7
+ 516 0250 B5E0      		ldi r27,lo8(5)
+ 517 0252 3B2E      		mov r3,r27
+ 519               	.LM47:
+ 520 0254 0F90      		pop __tmp_reg__
+ 521 0256 0F90      		pop __tmp_reg__
+ 523               	.LM48:
+ 524 0258 A0E0      		ldi r26,lo8(tx_buf+3)
+ 525 025a 8A2E      		mov r8,r26
+ 526 025c A0E0      		ldi r26,hi8(tx_buf+3)
+ 527 025e 9A2E      		mov r9,r26
+ 528 0260 00C0      		rjmp .L88
+ 529               	.L14:
+ 531               	.LM49:
+ 532 0262 80E0      		ldi r24,lo8(0)
+ 533 0264 0E94 0000 		call rtl_tx_pkt_check
+ 534 0268 8823      		tst r24
+ 535 026a 01F0      		breq .+2
+ 536 026c 00C0      		rjmp .L15
+ 538               	.LM50:
+ 539 026e 80E0      		ldi r24,lo8(timeend)
+ 540 0270 90E0      		ldi r25,hi8(timeend)
+ 541 0272 0E94 0000 		call nrk_time_get
+ 543               	.LM51:
+ 544 0276 8091 0000 		lds r24,timeend
+ 545 027a 9091 0000 		lds r25,(timeend)+1
+ 546 027e A091 0000 		lds r26,(timeend)+2
+ 547 0282 B091 0000 		lds r27,(timeend)+3
+ 548 0286 2091 0000 		lds r18,timeout
+ 549 028a 3091 0000 		lds r19,(timeout)+1
+ 550 028e 4091 0000 		lds r20,(timeout)+2
+ 551 0292 5091 0000 		lds r21,(timeout)+3
+ 552 0296 821B      		sub r24,r18
+ 553 0298 930B      		sbc r25,r19
+ 554 029a A40B      		sbc r26,r20
+ 555 029c B50B      		sbc r27,r21
+ 556 029e 232D      		mov r18,r3
+ 557 02a0 3327      		clr r19
+ 558 02a2 4427      		clr r20
+ 559 02a4 5527      		clr r21
+ 560 02a6 2817      		cp r18,r24
+ 561 02a8 3907      		cpc r19,r25
+ 562 02aa 4A07      		cpc r20,r26
+ 563 02ac 5B07      		cpc r21,r27
+ 564 02ae 00F0      		brlo .+2
+ 565 02b0 00C0      		rjmp .L17
+ 567               	.LM52:
+ 568 02b2 80E0      		ldi r24,lo8(timeout)
+ 569 02b4 90E0      		ldi r25,hi8(timeout)
+ 570 02b6 0E94 0000 		call nrk_time_get
+ 572               	.LM53:
+ 573 02ba 4420      		tst r4
+ 574 02bc 01F4      		brne .L19
+ 575               	.L74:
+ 577               	.LM54:
+ 578 02be 0E94 0000 		call rand
+ 579 02c2 63E0      		ldi r22,lo8(3)
+ 580 02c4 70E0      		ldi r23,hi8(3)
+ 581 02c6 0E94 0000 		call __divmodhi4
+ 582 02ca 182F      		mov r17,r24
+ 584               	.LM55:
+ 585 02cc 0817      		cp r16,r24
+ 586 02ce 01F4      		brne .L21
+ 587 02d0 00C0      		rjmp .L74
+ 588               	.L19:
+ 590               	.LM56:
+ 591 02d2 21E0      		ldi r18,lo8(1)
+ 592 02d4 4216      		cp r4,r18
+ 593 02d6 01F4      		brne .L22
+ 594 02d8 7724      		clr r7
+ 595 02da 00C0      		rjmp .L86
+ 596               	.L22:
+ 598               	.LM57:
+ 599 02dc 32E0      		ldi r19,lo8(2)
+ 600 02de 4316      		cp r4,r19
+ 601 02e0 01F4      		brne .L25
+ 602 02e2 7724      		clr r7
+ 603 02e4 7394      		inc r7
+ 604 02e6 00C0      		rjmp .L86
+ 605               	.L25:
+ 607               	.LM58:
+ 608 02e8 84E0      		ldi r24,lo8(4)
+ 609 02ea 4816      		cp r4,r24
+ 610 02ec 01F4      		brne .L27
+ 611 02ee F2E0      		ldi r31,lo8(2)
+ 612 02f0 7F2E      		mov r7,r31
+ 613 02f2 00C0      		rjmp .L86
+ 614               	.L27:
+ 616               	.LM59:
+ 617 02f4 98E0      		ldi r25,lo8(8)
+ 618 02f6 4916      		cp r4,r25
+ 619 02f8 01F4      		brne .L29
+ 620 02fa E3E0      		ldi r30,lo8(3)
+ 621 02fc 7E2E      		mov r7,r30
+ 622 02fe 00C0      		rjmp .L86
+ 623               	.L29:
+ 625               	.LM60:
+ 626 0300 A0E1      		ldi r26,lo8(16)
+ 627 0302 4A16      		cp r4,r26
+ 628 0304 01F4      		brne .L86
+ 629 0306 74E0      		ldi r23,lo8(4)
+ 630 0308 772E      		mov r7,r23
+ 631               	.L86:
+ 633               	.LM61:
+ 634 030a 0E94 0000 		call rand
+ 635 030e 63E0      		ldi r22,lo8(3)
+ 636 0310 70E0      		ldi r23,hi8(3)
+ 637 0312 0E94 0000 		call __divmodhi4
+ 638 0316 182F      		mov r17,r24
+ 640               	.LM62:
+ 641 0318 0817      		cp r16,r24
+ 642 031a 01F0      		breq .L86
+ 643 031c 7816      		cp r7,r24
+ 644 031e 01F0      		breq .L86
+ 645               	.L21:
+ 647               	.LM63:
+ 648 0320 A394      		inc r10
+ 650               	.LM64:
+ 651 0322 86EF      		ldi r24,lo8(-10)
+ 652 0324 9FEF      		ldi r25,hi8(-10)
+ 653 0326 AFEF      		ldi r26,hlo8(-10)
+ 654 0328 BFEF      		ldi r27,hhi8(-10)
+ 655 032a C80E      		add r12,r24
+ 656 032c D91E      		adc r13,r25
+ 657 032e EA1E      		adc r14,r26
+ 658 0330 FB1E      		adc r15,r27
+ 660               	.LM65:
+ 661 0332 FF92      		push r15
+ 662 0334 EF92      		push r14
+ 663 0336 DF92      		push r13
+ 664 0338 CF92      		push r12
+ 665 033a 8A2D      		mov r24,r10
+ 666 033c 9927      		clr r25
+ 667 033e 9F93      		push r25
+ 668 0340 8F93      		push r24
+ 669 0342 A0E0      		ldi r26,lo8(.LC4)
+ 670 0344 B0E0      		ldi r27,hi8(.LC4)
+ 671 0346 BF93      		push r27
+ 672 0348 AF93      		push r26
+ 673 034a 0E94 0000 		call printf
+ 674 034e 012F      		mov r16,r17
+ 675 0350 67E0      		ldi r22,lo8(7)
+ 676 0352 462E      		mov r4,r22
+ 677 0354 2DB7      		in r18,__SP_L__
+ 678 0356 3EB7      		in r19,__SP_H__
+ 679 0358 285F      		subi r18,lo8(-(8))
+ 680 035a 3F4F      		sbci r19,hi8(-(8))
+ 681 035c 0FB6      		in __tmp_reg__,__SREG__
+ 682 035e F894      		cli
+ 683 0360 3EBF      		out __SP_H__,r19
+ 684 0362 0FBE      		out __SREG__,__tmp_reg__
+ 685 0364 2DBF      		out __SP_L__,r18
+ 686               	.L17:
+ 688               	.LM66:
+ 689 0366 8A2D      		mov r24,r10
+ 690 0368 9927      		clr r25
+ 691 036a 9F93      		push r25
+ 692 036c 8F93      		push r24
+ 693 036e 802F      		mov r24,r16
+ 694 0370 9927      		clr r25
+ 695 0372 9F93      		push r25
+ 696 0374 8F93      		push r24
+ 697 0376 1F92      		push __zero_reg__
+ 698 0378 1F92      		push __zero_reg__
+ 699 037a 80E0      		ldi r24,lo8(.LC5)
+ 700 037c 90E0      		ldi r25,hi8(.LC5)
+ 701 037e 9F93      		push r25
+ 702 0380 8F93      		push r24
+ 703 0382 9F92      		push r9
+ 704 0384 8F92      		push r8
+ 705 0386 0E94 0000 		call sprintf
+ 707               	.LM67:
+ 708 038a F401      		movw r30,r8
+ 709 038c 0190      		ld __tmp_reg__,Z+
+ 710 038e 0020      		tst __tmp_reg__
+ 711 0390 01F4      		brne .-6
+ 712 0392 E050      		subi r30,lo8(tx_buf+4)
+ 713 0394 F040      		sbci r31,hi8(tx_buf+4)
+ 714 0396 EC5F      		subi r30,lo8(-(4))
+ 715 0398 E983      		std Y+1,r30
+ 717               	.LM68:
+ 718 039a 40E0      		ldi r20,lo8(0)
+ 719 039c 6E2F      		mov r22,r30
+ 720 039e 80E0      		ldi r24,lo8(tx_buf)
+ 721 03a0 90E0      		ldi r25,hi8(tx_buf)
+ 722 03a2 0E94 0000 		call rtl_tx_pkt
+ 724               	.LM69:
+ 725 03a6 81E0      		ldi r24,lo8(1)
+ 726 03a8 90E0      		ldi r25,hi8(1)
+ 727 03aa 0E94 0000 		call nrk_led_toggle
+ 728 03ae B42C      		mov r11,r4
+ 729 03b0 57E0      		ldi r21,lo8(7)
+ 730 03b2 452E      		mov r4,r21
+ 731 03b4 ADB7      		in r26,__SP_L__
+ 732 03b6 BEB7      		in r27,__SP_H__
+ 733 03b8 1A96      		adiw r26,10
+ 734 03ba 0FB6      		in __tmp_reg__,__SREG__
+ 735 03bc F894      		cli
+ 736 03be BEBF      		out __SP_H__,r27
+ 737 03c0 0FBE      		out __SREG__,__tmp_reg__
+ 738 03c2 ADBF      		out __SP_L__,r26
+ 739               	.L15:
+ 741               	.LM70:
+ 742 03c4 0E94 0000 		call rtl_rx_pkt_check
+ 743 03c8 8823      		tst r24
+ 744 03ca 01F4      		brne .+2
+ 745 03cc 00C0      		rjmp .L33
+ 746               	.LBB2:
+ 748               	.LM71:
+ 749 03ce AE01      		movw r20,r28
+ 750 03d0 4D5F      		subi r20,lo8(-(3))
+ 751 03d2 5F4F      		sbci r21,hi8(-(3))
+ 752 03d4 BE01      		movw r22,r28
+ 753 03d6 6E5F      		subi r22,lo8(-(2))
+ 754 03d8 7F4F      		sbci r23,hi8(-(2))
+ 755 03da CE01      		movw r24,r28
+ 756 03dc 0196      		adiw r24,1
+ 757 03de 0E94 0000 		call rtl_rx_pkt_get
+ 758 03e2 FC01      		movw r30,r24
+ 760               	.LM72:
+ 761 03e4 6B80      		ldd r6,Y+3
+ 763               	.LM73:
+ 764 03e6 8385      		ldd r24,Z+11
+ 765 03e8 9927      		clr r25
+ 766 03ea C097      		sbiw r24,48
+ 767 03ec 202F      		mov r18,r16
+ 768 03ee 3327      		clr r19
+ 769 03f0 8217      		cp r24,r18
+ 770 03f2 9307      		cpc r25,r19
+ 771 03f4 01F0      		breq .+2
+ 772 03f6 00C0      		rjmp .L35
+ 773 03f8 8389      		ldd r24,Z+19
+ 774 03fa 8133      		cpi r24,lo8(49)
+ 775 03fc 01F0      		breq .+2
+ 776 03fe 00C0      		rjmp .L35
+ 777 0400 B2E3      		ldi r27,lo8(50)
+ 778 0402 BA15      		cp r27,r10
+ 779 0404 00F4      		brsh .+2
+ 780 0406 00C0      		rjmp .L35
+ 782               	.LM74:
+ 783 0408 BB20      		tst r11
+ 784 040a 01F4      		brne .L39
+ 785               	.L75:
+ 787               	.LM75:
+ 788 040c 0E94 0000 		call rand
+ 789 0410 63E0      		ldi r22,lo8(3)
+ 790 0412 70E0      		ldi r23,hi8(3)
+ 791 0414 0E94 0000 		call __divmodhi4
+ 792 0418 182F      		mov r17,r24
+ 794               	.LM76:
+ 795 041a 0817      		cp r16,r24
+ 796 041c 01F4      		brne .L41
+ 797 041e 00C0      		rjmp .L75
+ 798               	.L39:
+ 800               	.LM77:
+ 801 0420 21E0      		ldi r18,lo8(1)
+ 802 0422 B216      		cp r11,r18
+ 803 0424 01F4      		brne .L42
+ 804 0426 7724      		clr r7
+ 805 0428 00C0      		rjmp .L87
+ 806               	.L42:
+ 808               	.LM78:
+ 809 042a 32E0      		ldi r19,lo8(2)
+ 810 042c B316      		cp r11,r19
+ 811 042e 01F4      		brne .L45
+ 812 0430 7724      		clr r7
+ 813 0432 7394      		inc r7
+ 814 0434 00C0      		rjmp .L87
+ 815               	.L45:
+ 817               	.LM79:
+ 818 0436 84E0      		ldi r24,lo8(4)
+ 819 0438 B816      		cp r11,r24
+ 820 043a 01F4      		brne .L47
+ 821 043c 42E0      		ldi r20,lo8(2)
+ 822 043e 742E      		mov r7,r20
+ 823 0440 00C0      		rjmp .L87
+ 824               	.L47:
+ 826               	.LM80:
+ 827 0442 98E0      		ldi r25,lo8(8)
+ 828 0444 B916      		cp r11,r25
+ 829 0446 01F4      		brne .L49
+ 830 0448 33E0      		ldi r19,lo8(3)
+ 831 044a 732E      		mov r7,r19
+ 832 044c 00C0      		rjmp .L87
+ 833               	.L49:
+ 835               	.LM81:
+ 836 044e A0E1      		ldi r26,lo8(16)
+ 837 0450 BA16      		cp r11,r26
+ 838 0452 01F4      		brne .L87
+ 839 0454 24E0      		ldi r18,lo8(4)
+ 840 0456 722E      		mov r7,r18
+ 841               	.L87:
+ 843               	.LM82:
+ 844 0458 0E94 0000 		call rand
+ 845 045c 63E0      		ldi r22,lo8(3)
+ 846 045e 70E0      		ldi r23,hi8(3)
+ 847 0460 0E94 0000 		call __divmodhi4
+ 848 0464 182F      		mov r17,r24
+ 850               	.LM83:
+ 851 0466 0817      		cp r16,r24
+ 852 0468 01F0      		breq .L87
+ 853 046a 7816      		cp r7,r24
+ 854 046c 01F0      		breq .L87
+ 855               	.L41:
+ 857               	.LM84:
+ 858 046e A394      		inc r10
+ 860               	.LM85:
+ 861 0470 3A94      		dec r3
+ 863               	.LM86:
+ 864 0472 01F4      		brne .L53
+ 865 0474 3324      		clr r3
+ 866 0476 3394      		inc r3
+ 867               	.L53:
+ 869               	.LM87:
+ 870 0478 80E0      		ldi r24,lo8(timeend)
+ 871 047a 90E0      		ldi r25,hi8(timeend)
+ 872 047c 0E94 0000 		call nrk_time_get
+ 874               	.LM88:
+ 875 0480 80E0      		ldi r24,lo8(timeout)
+ 876 0482 90E0      		ldi r25,hi8(timeout)
+ 877 0484 0E94 0000 		call nrk_time_get
+ 879               	.LM89:
+ 880 0488 84E6      		ldi r24,lo8(100)
+ 881 048a 90E0      		ldi r25,hi8(100)
+ 882 048c A0E0      		ldi r26,hlo8(100)
+ 883 048e B0E0      		ldi r27,hhi8(100)
+ 884 0490 C80E      		add r12,r24
+ 885 0492 D91E      		adc r13,r25
+ 886 0494 EA1E      		adc r14,r26
+ 887 0496 FB1E      		adc r15,r27
+ 889               	.LM90:
+ 890 0498 FF92      		push r15
+ 891 049a EF92      		push r14
+ 892 049c DF92      		push r13
+ 893 049e CF92      		push r12
+ 894 04a0 8A2D      		mov r24,r10
+ 895 04a2 9927      		clr r25
+ 896 04a4 9F93      		push r25
+ 897 04a6 8F93      		push r24
+ 898 04a8 A0E0      		ldi r26,lo8(.LC6)
+ 899 04aa B0E0      		ldi r27,hi8(.LC6)
+ 900 04ac BF93      		push r27
+ 901 04ae AF93      		push r26
+ 902 04b0 0E94 0000 		call printf
+ 903 04b4 012F      		mov r16,r17
+ 904 04b6 2DB7      		in r18,__SP_L__
+ 905 04b8 3EB7      		in r19,__SP_H__
+ 906 04ba 285F      		subi r18,lo8(-(8))
+ 907 04bc 3F4F      		sbci r19,hi8(-(8))
+ 908 04be 0FB6      		in __tmp_reg__,__SREG__
+ 909 04c0 F894      		cli
+ 910 04c2 3EBF      		out __SP_H__,r19
+ 911 04c4 0FBE      		out __SREG__,__tmp_reg__
+ 912 04c6 2DBF      		out __SP_L__,r18
+ 913               	.L35:
+ 915               	.LM91:
+ 916 04c8 862D      		mov r24,r6
+ 917 04ca 9927      		clr r25
+ 918 04cc 0297      		sbiw r24,2
+ 919 04ce 62E0      		ldi r22,lo8(2)
+ 920 04d0 70E0      		ldi r23,hi8(2)
+ 921 04d2 0E94 0000 		call __divmodhi4
+ 922 04d6 81E0      		ldi r24,lo8(1)
+ 923 04d8 90E0      		ldi r25,hi8(1)
+ 924 04da 00C0      		rjmp 2f
+ 925 04dc 880F      	1:	lsl r24
+ 926 04de 991F      		rol r25
+ 927 04e0 6A95      	2:	dec r22
+ 928 04e2 02F4      		brpl 1b
+ 929 04e4 8095      		com r24
+ 930 04e6 4822      		and r4,r24
+ 932               	.LM92:
+ 933 04e8 0E94 0000 		call rtl_rx_pkt_release
+ 934               	.L33:
+ 935               	.LBE2:
+ 937               	.LM93:
+ 938 04ec 0E94 0000 		call rtl_wait_until_rx_or_tx
+ 939               	.L88:
+ 941               	.LM94:
+ 942 04f0 32E3      		ldi r19,lo8(50)
+ 943 04f2 3A15      		cp r19,r10
+ 944 04f4 00F0      		brlo .+2
+ 945 04f6 00C0      		rjmp .L14
+ 947               	.LM95:
+ 948 04f8 FF92      		push r15
+ 949 04fa EF92      		push r14
+ 950 04fc DF92      		push r13
+ 951 04fe CF92      		push r12
+ 952 0500 80E0      		ldi r24,lo8(.LC7)
+ 953 0502 90E0      		ldi r25,hi8(.LC7)
+ 954 0504 9F93      		push r25
+ 955 0506 8F93      		push r24
+ 956 0508 0E94 0000 		call printf
+ 958               	.LM96:
+ 959 050c 80E0      		ldi r24,lo8(.LC8)
+ 960 050e 90E0      		ldi r25,hi8(.LC8)
+ 961 0510 0E94 0000 		call puts
+ 963               	.LM97:
+ 964 0514 0E94 0000 		call nrk_uart_rx_signal_get
+ 965 0518 182F      		mov r17,r24
+ 967               	.LM98:
+ 968 051a 0E94 0000 		call nrk_signal_register
+ 970               	.LM99:
+ 971 051e 81E0      		ldi r24,lo8(1)
+ 972 0520 0E94 0000 		call nrk_uart_data_ready
+ 973 0524 ADB7      		in r26,__SP_L__
+ 974 0526 BEB7      		in r27,__SP_H__
+ 975 0528 1696      		adiw r26,6
+ 976 052a 0FB6      		in __tmp_reg__,__SREG__
+ 977 052c F894      		cli
+ 978 052e BEBF      		out __SP_H__,r27
+ 979 0530 0FBE      		out __SREG__,__tmp_reg__
+ 980 0532 ADBF      		out __SP_L__,r26
+ 981 0534 8823      		tst r24
+ 982 0536 01F0      		breq .L56
+ 984               	.LM100:
+ 985 0538 8091 0000 		lds r24,__iob
+ 986 053c 9091 0000 		lds r25,(__iob)+1
+ 987 0540 0E94 0000 		call fgetc
+ 988 0544 582E      		mov r5,r24
+ 989 0546 00C0      		rjmp .L58
+ 990               	.L56:
+ 992               	.LM101:
+ 993 0548 61E0      		ldi r22,lo8(1)
+ 994 054a 70E0      		ldi r23,hi8(1)
+ 995 054c 80E0      		ldi r24,hlo8(1)
+ 996 054e 90E0      		ldi r25,hhi8(1)
+ 997 0550 00C0      		rjmp 2f
+ 998 0552 660F      	1:	lsl r22
+ 999 0554 771F      		rol r23
+ 1000 0556 881F      		rol r24
+ 1001 0558 991F      		rol r25
+ 1002 055a 1A95      	2:	dec r17
+ 1003 055c 02F4      		brpl 1b
+ 1004 055e 0E94 0000 		call nrk_event_wait
+ 1005               	.L58:
+ 1007               	.LM102:
+ 1008 0562 80E0      		ldi r24,lo8(timestart)
+ 1009 0564 90E0      		ldi r25,hi8(timestart)
+ 1010 0566 0E94 0000 		call nrk_time_get
+ 1012               	.LM103:
+ 1013 056a B9E7      		ldi r27,lo8(121)
+ 1014 056c 5B16      		cp r5,r27
+ 1015 056e 01F0      		breq .L59
+ 1016 0570 29E5      		ldi r18,lo8(89)
+ 1017 0572 5216      		cp r5,r18
+ 1018 0574 01F0      		breq .+2
+ 1019 0576 00C0      		rjmp .L61
+ 1020               	.L59:
+ 1022               	.LM104:
+ 1023 0578 0E94 0000 		call rtl_rx_pkt_release
+ 1024 057c EE24      		clr r14
+ 1025 057e FF24      		clr r15
+ 1026 0580 00C0      		rjmp .L62
+ 1027               	.L63:
+ 1029               	.LM105:
+ 1030 0582 812F      		mov r24,r17
+ 1031 0584 9927      		clr r25
+ 1032 0586 9F93      		push r25
+ 1033 0588 8F93      		push r24
+ 1034 058a 80E0      		ldi r24,lo8(.LC9)
+ 1035 058c 90E0      		ldi r25,hi8(.LC9)
+ 1036 058e 9F93      		push r25
+ 1037 0590 8F93      		push r24
+ 1038 0592 0E94 0000 		call printf
+ 1040               	.LM106:
+ 1041 0596 60E0      		ldi r22,lo8(.LC2)
+ 1042 0598 70E0      		ldi r23,hi8(.LC2)
+ 1043 059a C401      		movw r24,r8
+ 1044 059c 0E94 0000 		call strcpy
+ 1046               	.LM107:
+ 1047 05a0 F401      		movw r30,r8
+ 1048 05a2 0190      		ld __tmp_reg__,Z+
+ 1049 05a4 0020      		tst __tmp_reg__
+ 1050 05a6 01F4      		brne .-6
+ 1051 05a8 E050      		subi r30,lo8(tx_buf+4)
+ 1052 05aa F040      		sbci r31,hi8(tx_buf+4)
+ 1053 05ac EC5F      		subi r30,lo8(-(4))
+ 1054 05ae E983      		std Y+1,r30
+ 1056               	.LM108:
+ 1057 05b0 40E0      		ldi r20,lo8(0)
+ 1058 05b2 6E2F      		mov r22,r30
+ 1059 05b4 80E0      		ldi r24,lo8(tx_buf)
+ 1060 05b6 90E0      		ldi r25,hi8(tx_buf)
+ 1061 05b8 0E94 0000 		call rtl_tx_pkt
+ 1063               	.LM109:
+ 1064 05bc 0E94 0000 		call rtl_rx_pkt_release
+ 1066               	.LM110:
+ 1067 05c0 0E94 0000 		call rtl_wait_until_rx_or_tx
+ 1068 05c4 0F90      		pop __tmp_reg__
+ 1069 05c6 0F90      		pop __tmp_reg__
+ 1070 05c8 0F90      		pop __tmp_reg__
+ 1071 05ca 0F90      		pop __tmp_reg__
+ 1072               	.L62:
+ 1073 05cc 1E2D      		mov r17,r14
+ 1075               	.LM111:
+ 1076 05ce 0E94 0000 		call rtl_rx_pkt_check
+ 1077 05d2 0894      		sec
+ 1078 05d4 E11C      		adc r14,__zero_reg__
+ 1079 05d6 F11C      		adc r15,__zero_reg__
+ 1080 05d8 8823      		tst r24
+ 1081 05da 01F0      		breq .L63
+ 1082 05dc CC24      		clr r12
+ 1083 05de DD24      		clr r13
+ 1084 05e0 7601      		movw r14,r12
+ 1085 05e2 5524      		clr r5
+ 1086 05e4 5A94      		dec r5
+ 1087 05e6 00E0      		ldi r16,lo8(0)
+ 1088 05e8 AA24      		clr r10
+ 1089 05ea 97E0      		ldi r25,lo8(7)
+ 1090 05ec B92E      		mov r11,r25
+ 1091 05ee 87E0      		ldi r24,lo8(7)
+ 1092 05f0 482E      		mov r4,r24
+ 1093 05f2 7724      		clr r7
+ 1094 05f4 00C0      		rjmp .L14
+ 1095               	.L61:
+ 1097               	.LM112:
+ 1098 05f6 9EE6      		ldi r25,lo8(110)
+ 1099 05f8 5916      		cp r5,r25
+ 1100 05fa 01F0      		breq .L65
+ 1101 05fc AEE4      		ldi r26,lo8(78)
+ 1102 05fe 5A16      		cp r5,r26
+ 1103 0600 01F0      		breq .+2
+ 1104 0602 00C0      		rjmp .L88
+ 1105               	.L65:
+ 1107               	.LM113:
+ 1108 0604 20E0      		ldi r18,lo8(.LC10)
+ 1109 0606 30E0      		ldi r19,hi8(.LC10)
+ 1110 0608 3F93      		push r19
+ 1111 060a 2F93      		push r18
+ 1112 060c 0E94 0000 		call printf
+ 1114               	.LM114:
+ 1115 0610 0E94 0000 		call nrk_terminate_task
+ 1116 0614 0F90      		pop __tmp_reg__
+ 1117 0616 0F90      		pop __tmp_reg__
+ 1118 0618 00C0      		rjmp .L88
+ 1119               	/* epilogue: frame size=3 */
+ 1120               	/* epilogue: noreturn */
+ 1121               	/* epilogue end (size=0) */
+ 1122               	/* function Task1 size 691 (666) */
+ 1140               	.Lscope2:
+ 1142               		.stabd	78,0,0
+ 1144               	.global	main
+ 1146               	main:
+ 1147               		.stabd	46,0,0
+ 1149               	.LM115:
+ 1150               	.LFBB3:
+ 1151               	/* prologue: frame size=0 */
+ 1152 061a C0E0      		ldi r28,lo8(__stack - 0)
+ 1153 061c D0E0      		ldi r29,hi8(__stack - 0)
+ 1154 061e DEBF      		out __SP_H__,r29
+ 1155 0620 CDBF      		out __SP_L__,r28
+ 1156               	/* prologue end (size=4) */
+ 1158               	.LM116:
+ 1159 0622 0E94 0000 		call nrk_setup_ports
+ 1161               	.LM117:
+ 1162 0626 87E0      		ldi r24,lo8(7)
+ 1163 0628 90E0      		ldi r25,hi8(7)
+ 1164 062a 0E94 0000 		call nrk_setup_uart
+ 1166               	.LM118:
+ 1167 062e 80E0      		ldi r24,lo8(__c.2392)
+ 1168 0630 90E0      		ldi r25,hi8(__c.2392)
+ 1169 0632 0E94 0000 		call nrk_kprintf
+ 1171               	.LM119:
+ 1172 0636 0E94 0000 		call nrk_init
+ 1174               	.LM120:
+ 1175 063a 80E0      		ldi r24,lo8(0)
+ 1176 063c 90E0      		ldi r25,hi8(0)
+ 1177 063e 0E94 0000 		call nrk_led_clr
+ 1179               	.LM121:
+ 1180 0642 81E0      		ldi r24,lo8(1)
+ 1181 0644 90E0      		ldi r25,hi8(1)
+ 1182 0646 0E94 0000 		call nrk_led_clr
+ 1184               	.LM122:
+ 1185 064a 82E0      		ldi r24,lo8(2)
+ 1186 064c 90E0      		ldi r25,hi8(2)
+ 1187 064e 0E94 0000 		call nrk_led_clr
+ 1189               	.LM123:
+ 1190 0652 83E0      		ldi r24,lo8(3)
+ 1191 0654 90E0      		ldi r25,hi8(3)
+ 1192 0656 0E94 0000 		call nrk_led_clr
+ 1194               	.LM124:
+ 1195 065a 20E0      		ldi r18,lo8(0)
+ 1196 065c 30E0      		ldi r19,hi8(0)
+ 1197 065e 40E0      		ldi r20,hlo8(0)
+ 1198 0660 50E0      		ldi r21,hhi8(0)
+ 1199 0662 60E0      		ldi r22,lo8(0)
+ 1200 0664 70E0      		ldi r23,hi8(0)
+ 1201 0666 80E0      		ldi r24,hlo8(0)
+ 1202 0668 90E0      		ldi r25,hhi8(0)
+ 1203 066a 0E94 0000 		call nrk_time_set
+ 1205               	.LM125:
+ 1206 066e 0E94 0000 		call rtl_task_config
+ 1208               	.LM126:
+ 1209 0672 0E94 0000 		call nrk_create_taskset
+ 1211               	.LM127:
+ 1212 0676 0E94 0000 		call nrk_start
+ 1214               	.LM128:
+ 1215 067a 80E0      		ldi r24,lo8(0)
+ 1216 067c 90E0      		ldi r25,hi8(0)
+ 1217               	/* epilogue: frame size=0 */
+ 1218 067e 0C94 0000 		jmp exit
+ 1219               	/* epilogue end (size=2) */
+ 1220               	/* function main size 52 (46) */
+ 1222               	.Lscope3:
+ 1224               		.stabd	78,0,0
+ 1225               		.section	.progmem.data,"a",@progbits
+ 1228               	__c.2523:
+ 1229 0000 4372 6561 		.string	"Create Done\r\n"
+ 1229      7465 2044 
+ 1229      6F6E 650D 
+ 1229      0A00 
+ 1232               	__c.2421:
+ 1233 000e 5072 6573 		.string	"Press any key to start\r\n"
+ 1233      7320 616E 
+ 1233      7920 6B65 
+ 1233      7920 746F 
+ 1233      2073 7461 
+ 1236               	__c.2392:
+ 1237 0027 5374 6172 		.string	"Starting up...\r\n"
+ 1237      7469 6E67 
+ 1237      2075 702E 
+ 1237      2E2E 0D0A 
+ 1237      00
+ 1238               		.comm _nrk_signal_list,4,1
+ 1239               		.comm nrk_idle_task_stk,128,1
+ 1240               		.comm nrk_kernel_stk_ptr,2,1
+ 1241               		.comm rtl_task,35,1
+ 1242               		.comm rtl_task_stack,128,1
+ 1243               		.comm rtl_node_mode,1,1
+ 1244               		.comm last_slot,2,1
+ 1245               		.comm last_slot_time,8,1
+ 1246               		.comm _rtl_sync_ok,1,1
+ 1247               		.comm _rtl_ready,1,1
+ 1248               		.comm _rtl_time_token,1,1
+ 1249               		.comm _rtl_time_token_status,1,1
+ 1250               		.comm rtl_tsync_tx,7,1
+ 1251               		.comm rtl_tsync_buf,3,1
+ 1252               		.comm _rtl_contention_pending,1,1
+ 1253               		.comm _rtl_contention_slots,1,1
+ 1254               		.comm rtl_rfRxInfo,9,1
+ 1255               		.comm rtl_rx_data_ready,1,1
+ 1256               		.comm rtl_rx_slot,1,1
+ 1257               		.comm rtl_rx_buf,116,1
+ 1258               		.comm rtl_rfTxInfo,7,1
+ 1259               		.comm rtl_tx_info,99,1
+ 1260               		.comm rtl_abs_tx_slot,2,1
+ 1261               		.comm rtl_abs_tx_ready,1,1
+ 1262               		.comm rtl_tx_data_ready,4,1
+ 1263               		.comm rtl_param,9,1
+ 1264               		.comm rtl_tdma_rx_mask,4,1
+ 1265               		.comm rtl_tdma_tx_mask,4,1
+ 1266               		.comm rx_callback,2,1
+ 1267               		.comm tx_callback,2,1
+ 1268               		.comm abs_callback,2,1
+ 1269               		.comm slot_callback,2,1
+ 1270               		.comm cycle_callback,2,1
+ 1271               		.comm error_task,1,1
+ 1272               		.comm error_num,1,1
+ 1273               		.comm Stack1,128,1
+ 1274               		.comm TaskOne,35,1
+ 1275               		.comm tx_buf,116,1
+ 1276               		.comm rx_buf,116,1
+ 1277               		.comm timestart,8,1
+ 1278               		.comm timeend,8,1
+ 1279               		.comm newtime,8,1
+ 1280               		.comm timeout,8,1
+ 1327               		.text
+ 1329               	.Letext0:
+ 1330               	/* File "main.c": code  836 = 0x0344 ( 804), prologues  29, epilogues   3 */
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+     /tmp/ccVMCS4Y.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccVMCS4Y.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccVMCS4Y.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccVMCS4Y.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccVMCS4Y.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccVMCS4Y.s:142    .text:00000000 nrk_create_taskset
+     /tmp/ccVMCS4Y.s:270    .text:000000ba Task1
+                            *COM*:00000023 TaskOne
+                            *COM*:00000080 Stack1
+     /tmp/ccVMCS4Y.s:1228   .progmem.data:00000000 __c.2523
+                            *COM*:00000074 rx_buf
+     /tmp/ccVMCS4Y.s:1232   .progmem.data:0000000e __c.2421
+                            *COM*:00000008 timestart
+                            *COM*:00000074 tx_buf
+                            *COM*:00000008 timeout
+                            *COM*:00000008 timeend
+     /tmp/ccVMCS4Y.s:1146   .text:0000061a main
+     /tmp/ccVMCS4Y.s:1236   .progmem.data:00000027 __c.2392
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000080 nrk_idle_task_stk
+                            *COM*:00000002 nrk_kernel_stk_ptr
+                            *COM*:00000023 rtl_task
+                            *COM*:00000080 rtl_task_stack
+                            *COM*:00000001 rtl_node_mode
+                            *COM*:00000002 last_slot
+                            *COM*:00000008 last_slot_time
+                            *COM*:00000001 _rtl_sync_ok
+                            *COM*:00000001 _rtl_ready
+                            *COM*:00000001 _rtl_time_token
+                            *COM*:00000001 _rtl_time_token_status
+                            *COM*:00000007 rtl_tsync_tx
+                            *COM*:00000003 rtl_tsync_buf
+                            *COM*:00000001 _rtl_contention_pending
+                            *COM*:00000001 _rtl_contention_slots
+                            *COM*:00000009 rtl_rfRxInfo
+                            *COM*:00000001 rtl_rx_data_ready
+                            *COM*:00000001 rtl_rx_slot
+                            *COM*:00000074 rtl_rx_buf
+                            *COM*:00000007 rtl_rfTxInfo
+                            *COM*:00000063 rtl_tx_info
+                            *COM*:00000002 rtl_abs_tx_slot
+                            *COM*:00000001 rtl_abs_tx_ready
+                            *COM*:00000004 rtl_tx_data_ready
+                            *COM*:00000009 rtl_param
+                            *COM*:00000004 rtl_tdma_rx_mask
+                            *COM*:00000004 rtl_tdma_tx_mask
+                            *COM*:00000002 rx_callback
+                            *COM*:00000002 tx_callback
+                            *COM*:00000002 abs_callback
+                            *COM*:00000002 slot_callback
+                            *COM*:00000002 cycle_callback
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+                            *COM*:00000008 newtime
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+nrk_activate_task
+nrk_kprintf
+nrk_get_pid
+printf
+nrk_led_set
+rtl_init
+rtl_set_schedule
+rtl_set_channel
+rtl_start
+rtl_rx_pkt_set_buffer
+nrk_wait_until_next_period
+rtl_ready
+nrk_uart_rx_signal_get
+nrk_signal_register
+nrk_uart_data_ready
+__iob
+fgetc
+nrk_event_wait
+nrk_time_get
+rand
+__divmodhi4
+strcpy
+rtl_tx_pkt
+rtl_rx_pkt_release
+rtl_wait_until_rx_or_tx
+rtl_rx_pkt_check
+rtl_tx_pkt_check
+sprintf
+nrk_led_toggle
+rtl_rx_pkt_get
+puts
+nrk_terminate_task
+__stack
+nrk_setup_ports
+nrk_setup_uart
+nrk_init
+nrk_led_clr
+nrk_time_set
+rtl_task_config
+nrk_start
+exit

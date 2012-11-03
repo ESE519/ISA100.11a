@@ -1,0 +1,21 @@
+Basic Routing:
+
+1. Whenever the gateway receives a packet with 'nextHop' as BCAST_ADDR, it will construct a Msg_RouteReply
+containing the nodes which are along the best path. The exact nodes that will appear in this list will be chosen randomly
+each time (however always keeping the source node in the list)
+
+2. For a new node to get to know the default gateway, the HELLO messages from the neighbors will carry the address 
+of the default gateway
+
+3. If a node receives a packet whose destination it knows about, it sends back the routing information 
+to the sending node. The sending node should check for routing loops by examining the nextHop field. This 'distance vector'
+approach only extends to one previous node
+
+Link failures:
+When node '1' detects that neighbor '3' has not reported since a long time, it assumes the link 3->1 has failed. It removes 
+'3' from the neighbor list and sends a NGB_LIST message to the default gateway
+
+Whenever there is enough place to hold the node state in any packet, a field is set in the packet header if the packet is 
+destined for the gateway. In this way, the gateway can record node statistics.
+
+

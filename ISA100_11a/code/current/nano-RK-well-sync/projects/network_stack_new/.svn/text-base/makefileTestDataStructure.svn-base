@@ -1,0 +1,19 @@
+OBJS = TestDataStructure.o TopologyGeneration.o NGPack.o
+SRCS = TestDataStructure.c TopologyGeneration.c NGPack.c
+
+CC = gcc
+
+ROOT_DIR = /home/ayb/nano-RK
+
+INCL = -I$(ROOT_DIR)/projects/network_stack_new/
+
+CFLAGS = 
+CFLAGS += $(INCL)
+
+all:
+	clear 
+	$(CC) $(CFLAGS) -o testdatastructure $(SRCS) 
+
+.PHONY : clean
+clean:
+	rm -f testdatastructure $(OBJS) 

@@ -1,0 +1,318 @@
+#include <nrk.h>
+#include <include.h>
+#include <ulib.h>
+#include <stdio.h>
+#include <avr/sleep.h>
+#include <hal.h>
+#include <isa.h>
+#include <nrk_error.h>
+#include <nrk_events.h>
+
+
+
+//#define MY_CHANNEL 20 
+#define MY_TX_SLOT 1
+//#define MY_RX_SLOT 2
+
+#define MY_ID  1
+#define MY_CLK_SRC_ID  0
+
+#define NUM_OF_TEST_SET 16
+#define MAX_SLIP_BUF 17
+#define NUM_OF_NODES 3
+
+NRK_STK Stack1[NRK_APP_STACKSIZE];
+nrk_task_type TaskOne;
+void Task1(void);
+
+NRK_STK Stack2[NRK_APP_STACKSIZE];
+nrk_task_type TaskTwo;
+void Task2 (void);
+
+void nrk_create_taskset();
+void packet_measurement_better(uint8_t * local_rx_buf);
+
+/*Buffers*/
+uint8_t tx_buf[RF_MAX_PAYLOAD_SIZE];
+uint8_t rx_buf[RF_MAX_PAYLOAD_SIZE];
+uint8_t slip_tx_buf[MAX_SLIP_BUF];
+uint8_t slip_rx_buf[MAX_SLIP_BUF];
+
+/*packet evaluation related*/
+uint8_t pkt_measure[NUM_OF_NODES][NUM_OF_TEST_SET];
+uint8_t sendFlag;
+uint8_t frame_cnt[NUM_OF_NODES];  //add 1 every 8 packets
+uint8_t pkt_cnt[NUM_OF_NODES];
+uint8_t current_pkt_index[NUM_OF_NODES]; 
+uint8_t received_pkt_index[NUM_OF_NODES];
+uint8_t current_node;
+uint8_t send_node;
+
+/* signal related declaration */
+int8_t pkt_record_done_signal;
+
+
+
+int8_t pkt_record_check()
+{
+  return sendFlag;
+}
+
+int8_t wait_until_record_full()
+{
+    nrk_signal_register(pkt_record_done_signal);
+    if (pkt_record_check() != 0)
+        return NRK_OK;
+    nrk_event_wait (SIG(pkt_record_done_signal));
+    return NRK_OK;
+}
+
+
+
+
+void nrk_create_taskset();
+
+uint8_t tx_buf[RF_MAX_PAYLOAD_SIZE];
+uint8_t rx_buf[RF_MAX_PAYLOAD_SIZE];
+
+nrk_time_t timestart;
+nrk_time_t timeend;
+nrk_time_t newtime;
+nrk_time_t timeout;
+
+
+int
+main ()
+{
+
+  nrk_setup_ports();
+  nrk_setup_uart(UART_BAUDRATE_115K2);
+  
+
+  nrk_kprintf( PSTR("Starting up...\r\n") );
+	
+  nrk_init();
+
+  nrk_led_clr(0);
+  nrk_led_clr(1);
+  nrk_led_clr(2);
+  nrk_led_clr(3);
+  
+  nrk_time_set(0,0);
+
+  isa_task_config();
+  nrk_create_taskset ();
+
+  nrk_start();
+  
+  return 0;
+}
+
+void Task1()
+{
+    uint8_t i;
+    uint8_t length;
+    uint8_t *local_rx_buf;
+    int8_t rssi;
+    uint8_t cnt; 
+    //uint8_t my_tx_slot[4];
+
+    printf( "Task1 PID=%d\r\n",nrk_get_pid());
+
+    nrk_led_set(GREEN_LED); 
+
+    isa_set_channel_pattern(1);
+
+    isa_init(ISA_RECIPIENT,MY_ID, MY_CLK_SRC_ID);
+ 
+    isa_set_schedule(ISA_RECIPIENT,MY_CLK_SRC_ID);
+  
+    //isa_set_channel(MY_CHANNEL);
+
+    isa_start();
+ 
+    isa_rx_pkt_set_buffer(rx_buf, RF_MAX_PAYLOAD_SIZE);
+ 
+    while(!isa_ready())  nrk_wait_until_next_period(); 
+	
+    /*while(isa_join_ready()!=1) nrk_wait_until_next_period();
+    
+    for(i=0;i<4;i++){  // set tx slots
+	if(tx_slot_from_join[i]==0)
+		break;
+	else
+	    my_tx_slot[i]=tx_slot_from_join[i];
+    }	   
+    printf("MAIN_TX:%d\r\n",my_tx_slot[0]);*/
+
+
+    pkt_record_done_signal=nrk_signal_create();
+    if(pkt_record_done_signal==NRK_ERROR){
+	nrk_kprintf(PSTR("ERROR: creating packet record signal failed\r\n"));
+	nrk_kernel_error_add(NRK_SIGNAL_CREATE_ERROR,nrk_cur_task_TCB->task_ID);
+	return NRK_ERROR;
+    }  
+
+    while(1) {
+	//printf("check %d",isa_rx_pkt_check());
+	nrk_gpio_set(NRK_DEBUG_3);
+	if( isa_rx_pkt_check()!=0 ) {
+	    local_rx_buf=isa_rx_pkt_get(&length, &rssi);
+	    //local_rx_buf[PKT_DATA_START+length-1]='\0';
+	    //printf("length is %d, rssi is %d.\n\r",length,rssi);
+	    //printf( "node %c,%d\r\n",local_rx_buf[PKT_DATA_START+5],local_rx_buf[PKT_DATA_START+7]);
+	    packet_measurement_better(local_rx_buf);
+	    isa_rx_pkt_release();
+	    //printf("\r\n");
+	}
+	//printf("send message %d\r\n",cnt);
+
+	if(isa_tx_pkt_check(MY_TX_SLOT)!=0){
+	  //printf("Pending TX");
+	}
+	else{
+	sprintf( &tx_buf[PKT_DATA_START],"node %d,%c",MY_ID,cnt++);
+	//sprintf( &tx_buf[PKT_DATA_START],"3");
+	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
+	isa_tx_pkt(tx_buf,length,configDHDR(),MY_TX_SLOT);
+	}
+	//isa_rx_pkt_release();	
+	nrk_gpio_clr(NRK_DEBUG_3);
+	isa_wait_until_rx_or_tx();
+    }
+}
+
+void Task2 ()
+{
+
+  uint8_t len,i;
+  uint8_t zero_killer=0xaa;
+
+  slip_init (stdin, stdout, 0, 0);
+
+  wait_until_record_full(); //wait for first batch of packets
+
+  while (1) {
+    //nrk_led_set (ORANGE_LED);
+    //sprintf (slip_tx_buf, pkt_measure);
+	//if(sendFlag){
+		//printf("")
+		nrk_gpio_set(NRK_DEBUG_1);
+		//printf("CN:%d\r\n",send_node);
+		slip_tx_buf[0]=send_node+1;
+		for(uint8_t i=0;i<NUM_OF_TEST_SET;i++){
+		   slip_tx_buf[i+1]=pkt_measure[send_node][i] ^ zero_killer;  //get rid of '\0'
+		}
+		//slip_tx_buf[i]=0; // add '\0' at the end
+    	len = strlen (slip_tx_buf);
+	//printf("%d\r\n",len);
+    	slip_tx (slip_tx_buf, len);
+		sendFlag=0;
+		for(i=0;i<NUM_OF_TEST_SET;i++){
+		    pkt_measure[send_node][i]=0;	    
+		}
+	printf("KO,%d\r\n",send_node);	
+    	//nrk_wait_until_next_period ();
+		nrk_gpio_clr(NRK_DEBUG_1);
+	//}	
+	wait_until_record_full();
+  }
+}
+
+
+void
+nrk_create_taskset()
+{
+  TaskOne.task = Task1;
+  TaskOne.Ptos = (void *) &Stack1[NRK_APP_STACKSIZE-1];
+  TaskOne.Pbos = (void *) &Stack1[0];
+  TaskOne.prio = 2;
+  TaskOne.FirstActivation = TRUE;
+  TaskOne.Type = BASIC_TASK;
+  TaskOne.SchType = PREEMPTIVE;
+  TaskOne.period.secs = 0;
+  TaskOne.period.nano_secs = 500*NANOS_PER_MS;
+  TaskOne.cpu_reserve.secs = 0;
+  TaskOne.cpu_reserve.nano_secs = 0;
+  TaskOne.cpu_reserve.nano_secs = 500*NANOS_PER_MS;
+  TaskOne.offset.secs = 0;
+  TaskOne.offset.nano_secs= 0;
+  nrk_activate_task (&TaskOne);
+
+
+  TaskTwo.task = Task2;
+  nrk_task_set_stk( &TaskTwo, Stack2, NRK_APP_STACKSIZE);
+  TaskTwo.prio = 3;
+  TaskTwo.FirstActivation = TRUE;
+  TaskTwo.Type = BASIC_TASK;
+  TaskTwo.SchType = PREEMPTIVE;
+  TaskTwo.period.secs = 20;
+  TaskTwo.period.nano_secs = 0;
+  TaskTwo.cpu_reserve.secs = 0;
+  TaskTwo.cpu_reserve.nano_secs = 0;
+  TaskTwo.offset.secs = 0;
+  TaskTwo.offset.nano_secs = 100*NANOS_PER_MS;
+  nrk_activate_task (&TaskTwo);
+
+  nrk_kprintf( PSTR("Create Done\r\n") );
+}
+
+void packet_measurement_better(uint8_t * local_rx_buf)
+{
+	uint8_t i,length;
+	uint8_t next_pkt_offset;
+	uint8_t temp;
+
+	if(local_rx_buf[PKT_DATA_START]=='n'){
+		current_node = local_rx_buf[PKT_DATA_START+5]-'0';  // node number
+		received_pkt_index[current_node] = local_rx_buf[PKT_DATA_START+7]; 
+		
+
+		next_pkt_offset = received_pkt_index[current_node]-current_pkt_index[current_node];  // packet index difference
+		//printf("%d,%d\r\n",next_pkt_offset,current_node);
+
+		//if(next_pkt_offset!=1){
+//printf("%d,%d,%d,%d,%d\r\n", local_rx_buf[PKT_DATA_START+7],current_pkt_index[current_node],next_pkt_offset,current_node,isa_get_channel());
+			if(next_pkt_offset>=20){
+				printf("HUGE LOSS\r\n");
+				printf("%d,%d,%d,%d,%d\r\n", local_rx_buf[PKT_DATA_START+7],current_pkt_index[current_node],next_pkt_offset,current_node,isa_get_channel());
+			}
+		//}
+		current_pkt_index[current_node] = local_rx_buf[PKT_DATA_START+7];  // update current pakcet index
+		
+		pkt_cnt[current_node] += next_pkt_offset; // add the number of packet been measured
+		temp = current_pkt_index[current_node] % 8; // use 1 byte to record 8 packets
+		//printf("%d,%d,%d\r\n",temp,frame_cnt[0],pkt_cnt[0]);
+
+		if(pkt_cnt[current_node]>=8){
+		   frame_cnt[current_node]+=pkt_cnt[current_node]/8;
+		   pkt_cnt[current_node]=temp;
+		   //printf("current frame cnt: %d\r\n", frame_cnt[current_node]);		   
+		}
+		
+		
+		if(frame_cnt[current_node]>=NUM_OF_TEST_SET){
+		  /*for(i=0;i<NUM_OF_TEST_SET;i++){
+		    printf("pkt: %x\r\n",pkt_measure[current_node][i]);
+		  }*/
+		  //printf("KO %d\r\n",current_node);
+		  // reboot buffer for further test
+		  frame_cnt[current_node]=0;
+		  sendFlag=1;
+		  send_node=current_node;
+		  nrk_event_signal (pkt_record_done_signal);
+		  nrk_spin_wait_us(3000);
+		  /*for(i=0;i<NUM_OF_TEST_SET;i++){
+		    pkt_measure[current_node][i]=0;
+		  }*/
+ 		}
+
+		//printf("%d,%d,%d\r\n",temp,frame_cnt[0],pkt_cnt[0]);
+		pkt_measure[current_node][frame_cnt[current_node]] |= ((uint8_t) 1) << temp;
+		
+	}
+
+}
+
+
+

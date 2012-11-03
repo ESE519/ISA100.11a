@@ -1,0 +1,151 @@
+/******************************************************************************
+*  Nano-RK, a real-time operating system for sensor networks.
+*  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+*  All rights reserved.
+*
+*  This is the Open Source Version of Nano-RK included as part of a Dual
+*  Licensing Model. If you are unsure which license to use please refer to:
+*  http://www.nanork.org/nano-RK/wiki/Licensing
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation, version 2.0 of the License.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+*  Contributing Authors (specific to this file):
+*  Anthony Rowe
+*******************************************************************************/
+
+
+#include <isa.h>
+#include <isa_scheduler.h>
+#include <include.h>
+#include <nrk_error.h>
+
+/* For ISA */
+/* This method is only for demo 1. Need to be updated!! */
+int8_t isa_set_schedule (isa_node_mode_t isa_node_mode, uint8_t clk_src_id)
+{
+    char i =0;
+    isa_clk_src_id = clk_src_id;//change
+    if (isa_node_mode==ISA_GATEWAY){
+        isa_tdma_tx_mask |= ((uint32_t) 1) << 2;
+	isa_tdma_rx_mask |= ((uint32_t) 1) << 3;//change for test
+	//isa_tdma_tx_mask |= ((uint32_t) 1) << 1;
+	//isa_tdma_rx_mask |= ((uint32_t) 1) << 4;
+
+	//isa_sched[1] = 1;
+	isa_sched[2] = 1;//change for test
+	isa_sched[3] = 1;
+	//isa_sched[4] = 1;
+    }
+    else if (isa_node_mode==ISA_REPEATER){ //change
+        isa_tdma_rx_mask |= ((uint32_t) 1) << 2;
+	isa_tdma_tx_mask |= ((uint32_t) 1) << 3;//change for test
+	//isa_tdma_rx_mask |= ((uint32_t) 1) << 2;
+	//isa_tdma_tx_mask |= ((uint32_t) 1) << 3;
+
+	isa_sched[2] = 1;
+	isa_sched[3] = 1;//change for test
+	//isa_sched[2] = 1;
+	//isa_sched[3] = 1;
+
+    }
+    else if(isa_node_mode==ISA_RECIPIENT){
+	isa_tdma_tx_mask |= ((uint32_t) 1) << 1;
+	//isa_tdma_rx_mask |= ((uint32_t) 1) << 1;//change for test
+	isa_tdma_rx_mask |= ((uint32_t) 1) << 4;
+	//isa_tdma_rx_mask |= ((uint32_t) 1) << 0;
+
+//	isa_sched[0] = 1;
+	//isa_sched[1] = 1;//change for test
+	isa_sched[1] = 1;
+	isa_sched[4] = 1;
+    }
+
+
+    /*printf("isa_scheduler.h, isa_set_schedule():\n\r");
+    for(i=0;i<25;i++)
+	printf("%d,",isa_sched[i]);
+    printf("\n\r");*/
+    
+return NRK_OK;
+}
+
+/**
+ * isa_get_schedule()
+ *
+ * This function returns the stored schedule for a particular slot.
+ * 
+ * Return: schedule value
+ */
+int8_t isa_get_schedule (uint8_t slot)
+{
+    if (slot > ISA_SLOTS_PER_FRAME)
+        return NRK_ERROR;
+
+    return isa_sched[slot];
+}
+
+/**
+ * _isa_clear_sched_cache()
+ *
+ * This function is called by the timer interrupt at the
+ * start of each ISA cycle to remove any cached scheduling
+ * values.  Only call this if you are reseting the ISA frames.
+ */
+void _isa_clear_sched_cache ()
+{
+    uint8_t i;
+// FIXME compress this shit later...
+    for (i = 0; i < ISA_SLOTS_PER_FRAME; i++) {
+        isa_sched[i] = 0;
+    }
+}
+
+
+/**
+ * isa_get_slots_until_next_wakeup()
+ *
+ * This function returns the absolute number of slots between the current_slot
+ * and the next RX/TX related wakeup.  It uses an internal cache to allow for
+ * faster computation.
+ *
+ * Argument: current_slot is the current slot
+ * Return: uint16_t number of slots until the next wakeup
+ */
+uint16_t isa_get_slots_until_next_wakeup (uint16_t current_global_slot)
+{
+    uint16_t min_slot;
+    uint8_t test_slot;
+    uint8_t wrapped_slot;
+    uint8_t current_local_slot;
+    
+//total_slot = (((uint16_t)current_frame)<<5) + current_slot; 
+    min_slot = ISA_SLOTS_PER_FRAME + 1;
+    current_local_slot = current_global_slot%25;
+
+    //scheduled slot follows current slot
+    for (test_slot = current_local_slot+1; test_slot < ISA_SLOTS_PER_FRAME; test_slot++) {
+	//printf("isa_sched[%d] is %d.\n\r",test_slot,isa_sched[test_slot]);
+        if(isa_sched[test_slot]==0) //slot is not scheduled
+            continue;
+	min_slot = test_slot-current_local_slot;
+	return min_slot;
+    }
+
+    // scheduled slot wrapped back
+    for (test_slot = 0; test_slot<=current_local_slot;test_slot++){ 
+	if(isa_sched[test_slot]==0) //slot is not scheduled
+            continue;
+	min_slot = (ISA_SLOTS_PER_FRAME - current_local_slot + test_slot);
+	return min_slot;
+    }
+}

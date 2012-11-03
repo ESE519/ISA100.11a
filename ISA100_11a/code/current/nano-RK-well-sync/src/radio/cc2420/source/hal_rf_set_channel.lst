@@ -1,0 +1,139 @@
+   1               		.file	"hal_rf_set_channel.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 108               	.global	halRfSetChannel
+ 110               	halRfSetChannel:
+ 111               		.stabd	46,0,0
+   1:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** /******************************************************************************
+   2:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  All rights reserved.
+   5:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *
+   6:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *
+  10:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *
+  14:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  GNU General Public License for more details.
+  18:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *
+  19:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *
+  22:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *  Chipcon Development Team 
+  24:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** *******************************************************************************/
+  25:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 
+  26:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 
+  27:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** #include <include.h>
+  28:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** #include <ulib.h>
+  29:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 
+  30:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 
+  31:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 
+  32:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //-------------------------------------------------------------------------------------------------
+  33:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //	void halRfSetChannel(UINT8 Channel)
+  34:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //
+  35:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //	DESCRIPTION:
+  36:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //		Programs CC2420 for a given IEEE 802.15.4 channel. 
+  37:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //		Note that SRXON, STXON or STXONCCA must be run for the new channel selection to take full effec
+  38:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //
+  39:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //	PARAMETERS:
+  40:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //		UINT8 channel
+  41:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //			The channel number (11-26)
+  42:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** //-------------------------------------------------------------------------------------------------
+  43:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** void halRfSetChannel(uint8_t channel) {
+ 113               	.LM0:
+ 114               	.LFBB1:
+ 115               	/* prologue: frame size=0 */
+ 116               	/* prologue end (size=0) */
+  44:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	uint16_t f;
+  45:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	
+  46:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	// Derive frequency programming from the given channel number
+  47:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	f = (uint16_t) (channel - 11); // Subtract the base channel 
+ 118               	.LM1:
+ 119 0000 9927      		clr r25
+  48:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	f = f + (f << 2);    		 // Multiply with 5, which is the channel spacing
+ 121               	.LM2:
+ 122 0002 9C01      		movw r18,r24
+ 123 0004 265A      		subi r18,lo8(-(16730))
+ 124 0006 3E4B      		sbci r19,hi8(-(16730))
+ 125 0008 0B97      		sbiw r24,11
+  49:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	f = f + 357 + 0x4000;		 // 357 is 2405-2048, 0x4000 is LOCK_THR = 1
+ 127               	.LM3:
+ 128 000a 880F      		lsl r24
+ 129 000c 991F      		rol r25
+ 130 000e 880F      		lsl r24
+ 131 0010 991F      		rol r25
+ 132 0012 280F      		add r18,r24
+ 133 0014 391F      		adc r19,r25
+  50:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	
+  51:../../../src/radio/cc2420/source/hal_rf_set_channel.c ****     // Write it to the CC2420
+  52:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	DISABLE_GLOBAL_INT();
+ 135               	.LM4:
+ 136               	/* #APP */
+ 137 0016 F894      		cli
+ 138               		
+  53:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	FASTSPI_SETREG(CC2420_FSCTRL, f);
+ 140               	.LM5:
+ 141               	/* #NOAPP */
+ 142 0018 4098      		cbi 40-0x20,0
+ 143 001a 88E1      		ldi r24,lo8(24)
+ 144 001c 8EBD      		out 78-0x20,r24
+ 145               	.L2:
+ 147               	.LM6:
+ 148 001e 0DB4      		in __tmp_reg__,77-0x20
+ 149 0020 07FE      		sbrs __tmp_reg__,7
+ 150 0022 00C0      		rjmp .L2
+ 151 0024 832F      		mov r24,r19
+ 152 0026 9927      		clr r25
+ 153 0028 8EBD      		out 78-0x20,r24
+ 154               	.L4:
+ 155 002a 0DB4      		in __tmp_reg__,77-0x20
+ 156 002c 07FE      		sbrs __tmp_reg__,7
+ 157 002e 00C0      		rjmp .L4
+ 158 0030 2EBD      		out 78-0x20,r18
+ 159               	.L6:
+ 160 0032 0DB4      		in __tmp_reg__,77-0x20
+ 161 0034 07FE      		sbrs __tmp_reg__,7
+ 162 0036 00C0      		rjmp .L6
+ 163 0038 409A      		sbi 40-0x20,0
+  54:../../../src/radio/cc2420/source/hal_rf_set_channel.c **** 	ENABLE_GLOBAL_INT();
+ 165               	.LM7:
+ 166               	/* #APP */
+ 167 003a 7894      		sei
+ 168               		
+ 169               	/* #NOAPP */
+ 170               	/* epilogue: frame size=0 */
+ 171 003c 0895      		ret
+ 172               	/* epilogue end (size=1) */
+ 173               	/* function halRfSetChannel size 37 (36) */
+ 175               	.Lscope1:
+ 177               		.stabd	78,0,0
+ 178               		.comm _nrk_signal_list,4,1
+ 181               	.Letext0:
+ 182               	/* File "../../../src/radio/cc2420/source/hal_rf_set_channel.c": code   37 = 0x0025 (  36), prologu
+DEFINED SYMBOLS
+                            *ABS*:00000000 hal_rf_set_channel.c
+     /tmp/ccXpy9PF.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccXpy9PF.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccXpy9PF.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccXpy9PF.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccXpy9PF.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccXpy9PF.s:110    .text:00000000 halRfSetChannel
+                            *COM*:00000004 _nrk_signal_list
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss

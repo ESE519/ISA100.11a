@@ -1,0 +1,17 @@
+# This file configures the gateway's XMPP connection
+# The order of this file is important and should be as folows:
+#
+# JID (give the full JID, i.e. user@domain)
+# JID Password
+# XMPP Server name (full machine name)
+# XMPP Server port (usually 5222 for non-ssl, 5223 for ssl)
+# PubSub service address (usually 'pubsub.<server_name>')
+# SSL Fingerprint for XMPP Server, if connection uses ssl
+#
+
+sample_gateway@sensor.andrew.cmu.edu
+sample_passwd
+sensor.andrew.cmu.edu
+5223
+pubsub.sensor.andrew.cmu.edu
+15:6e:ae:83:c4:5a:19:f2:00:13:ff:89:09:ce:70:be

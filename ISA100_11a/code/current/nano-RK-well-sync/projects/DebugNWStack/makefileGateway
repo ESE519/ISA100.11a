@@ -1,0 +1,20 @@
+OBJS = NetworkGateway.o slipstream.o
+SRCS = NetworkGateway.c slipstream.c
+
+CC = gcc
+
+ROOT_DIR = /home/ayb/nano-RK
+
+INCL = -I$(ROOT_DIR)/projects/DebugNWStack/
+
+CFLAGS = 
+CFLAGS += $(INCL)
+
+all:
+	clear 
+	$(CC) $(CFLAGS) -o networkgateway $(SRCS) 
+
+.PHONY : clean
+clean:
+	rm -f networkgateway $(OBJS) 
+	 

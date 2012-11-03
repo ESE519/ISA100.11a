@@ -1,0 +1,49 @@
+10
+
+dir
+3524
+svn://mlab.seas.upenn.edu/Projects/Projects/evm/ISA100_11a/code/current/nano-RK-well-sync/src/kernel/hal
+svn://mlab.seas.upenn.edu/Projects
+
+
+
+2011-12-30T22:52:48.309445Z
+3358
+isa_group
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6f2535f0-0a29-41e6-88c8-b250f56a4b15
+
+atmega32
+dir
+
+include
+dir
+
+msp430x1611
+dir
+
+msp430xG4618
+dir
+
+atmega128
+dir
+
+atmega1281
+dir
+
+msp430x149
+dir
+

@@ -1,0 +1,18 @@
+NetworkLayer.c
+
+1. Combine 'lastReport' and 'isNew' into a single byte
+2. Introduce a variable 'packet_loss_rate' into the Neighbor structure
+
+
+
+NetworkGateway.c
+
+1. Fix the algorithm for pruning the graph
+2. Why is edge an uint8_t[][]?
+
+0. Test for SOCK_IPC
+1. Reduce number of bytes sent in the NW_Packet header
+2. Account for mobility
+3. Implement reliability
+4. Introduce sequence numbers in packets
+5. Introduce aggregation

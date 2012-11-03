@@ -1,0 +1,28 @@
+OBJS = NetworkGateway.o TopologyGeneration.o NGPack.o slipstream.o
+SRCS = NetworkGateway.c TopologyGeneration.c NGPack.c slipstream.c
+
+CC = gcc
+
+ROOT_DIR = /home/ayb/nano-RK
+
+INCL = -I$(ROOT_DIR)/projects/network_stack/
+#INCL += -I$(ROOT_DIR)/src/platform/include
+#INCL += -I$(ROOT_DIR)/src/platform/firefly2/include
+#INCL += -I$(ROOT_DIR)/src/radio/cc2420/include
+#INCL += -I$(ROOT_DIR)/src/drivers/include
+#INCL += -I$(ROOT_DIR)/src/drivers/platform/firefly2/include
+#INCL += -I$(ROOT_DIR)/src/kernel/include
+#INCL += -I$(ROOT_DIR)/src/kernel/hal/include
+#INCL += -I/usr/local/avr/include/avr/
+
+CFLAGS = 
+CFLAGS += $(INCL)
+
+all:
+	clear 
+	$(CC) $(CFLAGS) -o networkgateway $(SRCS) 
+
+.PHONY : clean
+clean:
+	rm -f networkgateway $(OBJS) 
+	 
