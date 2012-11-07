@@ -41,6 +41,7 @@
 #include <isa.h>
 #include <isa_defs.h>
 
+
 #define CHANNEL_HOPPING 
 //#define CORRECTION
 //#define INIT_SYNC
@@ -101,6 +102,9 @@ uint8_t tmp_offsetSec;
 int16_t tmp_offsetNanoSec;
 uint16_t tmp_count=0;
 uint16_t DHDRcount = 0;
+uint16_t txCount = 0;		//Holds the number of packets transmitted successfully
+uint16_t rxCount = 0;		// Holds the number of packets received successfully
+uint16_t packetsLost = 0; //Holds packets lost (receive  + ACK )
 
 
 void config_child_list (uint8_t node_id)
@@ -300,9 +304,10 @@ void isa_start ()
  * into the PDU header.
  *
  */
-int8_t configDHDR()
+int8_t configDHDR(uint8_t slot)
 {
     int8_t DHDR = 1;
+    if (slot !=5)DHDRcount++;
     if(1){//request ACK
 	DHDR |= 1<<7;
     }
@@ -318,12 +323,12 @@ int8_t configDHDR()
     if(0){//include slow hopping offset
 	DHDR |= 1<<3;
     }
-    if((isa_node_mode == ISA_RECIPIENT || isa_node_mode == ISA_REPEATER)&& (!(DHDRcount % 100) || DHDRcount < 20) ){//is clock recipient
+    if((isa_node_mode == ISA_RECIPIENT || isa_node_mode == ISA_REPEATER) &&  (DHDRcount % 200==0) && (slot!=5) ){//is clock recipient
 	DHDR |= 1<<2;
 
     }
 
-    DHDRcount++;
+
     return DHDR;
 }
 
@@ -338,7 +343,7 @@ int8_t configDHDR()
 int8_t configDHR(uint8_t clockCorrection)
 {
     int8_t DHR = 3;
-    if(isa_node_mode == ISA_GATEWAY && clockCorrection){//include clock correction change
+    if(clockCorrection){//include clock correction change
 	DHR |= 1<<7;
     }
     if(0){//including slow-hopping timeslot offset
@@ -453,6 +458,7 @@ uint8_t* isa_rx_pkt_get (uint8_t *len, int8_t *rssi)
 
 void _isa_rx (uint8_t slot)
 {
+//putchar('R');
     uint8_t n;
     uint32_t node_mask;
     volatile uint8_t timeout;
@@ -472,14 +478,20 @@ void _isa_rx (uint8_t slot)
         if (_nrk_os_timer_get() > timeout) {
 	    //spend too much time on waiting for a pkt's arrival
         	nrk_gpio_clr(NRK_DEBUG_2);
+
 	    rf_rx_off ();
 	    #ifdef LED_DEBUG
 		nrk_led_clr(1);
 	    #endif
 	    #ifdef RX_DEBUG
+		 nrk_gpio_set(NRK_DEBUG_2);
+				 nrk_gpio_clr(NRK_DEBUG_2);
+		putchar('v');
+		printf("%d", slot);
 		//printf("sfd times out.\n\r");
 	    #endif
-	    return;
+		packetsLost++;
+		return;
         }
     }
 //printf("%d\n\r",_nrk_high_speed_timer_get());
@@ -498,17 +510,26 @@ void _isa_rx (uint8_t slot)
 		#ifdef RX_DEBUG
 		    printf("packet is too long, times out.\n\r");
 		#endif
-		// spend too much time on receiving pkt.
+		    packetsLost++;
+		    // spend too much time on receiving pkt.
                 return;          // huge timeout as fail safe
             }
         }
     }
     nrk_gpio_clr(NRK_DEBUG_2);
+   // printf("%d", currentChannel);
     rf_rx_off ();
+
+    if  (n !=1){	//size of packet must have been wrong
+	putchar('b');
+	packetsLost++;
+}
+
     if (n == 1) {// successfully received packet
+    	rxCount++;
     	nrk_led_toggle(BLUE_LED);
-    	putchar ('r');
-	isa_rx_data_ready = 1;
+    	//putchar ('r');
+	if (slot != 7) isa_rx_data_ready = 1;
 	//potential problem: if repeater or recipient receives noise, the DHDR would be changed. And it is highly possible that the highest bit of DHDR would be set to 0
 	//if(isa_node_mode != ISA_GATEWAY)
 	    DHDR = isa_rfRxInfo.pPayload[DHDR_INDEX];
@@ -517,20 +538,13 @@ void _isa_rx (uint8_t slot)
 	#endif RX_DEBUG	
 	nrk_event_signal(isa_rx_pkt_signal);	
 
-	//_nrk_high_speed_timer_reset();
-	//nrk_high_speed_timer_wait(0,CPU_PROCESS_TIME);
-	//nrk_gpio_set(NRK_DEBUG_3);
-
 	node_mask = ((uint32_t) 1) << isa_rfRxInfo.pPayload[SRC_INDEX];
 	
-
-//	if( !(node_mask & child_list))
-	  // return;  //FIXME change
-	// ACK required
 	if(DHDR & (1<<7)){
-
+		txCount++;
 	    // Transmit ACK packet
 	    DHR = configDHR(DHDR & (1<<2));
+	  //  printf("%d", DHR);
 	    isa_ack_buf[DHR_INDEX]= DHR;
 	    #ifdef ACK_DEBUG
 		//printf("DHDR is %x.\n\r",DHDR);
@@ -556,9 +570,10 @@ void _isa_rx (uint8_t slot)
 	    { // recipient , only reply explicit ACK
 	        //isa_ack_tx.length = PKT_DATA_START-1;
 		isa_ack_tx.length = 2;
-		putchar ('C');
+		//putchar ('C');
+		//putchar('\n');
             }
-	    nrk_gpio_set(NRK_DEBUG_2);
+	   nrk_gpio_set(NRK_DEBUG_2);
 	    rf_tx_tdma_packet (&isa_ack_tx,slot_start_time,isa_param.tx_guard_time,&tx_start_time);	
 	    nrk_gpio_clr(NRK_DEBUG_2);
 	}	
@@ -671,15 +686,14 @@ void _isa_tx (uint8_t slot)
 	//AFTER_FIRST_SYNC = 0;
     //}
 	    #ifdef TX_RX_DEBUG
-		
 		nrk_gpio_set(NRK_DEBUG_1);
    		//printf("T\r\n");
 	    #endif
     if(rf_tx_tdma_packet (&isa_rfTxInfo,slot_start_time,isa_param.tx_guard_time,&tx_start_time))
-    {
+    {	txCount++;
     	nrk_gpio_clr(NRK_DEBUG_1);
     	nrk_led_toggle(RED_LED);
-    	putchar ('t');
+    //	putchar ('t');
     		//("rx_start_time is %d.\n\r",_nrk_high_speed_timer_get());
 	offsetY = tx_start_time - slot_start_time;
 	//printf("offset Y is %d.\n\r",offsetY);
@@ -692,7 +706,7 @@ void _isa_tx (uint8_t slot)
 
     // ACK required
     if(DHDR & (1<<7)) {  //&& isa_node_mode!=ISA_GATEWAY){ //Azriel
-    	putchar('b');
+    	//putchar('b');
     	rf_polling_rx_on ();
     	nrk_gpio_set(NRK_DEBUG_1);
 	_nrk_high_speed_timer_reset();
@@ -724,10 +738,14 @@ void _isa_tx (uint8_t slot)
 		    nrk_led_clr(1);
 		#endif
 		#ifdef RX_DEBUG
-		    printf("sfd times out.\n\r");
-		#endif
+		 putchar('s');
+		 printf("%d", slot);
+
+		 //   printf("sfd times out.\n\r");
+		    #endif
 		//nrk_gpio_clr(NRK_DEBUG_1);
-		return;
+		 packetsLost++;
+		 return;
 	    }
 	}
 	//nrk_gpio_clr(NRK_DEBUG_1);
@@ -736,14 +754,16 @@ void _isa_tx (uint8_t slot)
 	if (n != 0) {
 	    n = 0;
 	    //printf("Packet on its way\n\r");
-	    if ((DHDRcount % 50 == 0) || DHDRcount <20) c = 4 ;
+	    if (slot !=5 && DHDRcount%200==0 ) c = 4 ;
 	    else c = 2;
-	    while ((n = rf_polling_rx_packet (false, c)) == 0)		 {	//changed to 2 by Azriel for gateway
-		//printf("%d\n\r",_nrk_os_timer_get());
+	    if (isa_node_mode == ISA_GATEWAY) c=2;
+	    while ((n = rf_polling_rx_packet (true, c)) == 0)		 {	//changed to 2 by Azriel for gateway
+
 		if (_nrk_os_timer_get () > timeout) {
 		#ifdef RX_DEBUG
 		    printf("packet is too long, times out.\n\r");
 		#endif	
+		    packetsLost++;
 		    tmp_curSec = _nrk_os_timer_get();
 		    // spend too much time on receiving pkt.
                     return;          // huge timeout as fail safe
@@ -753,50 +773,60 @@ void _isa_tx (uint8_t slot)
 		  //  printf("%d\n\r",_nrk_os_timer_get());	
 	    }
 	}
-	if (n==1) putchar ('4');
+
+	if  (n !=1){	//size of packet must have been wrong
+		putchar('f');
+		packetsLost++;
+	}
+	if (n==1)
 	rf_rx_off ();
 	nrk_gpio_clr(NRK_DEBUG_1);
 	if (n == 1) {// successfully received ACK
-	    slot_expired = 0;
+	   rxCount++;
+		slot_expired = 0;
 	    //isa_rx_data_ready = 1;
 	    DHR = isa_rfRxInfo.pPayload[DHR_INDEX];
 	    #ifdef ACK_DEBUG
 
 	    #endif ACK_DEBUG
 	    if((DHDR & (1<<7))) {  //  &&isa_node_mode!=ISA_GATEWAY){
-
-
+#ifdef TIME
 		if(DHR & (1<<7)){
-		    offsetX = ((0x0000|isa_rfRxInfo.pPayload[OFFSET_HIGH])<<8)&0xff00 + 0x0000|isa_rfRxInfo.pPayload[OFFSET_LOW];
+			offsetX = ((0x0000|isa_rfRxInfo.pPayload[OFFSET_HIGH])<<8)&0xff00 + 0x0000|isa_rfRxInfo.pPayload[OFFSET_LOW];
 		    #ifdef ACK_DEBUG
 		//	printf("offset X is %d.\n\r", offsetX);
 		//	printf("offset Y is %d.\n\r", offsetY);
 		    nrk_led_toggle(ORANGE_LED);
 		    putchar('a');
 		    #endif ACK_DEBUG
+
 //printf("%d,%d\n\r",offsetX,offsetY);
 		    time_correction = offsetX - offsetY;
 		    #ifdef HIGH_TIMER_DEBUG
 			printf("time correction is %d.\n\r", time_correction);
 		    #endif
-		    //printf("time correction is %d.\n\r", time_correction);
+		    printf("time correction is %d.\n\r", time_correction);
 		    // SYNC as a by-product of communication.
 		    //tmp_nrk_prev_timer_val = _nrk_prev_timer_val;
 //printf("%d\n\r",time_correction);
 //printf("%d\n\r",HIGH_TIMER_TICKES_PER_MILISEC-time_correction%HIGH_TIMER_TICKES_PER_MILISEC);
 		    timeout=50;
 		    curSec = _nrk_os_timer_get();
+		    nrk_gpio_set(NRK_DEBUG_2);
 		    if(time_correction >= 0&&curSec<7){
 			tmp_curSec = curSec;
 			/*do{
 			    curSec = _nrk_os_timer_get();
 			}while(curSec<=7);*/
 			_nrk_os_timer_stop();
+
 			//_nrk_os_timer_reset();
-			offsetSec = time_correction/HIGH_TIMER_TICKES_PER_MILISEC+1;
+
+			//Basically speed up by offsetSec ticks of OS timer - offsetNanoSeconds
+			offsetSec = time_correction/HIGH_TIMER_TICKES_PER_MILISEC+1; //This should be called offSetMilli-it gives the seconds I should speed up by
 			tmp_offsetSec = offsetSec;
-			offsetNanoSec = HIGH_TIMER_TICKES_PER_MILISEC-time_correction%HIGH_TIMER_TICKES_PER_MILISEC;
-			tmp_offsetNanoSec = offsetNanoSec;
+			offsetNanoSec = HIGH_TIMER_TICKES_PER_MILISEC-time_correction%HIGH_TIMER_TICKES_PER_MILISEC;	//This should not be called nanoseconds because it is NOT!!!
+			tmp_offsetNanoSec = offsetNanoSec;																//This is the high speed timer ticks that we should slow down by
 //printf("%d,%d\n\r",curSec,offsetSec);
 			    //if(curSec+offsetSec>=10)
 			    	//printf("%d,%d\n\r",curSec,offsetSec);
@@ -811,10 +841,11 @@ void _isa_tx (uint8_t slot)
 			nrk_spin_wait_us(50);
 			//printf("%d,%d,%d\n\r",curSec,offsetSec,offsetNanoSec);
 		//	nrk_gpio_set(NRK_DEBUG_2);
-			do{}while(_nrk_high_speed_timer_get()<offsetNanoSec);
+			do{}while(_nrk_high_speed_timer_get()<offsetNanoSec);	//Why not use high_speed_timer_wait here???
 		//	nrk_gpio_clr(NRK_DEBUG_2);
 			//nrk_high_speed_timer_wait(0,offsetNanoSec);
 			//nrk_high_speed_timer_wait(0,4912);
+
 			_nrk_os_timer_set(curSec+offsetSec);
 			nrk_spin_wait_us(100);
 			#ifdef CORRECTION
@@ -824,6 +855,7 @@ void _isa_tx (uint8_t slot)
 //printf("p\n\r");	
 			_nrk_os_timer_start();
 		    }else if(-time_correction>8000&&curSec<7){
+		    	putchar('!');
 			_nrk_os_timer_stop();
 			//_nrk_os_timer_reset();
 			_nrk_high_speed_timer_reset();
@@ -855,9 +887,84 @@ void _isa_tx (uint8_t slot)
 //nrk_cur_task_TCB->next_wakeup = 10;
 		    _nrk_high_speed_timer_reset();
 		    nrk_spin_wait_us(50);
+		    nrk_gpio_clr(NRK_DEBUG_2);
 		}
+#endif
+
+	//	************************* Trying time correction
+		if(DHR & (1<<7)){
+					offsetX = ((0x0000|isa_rfRxInfo.pPayload[OFFSET_HIGH])<<8)&0xff00 + 0x0000|isa_rfRxInfo.pPayload[OFFSET_LOW];
+				    #ifdef ACK_DEBUG
+				    nrk_led_toggle(ORANGE_LED);
+				    putchar('a');
+				    #endif ACK_DEBUG
+
+
+				    time_correction = offsetX - offsetY;
+				    #ifdef HIGH_TIMER_DEBUG
+					printf("time correction is %d.\n\r", time_correction);
+				    #endif
+
+				    timeout=50;
+				    curSec = _nrk_os_timer_get();
+				    nrk_gpio_set(NRK_DEBUG_2);
+				    if(time_correction >= 0){
+					tmp_curSec = curSec;
+
+					_nrk_os_timer_stop();
+
+					offsetSec = time_correction/HIGH_TIMER_TICKES_PER_MILISEC+1; //This should be called offSetMilli-it gives the seconds I should speed up by
+					tmp_offsetSec = offsetSec;
+					offsetNanoSec = HIGH_TIMER_TICKES_PER_MILISEC-time_correction%HIGH_TIMER_TICKES_PER_MILISEC;	//This should not be called nanoseconds because it is NOT!!!
+					tmp_offsetNanoSec = offsetNanoSec;																//This is the high speed timer ticks that we should slow down by
+
+					_nrk_high_speed_timer_reset();
+					nrk_spin_wait_us(50);
+
+					nrk_high_speed_timer_wait(0,offsetNanoSec);
+					//nrk_high_speed_timer_wait(0,4912);
+
+					_nrk_os_timer_set(curSec+offsetSec);
+					nrk_spin_wait_us(100);
+					#ifdef CORRECTION
+					    nrk_gpio_set(NRK_DEBUG_1);
+					    nrk_gpio_clr(NRK_DEBUG_1);
+					#endif
+		//printf("p\n\r");
+					_nrk_os_timer_start();
+
+
+				    }else if(time_correction<0){
+				    	putchar('!');
+					_nrk_os_timer_stop();
+
+					_nrk_high_speed_timer_reset();
+
+					//_nrk_set_next_wakeup(10);
+					#ifdef CORRECTION
+					nrk_gpio_set(NRK_DEBUG_2);
+					//nrk_high_speed_timer_wait(0,22800); // for test
+					nrk_gpio_clr(NRK_DEBUG_2);
+					#endif
+					//printf("%d\n\r",-time_correction);
+					nrk_high_speed_timer_wait(0,-time_correction);
+					_nrk_os_timer_set(curSec);
+
+					_nrk_os_timer_start();
+				    }
+				    //_nrk_prev_timer_val=tmp_nrk_prev_timer_val;
+		//nrk_cur_task_TCB->next_wakeup = 10;
+				    _nrk_high_speed_timer_reset();
+				    nrk_spin_wait_us(50);
+				    nrk_gpio_clr(NRK_DEBUG_2);
+				}
+
+
+		//****************************************************
+
 	    }		
-        }    	
+        }
+
     }//wait for ACK 
 }
 
@@ -968,7 +1075,7 @@ int8_t isa_join_ready()
 }
 
 
-/** FIXME this is only a temperary function need to be more specified
+/** FIXME this is only a temporary function need to be more specified
  * _isa_init_sync()
  *
  * This function is used for join process.
@@ -998,7 +1105,7 @@ uint8_t _isa_init_sync ()
     {
 
     	//printf("Init sync \r\n");
-	isa_rfRxInfo.pPayload[DHDR_INDEX]=configDHDR();
+	isa_rfRxInfo.pPayload[DHDR_INDEX]=configDHDR(0);
 	//isa_rfRxInfo.pPayload[SLOT_INDEX]=global_slot;
 	
 	#ifdef LED_DEBUG
@@ -1054,10 +1161,11 @@ uint8_t _isa_init_sync ()
 		//rtl_rx_slot = 0;
 		//DHDR = (volatile)isa_rfRxInfo.pPayload[DHDR_INDEX];		
 		global_slot += (volatile)isa_rfRxInfo.pPayload[SLOT_INDEX];
+
 		nrk_led_toggle(GREEN_LED);
 		putchar ('i');
 
-		nrk_event_signal(SIG(isa_rx_pkt_signal));
+	//	nrk_event_signal(SIG(isa_rx_pkt_signal));
 		break;
 		//
 	    }
@@ -1114,7 +1222,7 @@ void isa_nw_task ()
     //nrk_gpio_clr(NRK_DEBUG_0);
     //nrk_time_get (&last_slot_time);// dont know if it is useful
     while (1) {
-
+    	//putchar('n');
 	nrk_gpio_set(NRK_DEBUG_1);
 	nrk_gpio_clr(NRK_DEBUG_1);
 
@@ -1122,17 +1230,17 @@ void isa_nw_task ()
 	_nrk_high_speed_timer_reset();
         slot_start_time = _nrk_high_speed_timer_get();
 	//nrk_time_get (&last_slot_time);// dont know if it is useful
-        last_slot = global_slot; //global_slot has been initialized to MAX_ISA_GLOBAL_SLOTS in isa_init()
-        if (last_slot > MAX_ISA_GLOBAL_SLOTS)
-            last_slot -= (MAX_ISA_GLOBAL_SLOTS+1);
-	
+     //   last_slot = global_slot; //global_slot has been initialized to MAX_ISA_GLOBAL_SLOTS in isa_init()
+      //  if (last_slot > MAX_ISA_GLOBAL_SLOTS)
+        //    last_slot -= (MAX_ISA_GLOBAL_SLOTS+1);
+
 	current_global_slot = global_slot;
 	/* global_slot should be wrapped */
         if (global_slot > MAX_ISA_GLOBAL_SLOTS) {
             global_slot -= MAX_ISA_GLOBAL_SLOTS;
             global_cycle++;
         }
-	
+
 	slot = global_slot % ISA_SLOTS_PER_FRAME;
         slot_mask = ((uint32_t) 1) << slot;
 	if(_isa_sync_ok == 1){
@@ -1140,6 +1248,8 @@ void isa_nw_task ()
 		channelIndex += next_slot_offset;
 		currentChannel = slottedPattern[(channelIndex)&0x0F];
 		isa_set_channel(currentChannel);
+
+		/*
 		if(slot>=22 && isa_node_mode == ISA_GATEWAY){
 		   slowIndex = slowIndex % 3;
 		   currentChannel = slowPattern[slowIndex];
@@ -1147,7 +1257,9 @@ void isa_nw_task ()
 		   if(slot>=24)
 		      slowIndex++;
 		}
-	//    printf("CH:%d SL: %d\r\n",currentChannel,slot);
+
+		*/
+	    //printf("CH:%d SL: %d\r\n",currentChannel,slot);
 	    #endif
 	    //printf("%d,%d\n\r",currentChannel,(channelIndex)&0x0F);
 	    //printf("isa_rx_data_ready:%d\r\n",isa_rx_data_ready);
@@ -1159,8 +1271,10 @@ void isa_nw_task ()
 	    #ifdef TX_RX_DEBUG
 		//printf("R\r\n");
 	//	nrk_gpio_set(NRK_DEBUG_0);
+
 	    #endif
             if (slot_mask & isa_tx_data_ready & isa_tdma_tx_mask){
+
 		//printf("isa tx slot %d.\n\r",slot);
 	//	printf("TX %d,%d,%d\n\r",currentChannel,(channelIndex)&0x0F,slot);
 		//printf("tx\n\r");
@@ -1190,7 +1304,7 @@ void isa_nw_task ()
 	} else	{
 
 	    ///do joining or sync request here
-	    DHDR = configDHDR();
+	    DHDR = configDHDR(0);
 	    if(isa_node_mode != ISA_GATEWAY){//change
 		#ifdef JOIN_PROCESS
 		if(!_isa_join_ok){
@@ -1218,7 +1332,7 @@ void isa_nw_task ()
 	    //printf("re-sync\n\r");
 	    _isa_sync_ok = 0;
 	    slot_expired = 0;    
-	    global_slot = 100;
+	    global_slot = 0;
 	    next_slot_offset = 0;
 	    resync_times++;
 	    if(isa_id!=0){
@@ -1234,7 +1348,7 @@ void isa_nw_task ()
 	}else{
 	    //printf("global_slot is %d. global cycle is %d.\n\r",global_slot,global_cycle);
 	    next_slot_offset = isa_get_slots_until_next_wakeup (global_slot);
-	    //printf("NOS:%d\n\r",next_slot_offset);
+	  //  printf("NOS:%d\n\r",next_slot_offset);
 	    //printf("%d,%d,%d,%d\n\r",_nrk_os_timer_get (),_nrk_get_next_wakeup (),global_slot,next_slot_offset);
 	    global_slot += next_slot_offset;
             //nrk_clr_led (1);

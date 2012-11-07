@@ -68,6 +68,10 @@ uint8_t DHDR;
 uint16_t last_slot;
 uint16_t resync_times;
 
+extern uint16_t txCount;
+extern uint16_t rxCount;
+extern uint16_t packetsLost;
+
 typedef struct {
     int8_t length;
     int8_t DHDR;
@@ -120,7 +124,7 @@ uint8_t isa_init(isa_node_mode_t mode,uint8_t id, uint8_t src_id);
 void isa_nw_task();
 void isa_set_channel (uint8_t chan);
 int8_t isa_ready();
-int8_t configDHDR();
+int8_t configDHDR(uint8_t);
 
 /********************* waiting function ***********************************/
 int8_t isa_wait_until_rx_pkt ();

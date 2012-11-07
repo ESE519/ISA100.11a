@@ -90,13 +90,13 @@
  161               	/* File "../../../src/kernel/hal/atmega1281/nrk_status.c": code   12 = 0x000c (  10), prologues   0
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_status.c
-     /tmp/ccBswmbI.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccBswmbI.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccBswmbI.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccBswmbI.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccBswmbI.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccBswmbI.s:109    .text:00000000 _nrk_startup_ok
-     /tmp/ccBswmbI.s:142    .text:00000014 update_watchdog
+     /tmp/ccgTPquO.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccgTPquO.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccgTPquO.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccgTPquO.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccgTPquO.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccgTPquO.s:109    .text:00000000 _nrk_startup_ok
+     /tmp/ccgTPquO.s:142    .text:00000014 update_watchdog
                             *COM*:00000004 _nrk_signal_list
 
 UNDEFINED SYMBOLS

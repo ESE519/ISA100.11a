@@ -1,0 +1,5 @@
+1. add_ngb(): This function does not add a new neighbor if the neighbor list is full
+
+Things to check: 
+1. dest is not checked in route_pkt()
+2. NodeInfoAcquired functionality not implemented

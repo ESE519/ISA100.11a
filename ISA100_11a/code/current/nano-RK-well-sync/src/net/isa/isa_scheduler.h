@@ -32,7 +32,7 @@
 uint8_t isa_sched[ISA_SLOTS_PER_FRAME];
 
 uint32_t isa_tdma_rx_mask;
-uint32_t isa_tdma_tx_mask; 
+uint32_t isa_tdma_tx_mask;
 
 void _isa_clear_sched_cache ();
 uint16_t isa_get_slots_until_next_wakeup (uint16_t current_slot);

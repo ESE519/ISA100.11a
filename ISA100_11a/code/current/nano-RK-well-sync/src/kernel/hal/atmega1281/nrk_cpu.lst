@@ -504,9 +504,9 @@
  514               		.comm _nrk_signal_list,4,1
  515               		.comm nrk_idle_task_stk,128,1
  516               		.comm nrk_kernel_stk_ptr,2,1
- 517               		.comm nrk_task_TCB,99,1
+ 517               		.comm nrk_task_TCB,165,1
  518               		.comm nrk_wakeup_signal,1,1
- 519               		.comm _nrk_readyQ,20,1
+ 519               		.comm _nrk_readyQ,30,1
  520               		.comm _free_node,2,1
  521               		.comm _head_node,2,1
  522               		.comm nrk_cur_task_prio,1,1
@@ -515,7 +515,7 @@
  525               		.comm nrk_high_ready_TCB,2,1
  526               		.comm _nrk_resource_cnt,1,1
  527               		.comm nrk_system_time,8,1
- 528               		.comm nrk_sem_list,6,1
+ 528               		.comm nrk_sem_list,15,1
  529               		.comm _nrk_prev_timer_val,1,1
  530               		.comm _nrk_time_trigger,1,1
  531               		.comm app_timer0_callback,2,1
@@ -526,26 +526,26 @@
  558               	/* File "../../../src/kernel/hal/atmega1281/nrk_cpu.c": code  158 = 0x009e ( 137), prologues   6, e
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_cpu.c
-     /tmp/cc7h11IJ.s:2      *ABS*:0000003f __SREG__
-     /tmp/cc7h11IJ.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cc7h11IJ.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cc7h11IJ.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cc7h11IJ.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cc7h11IJ.s:128    .text:00000000 nrk_battery_save
-     /tmp/cc7h11IJ.s:146    .text:00000002 nrk_sleep
-     /tmp/cc7h11IJ.s:182    .text:0000001a nrk_idle
-     /tmp/cc7h11IJ.s:219    .text:00000030 nrk_task_set_entry_function
-     /tmp/cc7h11IJ.s:245    .text:00000038 nrk_task_stk_init
-     /tmp/cc7h11IJ.s:368    .text:000000b4 nrk_stack_pointer_init
+     /tmp/ccyR4YdV.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccyR4YdV.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccyR4YdV.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccyR4YdV.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccyR4YdV.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccyR4YdV.s:128    .text:00000000 nrk_battery_save
+     /tmp/ccyR4YdV.s:146    .text:00000002 nrk_sleep
+     /tmp/ccyR4YdV.s:182    .text:0000001a nrk_idle
+     /tmp/ccyR4YdV.s:219    .text:00000030 nrk_task_set_entry_function
+     /tmp/ccyR4YdV.s:245    .text:00000038 nrk_task_stk_init
+     /tmp/ccyR4YdV.s:368    .text:000000b4 nrk_stack_pointer_init
                             *COM*:00000002 nrk_kernel_stk_ptr
-     /tmp/cc7h11IJ.s:406    .text:000000d6 nrk_stack_pointer_restore
-     /tmp/cc7h11IJ.s:434    .text:000000e8 nrk_target_start
-     /tmp/cc7h11IJ.s:461    .text:000000f2 nrk_task_set_stk
+     /tmp/ccyR4YdV.s:406    .text:000000d6 nrk_stack_pointer_restore
+     /tmp/ccyR4YdV.s:434    .text:000000e8 nrk_target_start
+     /tmp/ccyR4YdV.s:461    .text:000000f2 nrk_task_set_stk
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
-                            *COM*:00000063 nrk_task_TCB
+                            *COM*:000000a5 nrk_task_TCB
                             *COM*:00000001 nrk_wakeup_signal
-                            *COM*:00000014 _nrk_readyQ
+                            *COM*:0000001e _nrk_readyQ
                             *COM*:00000002 _free_node
                             *COM*:00000002 _head_node
                             *COM*:00000001 nrk_cur_task_prio
@@ -554,7 +554,7 @@ DEFINED SYMBOLS
                             *COM*:00000002 nrk_high_ready_TCB
                             *COM*:00000001 _nrk_resource_cnt
                             *COM*:00000008 nrk_system_time
-                            *COM*:00000006 nrk_sem_list
+                            *COM*:0000000f nrk_sem_list
                             *COM*:00000001 _nrk_prev_timer_val
                             *COM*:00000001 _nrk_time_trigger
                             *COM*:00000002 app_timer0_callback

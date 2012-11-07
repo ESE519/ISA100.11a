@@ -1,0 +1,2372 @@
+   1               		.file	"ulib.c"
+   2               		.arch msp430x1611
+   3               	
+   4               	/* Hardware multiplier registers: */
+   5               	__MPY=0x130
+   6               	__MPYS=0x132
+   7               	__MAC=0x134
+   8               	__MACS=0x136
+   9               	__OP2=0x138
+  10               	__RESLO=0x13a
+  11               	__RESHI=0x13c
+  12               	__SUMEXT=0x13e
+  13               	
+  16               		.text
+  17               	.Ltext0:
+ 196               		.p2align 1,0
+ 198               	.global	nrk_uart_rx_signal_get
+ 200               	/***********************
+ 201               	 * Function `nrk_uart_rx_signal_get' 
+ 202               	 ***********************/
+ 203               	nrk_uart_rx_signal_get:
+   1:../../src/platform/tmote/source/ulib.c **** #include <include.h>
+   2:../../src/platform/tmote/source/ulib.c **** #include <ulib.h>
+   3:../../src/platform/tmote/source/ulib.c **** #include <stdio.h>
+   4:../../src/platform/tmote/source/ulib.c **** #include <hal.h>
+   5:../../src/platform/tmote/source/ulib.c **** #include <hal_tmote.h>
+   6:../../src/platform/tmote/source/ulib.c **** //#include <avr/interrupt.h>
+   7:../../src/platform/tmote/source/ulib.c **** #include <nrk_pin_define.h>
+   8:../../src/platform/tmote/source/ulib.c **** #include <nrk_error.h>
+   9:../../src/platform/tmote/source/ulib.c **** 
+  10:../../src/platform/tmote/source/ulib.c **** 
+  11:../../src/platform/tmote/source/ulib.c **** #ifdef NANORK
+  12:../../src/platform/tmote/source/ulib.c **** #include <nrk_cfg.h>
+  13:../../src/platform/tmote/source/ulib.c **** #endif
+  14:../../src/platform/tmote/source/ulib.c **** 
+  15:../../src/platform/tmote/source/ulib.c **** #ifdef NRK_UART_BUF
+  16:../../src/platform/tmote/source/ulib.c **** #include <nrk_events.h>
+  17:../../src/platform/tmote/source/ulib.c **** 
+  18:../../src/platform/tmote/source/ulib.c **** #ifndef MAX_RX_UART_BUF
+  19:../../src/platform/tmote/source/ulib.c **** #define MAX_RX_UART_BUF    16
+  20:../../src/platform/tmote/source/ulib.c **** #endif
+  21:../../src/platform/tmote/source/ulib.c **** 
+  22:../../src/platform/tmote/source/ulib.c **** uint8_t uart_rx_buf_start,uart_rx_buf_end;
+  23:../../src/platform/tmote/source/ulib.c **** char uart_rx_buf[MAX_RX_UART_BUF];
+  24:../../src/platform/tmote/source/ulib.c **** int8_t uart_rx_signal;
+  25:../../src/platform/tmote/source/ulib.c **** 
+  26:../../src/platform/tmote/source/ulib.c **** SIGNAL(USART1_RX_vect)
+  27:../../src/platform/tmote/source/ulib.c **** {
+  28:../../src/platform/tmote/source/ulib.c **** char c;
+  29:../../src/platform/tmote/source/ulib.c **** uint8_t sig;
+  30:../../src/platform/tmote/source/ulib.c **** DISABLE_UART1_RX_INT();
+  31:../../src/platform/tmote/source/ulib.c ****    UART1_WAIT_AND_RECEIVE(c);
+  32:../../src/platform/tmote/source/ulib.c ****    uart_rx_buf[uart_rx_buf_end]=c;
+  33:../../src/platform/tmote/source/ulib.c ****    //if(uart_rx_buf_end==uart_rx_buf_start) sig=1; else sig=0;
+  34:../../src/platform/tmote/source/ulib.c ****    uart_rx_buf_end++;
+  35:../../src/platform/tmote/source/ulib.c ****    if(uart_rx_buf_end==MAX_RX_UART_BUF) uart_rx_buf_end=0;
+  36:../../src/platform/tmote/source/ulib.c ****    nrk_event_signal(uart_rx_signal);
+  37:../../src/platform/tmote/source/ulib.c **** CLEAR_UART1_RX_INT();
+  38:../../src/platform/tmote/source/ulib.c **** ENABLE_UART1_RX_INT();
+  39:../../src/platform/tmote/source/ulib.c **** }
+  40:../../src/platform/tmote/source/ulib.c **** 
+  41:../../src/platform/tmote/source/ulib.c **** char getc1()
+  42:../../src/platform/tmote/source/ulib.c **** {
+  43:../../src/platform/tmote/source/ulib.c **** char tmp;
+  44:../../src/platform/tmote/source/ulib.c **** 
+  45:../../src/platform/tmote/source/ulib.c **** if(uart_rx_buf_start!=uart_rx_buf_end)
+  46:../../src/platform/tmote/source/ulib.c ****    {
+  47:../../src/platform/tmote/source/ulib.c ****    tmp=uart_rx_buf[uart_rx_buf_start];
+  48:../../src/platform/tmote/source/ulib.c ****    uart_rx_buf_start++;
+  49:../../src/platform/tmote/source/ulib.c ****    if(uart_rx_buf_start==MAX_RX_UART_BUF) uart_rx_buf_start=0;
+  50:../../src/platform/tmote/source/ulib.c ****    return(tmp);
+  51:../../src/platform/tmote/source/ulib.c ****    }
+  52:../../src/platform/tmote/source/ulib.c **** // if buffer empty, then we have to block for it
+  53:../../src/platform/tmote/source/ulib.c **** UART1_WAIT_AND_RECEIVE(tmp);
+  54:../../src/platform/tmote/source/ulib.c **** return tmp;
+  55:../../src/platform/tmote/source/ulib.c **** }
+  56:../../src/platform/tmote/source/ulib.c **** 
+  57:../../src/platform/tmote/source/ulib.c **** uint8_t nrk_uart_data_ready(uint8_t uart_num)
+  58:../../src/platform/tmote/source/ulib.c **** {
+  59:../../src/platform/tmote/source/ulib.c **** if(uart_rx_buf_start!=uart_rx_buf_end) return 1;
+  60:../../src/platform/tmote/source/ulib.c **** return 0;
+  61:../../src/platform/tmote/source/ulib.c **** }
+  62:../../src/platform/tmote/source/ulib.c **** 
+  63:../../src/platform/tmote/source/ulib.c **** int8_t nrk_uart_rx_signal_get()
+  64:../../src/platform/tmote/source/ulib.c **** {
+  65:../../src/platform/tmote/source/ulib.c ****    if(uart_rx_signal==0) nrk_error_add(NRK_SIGNAL_CREATE_ERROR);
+  66:../../src/platform/tmote/source/ulib.c ****    return uart_rx_signal;
+  67:../../src/platform/tmote/source/ulib.c **** }
+  68:../../src/platform/tmote/source/ulib.c **** 
+  69:../../src/platform/tmote/source/ulib.c **** #else
+  70:../../src/platform/tmote/source/ulib.c **** 
+  71:../../src/platform/tmote/source/ulib.c **** int8_t nrk_uart_rx_signal_get()
+  72:../../src/platform/tmote/source/ulib.c **** {
+ 205               	.LM1:
+ 206               		/* prologue: frame size = 0 */
+ 207               	.L__FrameSize_nrk_uart_rx_signal_get=0x0
+ 208               	.L__FrameOffset_nrk_uart_rx_signal_get=0x0
+ 209               		/* prologue end (size=0) */
+ 210               	
+  73:../../src/platform/tmote/source/ulib.c **** num==1)
+  74:../../src/platform/tmote/source/ulib.c ****         {
+ 212               	.LM2:
+ 213 0000 0F43      		mov	#llo(0), r15 
+ 214 0002 3041      		ret
+ 215               	
+ 216               		/* epilogue: not required */
+ 217               		/* function nrk_uart_rx_signal_get size 2 (1) */
+ 218               	.Lfe1:
+ 220               	/********* End of function ******/
+ 221               	
+ 222               	.Lscope0:
+ 224               		.p2align 1,0
+ 227               	.global	nrk_uart_data_ready
+ 229               	/***********************
+ 230               	 * Function `nrk_uart_data_ready' 
+ 231               	 ***********************/
+ 232               	nrk_uart_data_ready:
+  75:../../src/platform/tmote/source/ulib.c ****       if( IFG2 & BM(URXIFG1) ) return 1;
+  76:../../src/platform/tmote/source/ulib.c ****         }
+  77:../../src/platform/tmote/source/ulib.c **** return 0;
+ 234               	.LM3:
+ 235               		/* prologue: frame size = 0 */
+ 236               	.L__FrameSize_nrk_uart_data_ready=0x0
+ 237               	.L__FrameOffset_nrk_uart_data_ready=0x0
+ 238               		/* prologue end (size=0) */
+ 239               	
+  78:../../src/platform/tmote/source/ulib.c **** *
+ 241               	.LM4:
+ 242 0004 5F93      		cmp.b	#llo(1), r15
+ 243 0006 0220      		jne	.L3
+  79:../../src/platform/tmote/source/ulib.c **** int8_t nrk_uart_data_ready(uint8_t uart_num)
+  80:../../src/platform/tmote/source/ulib.c **** {
+ 245               	.LM5:
+ 246 0008 5F42 0300 		mov.b	&0x0003, r15
+ 247               	.L3:
+  81:../../src/platform/tmote/source/ulib.c **** (uart_num==1)
+  82:../../src/platform/tmote/source/ulib.c ****         {
+  83:../../src/platform/tmote/source/ulib.c ****         if( UCSR1A & BM(RXC1) ) return 1;
+ 249               	.LM6:
+ 250 000c 0F43      		mov	#llo(0), r15 
+ 251 000e 3041      		ret
+ 252               	
+ 253               		/* epilogue: not required */
+ 254               		/* function nrk_uart_data_ready size 6 (5) */
+ 255               	.Lfe2:
+ 257               	/********* End of function ******/
+ 258               	
+ 259               	.Lscope1:
+ 261               		.p2align 1,0
+ 263               	.global	getc1
+ 265               	/***********************
+ 266               	 * Function `getc1' 
+ 267               	 ***********************/
+ 268               	getc1:
+  84:../../src/platform/tmote/source/ulib.c ****      }
+  85:../../src/platform/tmote/source/ulib.c **** return 0;
+  86:../../src/platform/tmote/source/ulib.c **** }
+  87:../../src/platform/tmote/source/ulib.c **** */
+  88:../../src/platform/tmote/source/ulib.c **** 
+  89:../../src/platform/tmote/source/ulib.c **** char getc1(void){
+  90:../../src/platform/tmote/source/ulib.c ****         unsigned char tmp;
+  91:../../src/platform/tmote/source/ulib.c ****         UART1_WAIT_AND_RECEIVE(tmp);
+  92:../../src/platform/tmote/source/ulib.c ****         return tmp;
+  93:../../src/platform/tmote/source/ulib.c **** }
+  94:../../src/platform/tmote/source/ulib.c **** 
+  95:../../src/platform/tmote/source/ulib.c **** #endif
+ 270               	.LM7:
+ 271               		/* prologue: frame size = 0 */
+ 272               	.L__FrameSize_getc1=0x0
+ 273               	.L__FrameOffset_getc1=0x0
+ 274               		/* prologue end (size=0) */
+ 275               	
+ 276               	.LBB2:
+  96:../../src/platform/tmote/source/ulib.c ****  for msp
+  97:../../src/platform/tmote/source/ulib.c **** void nrk_kprintf( const char *addr)
+  98:../../src/platform/tmote/source/ulib.c **** {
+ 278               	.LM8:
+ 279 0010 7FF3      		and.b	#-1,r15
+ 280               	.LBE2:
+  99:../../src/platform/tmote/source/ulib.c **** ar c;
+ 282               	.LM9:
+ 283 0012 3041      		ret
+ 284               	
+ 285               		/* epilogue: not required */
+ 286               		/* function getc1 size 2 (1) */
+ 287               	.Lfe3:
+ 289               	/********* End of function ******/
+ 290               	
+ 294               	.Lscope2:
+ 296               		.p2align 1,0
+ 299               	.global	nrk_kprintf
+ 301               	/***********************
+ 302               	 * Function `nrk_kprintf' 
+ 303               	 ***********************/
+ 304               	nrk_kprintf:
+ 100:../../src/platform/tmote/source/ulib.c ****   //while((c=pgm_read_byte(addr++)))
+ 101:../../src/platform/tmote/source/ulib.c ****         //putchar(c);
+ 102:../../src/platform/tmote/source/ulib.c **** }
+ 103:../../src/platform/tmote/source/ulib.c **** 
+ 104:../../src/platform/tmote/source/ulib.c **** //TODO: fix for msp
+ 105:../../src/platform/tmote/source/ulib.c **** void nrk_setup_ports()
+ 306               	.LM10:
+ 307               		/* prologue: frame size = 0 */
+ 308               	.L__FrameSize_nrk_kprintf=0x0
+ 309               	.L__FrameOffset_nrk_kprintf=0x0
+ 310               		/* prologue end (size=0) */
+ 311               	
+ 312               	.LBB3:
+ 106:../../src/platform/tmote/source/ulib.c **** _gpio_direction(NRK_LED_0, NRK_PIN_OUTPUT);
+ 314               	.LM11:
+ 315               	.LBE3:
+ 107:../../src/platform/tmote/source/ulib.c **** nrk_gpio_direction(NRK_LED_1, NRK_PIN_OUTPUT);
+ 108:../../src/platform/tmote/source/ulib.c **** 	nrk_gpio_direction(NRK_LED_2, NRK_PIN_OUTPUT);
+ 109:../../src/platform/tmote/source/ulib.c **** 	//PORT_INIT();
+ 317               	.LM12:
+ 318 0014 3041      		ret
+ 319               	
+ 320               		/* epilogue: not required */
+ 321               		/* function nrk_kprintf size 1 (0) */
+ 322               	.Lfe4:
+ 324               	/********* End of function ******/
+ 325               	
+ 326               	.Lscope3:
+ 328               		.p2align 1,0
+ 330               	.global	nrk_setup_ports
+ 332               	/***********************
+ 333               	 * Function `nrk_setup_ports' 
+ 334               	 ***********************/
+ 335               	nrk_setup_ports:
+ 110:../../src/platform/tmote/source/ulib.c **** SPI_INIT();
+ 111:../../src/platform/tmote/source/ulib.c **** }
+ 112:../../src/platform/tmote/source/ulib.c **** 
+ 113:../../src/platform/tmote/source/ulib.c **** //---------------------------------------------------------------------------------------------
+ 337               	.LM13:
+ 338               		/* prologue: frame size = 0 */
+ 339               	.L__FrameSize_nrk_setup_ports=0x0
+ 340               	.L__FrameOffset_nrk_setup_ports=0x0
+ 341               		/* prologue end (size=0) */
+ 342               	
+ 114:../../src/platform/tmote/source/ulib.c **** PIO related definitions
+ 344               	.LM14:
+ 345 0016 5E43      		mov.b	#llo(1), r14
+ 346 0018 5F42 0000 		mov.b	&NRK_LED_0, r15
+ 347 001c B012 0000 		call	#nrk_gpio_direction
+ 115:../../src/platform/tmote/source/ulib.c **** /---------------------------------------------------------------------------------------------
+ 349               	.LM15:
+ 350 0020 5E43      		mov.b	#llo(1), r14
+ 351 0022 5F42 0000 		mov.b	&NRK_LED_1, r15
+ 352 0026 B012 0000 		call	#nrk_gpio_direction
+ 116:../../src/platform/tmote/source/ulib.c **** / Define high-level nrk pins mappings to hardware pins and ports
+ 354               	.LM16:
+ 355 002a 5E43      		mov.b	#llo(1), r14
+ 356 002c 5F42 0000 		mov.b	&NRK_LED_2, r15
+ 357 0030 B012 0000 		call	#nrk_gpio_direction
+ 117:../../src/platform/tmote/source/ulib.c **** / This is used for nrk_gpio_... functions.
+ 118:../../src/platform/tmote/source/ulib.c **** // Raw GPIO mapping can be found in the nrk_pin_define.h file.
+ 119:../../src/platform/tmote/source/ulib.c **** //---------------------------------------------------------------------------------------------
+ 359               	.LM17:
+ 360 0034 3041      		ret
+ 361               	
+ 362               		/* epilogue: not required */
+ 363               		/* function nrk_setup_ports size 16 (15) */
+ 364               	.Lfe5:
+ 366               	/********* End of function ******/
+ 367               	
+ 368               	.Lscope4:
+ 370               	.global	NRK_DEBUG_0
+ 373               	NRK_DEBUG_0:
+ 374 0036 18        		.byte	24
+ 375               	.global	NRK_DEBUG_1
+ 378               	NRK_DEBUG_1:
+ 379 0037 20        		.byte	32
+ 380               	.global	NRK_DEBUG_2
+ 383               	NRK_DEBUG_2:
+ 384 0038 FF        		.byte	-1
+ 385               	.global	NRK_DEBUG_3
+ 388               	NRK_DEBUG_3:
+ 389 0039 FF        		.byte	-1
+ 390               	.global	NRK_BUTTON
+ 393               	NRK_BUTTON:
+ 394 003a 38        		.byte	56
+ 395               	.global	NRK_SCK
+ 398               	NRK_SCK:
+ 399 003b 19        		.byte	25
+ 400               	.global	NRK_MOSI
+ 403               	NRK_MOSI:
+ 404 003c 09        		.byte	9
+ 405               	.global	NRK_MISO
+ 408               	NRK_MISO:
+ 409 003d 11        		.byte	17
+ 410               	.global	NRK_GPIO26
+ 413               	NRK_GPIO26:
+ 414 003e 21        		.byte	33
+ 415               	.global	NRK_GPIO28
+ 418               	NRK_GPIO28:
+ 419 003f 29        		.byte	41
+ 420               	.global	NRK_UART1_RXD
+ 423               	NRK_UART1_RXD:
+ 424 0040 3B        		.byte	59
+ 425               	.global	NRK_UART1_TXD
+ 428               	NRK_UART1_TXD:
+ 429 0041 33        		.byte	51
+ 430               	.global	NRK_CCA
+ 433               	NRK_CCA:
+ 434 0042 23        		.byte	35
+ 435               	.global	NRK_SFD
+ 438               	NRK_SFD:
+ 439 0043 0B        		.byte	11
+ 440               	.global	NRK_UART0_RXD
+ 443               	NRK_UART0_RXD:
+ 444 0044 2C        		.byte	44
+ 445               	.global	NRK_UART0_TXD
+ 448               	NRK_UART0_TXD:
+ 449 0045 24        		.byte	36
+ 450               	.global	NRK_LED_0
+ 453               	NRK_LED_0:
+ 454 0046 24        		.byte	36
+ 455               	.global	NRK_LED_1
+ 458               	NRK_LED_1:
+ 459 0047 2C        		.byte	44
+ 460               	.global	NRK_LED_2
+ 463               	NRK_LED_2:
+ 464 0048 34        		.byte	52
+ 465               	.global	NRK_LED_3
+ 468               	NRK_LED_3:
+ 469 0049 FF        		.byte	-1
+ 470               	.global	NRK_GPIO34
+ 473               	NRK_GPIO34:
+ 474 004a 34        		.byte	52
+ 475               	.global	NRK_FIFOP
+ 478               	NRK_FIFOP:
+ 479 004b 04        		.byte	4
+ 480               	.global	NRK_ADC_INPUT_0
+ 483               	NRK_ADC_INPUT_0:
+ 484 004c 05        		.byte	5
+ 485               	.global	NRK_ADC_INPUT_1
+ 488               	NRK_ADC_INPUT_1:
+ 489 004d 0D        		.byte	13
+ 490               	.global	NRK_ADC_INPUT_2
+ 493               	NRK_ADC_INPUT_2:
+ 494 004e 15        		.byte	21
+ 495               	.global	NRK_ADC_INPUT_3
+ 498               	NRK_ADC_INPUT_3:
+ 499 004f 1D        		.byte	29
+ 500               	.global	NRK_ADC_INPUT_4
+ 503               	NRK_ADC_INPUT_4:
+ 504 0050 25        		.byte	37
+ 505               	.global	NRK_ADC_INPUT_5
+ 508               	NRK_ADC_INPUT_5:
+ 509 0051 2D        		.byte	45
+ 510               	.global	NRK_ADC_INPUT_6
+ 513               	NRK_ADC_INPUT_6:
+ 514 0052 35        		.byte	53
+ 515               	.global	NRK_ADC_INPUT_7
+ 518               	NRK_ADC_INPUT_7:
+ 519 0053 3D        		.byte	61
+ 520               		.p2align 1,0
+ 523               	.global	nrk_gpio_set
+ 525               	/***********************
+ 526               	 * Function `nrk_gpio_set' 
+ 527               	 ***********************/
+ 528               	nrk_gpio_set:
+ 120:../../src/platform/tmote/source/ulib.c **** TODO: fix these for msp
+ 121:../../src/platform/tmote/source/ulib.c **** //-------------------------------
+ 122:../../src/platform/tmote/source/ulib.c **** // Port A
+ 123:../../src/platform/tmote/source/ulib.c **** NRK_PIN( DEBUG_0,DEBUG_0, NRK_PORTA )
+ 124:../../src/platform/tmote/source/ulib.c **** NRK_PIN( DEBUG_1,DEBUG_1, NRK_PORTA )
+ 125:../../src/platform/tmote/source/ulib.c **** NRK_INVALID_PIN( DEBUG_2 )
+ 126:../../src/platform/tmote/source/ulib.c **** NRK_INVALID_PIN( DEBUG_3 )
+ 127:../../src/platform/tmote/source/ulib.c **** NRK_PIN( BUTTON,BUTTON, NRK_PORTA )
+ 128:../../src/platform/tmote/source/ulib.c **** //-------------------------------
+ 129:../../src/platform/tmote/source/ulib.c **** // Port B
+ 130:../../src/platform/tmote/source/ulib.c **** //NRK_PIN( SPI_SS,SPI_SS, NRK_PORTB )
+ 131:../../src/platform/tmote/source/ulib.c **** NRK_PIN( SCK,SCK, NRK_PORTB )
+ 132:../../src/platform/tmote/source/ulib.c **** NRK_PIN( MOSI,MOSI, NRK_PORTB )
+ 133:../../src/platform/tmote/source/ulib.c **** NRK_PIN( MISO,MISO, NRK_PORTB )
+ 134:../../src/platform/tmote/source/ulib.c **** NRK_PIN( GPIO26,4, NRK_PORTB )
+ 135:../../src/platform/tmote/source/ulib.c **** NRK_PIN( GPIO28,5, NRK_PORTB )
+ 136:../../src/platform/tmote/source/ulib.c **** 
+ 137:../../src/platform/tmote/source/ulib.c **** //-------------------------------
+ 138:../../src/platform/tmote/source/ulib.c **** // Port D
+ 139:../../src/platform/tmote/source/ulib.c **** NRK_PIN( UART1_RXD,UART1_RXD, NRK_PORTD )
+ 140:../../src/platform/tmote/source/ulib.c **** NRK_PIN( UART1_TXD,UART1_TXD, NRK_PORTD )
+ 141:../../src/platform/tmote/source/ulib.c **** NRK_PIN( CCA,CCA, NRK_PORTD )
+ 142:../../src/platform/tmote/source/ulib.c **** NRK_PIN( SFD,SFD, NRK_PORTD )
+ 143:../../src/platform/tmote/source/ulib.c **** 
+ 144:../../src/platform/tmote/source/ulib.c **** //-------------------------------
+ 145:../../src/platform/tmote/source/ulib.c **** // Port E
+ 146:../../src/platform/tmote/source/ulib.c **** NRK_PIN( UART0_RXD,UART0_RXD, NRK_PORTE )
+ 147:../../src/platform/tmote/source/ulib.c **** NRK_PIN( UART0_TXD,UART0_TXD, NRK_PORTE )
+ 148:../../src/platform/tmote/source/ulib.c **** NRK_PIN( LED_0,LED_0, NRK_PORTE )
+ 149:../../src/platform/tmote/source/ulib.c **** NRK_PIN( LED_1,LED_1, NRK_PORTE )
+ 150:../../src/platform/tmote/source/ulib.c **** NRK_PIN( LED_2,LED_2, NRK_PORTE )
+ 151:../../src/platform/tmote/source/ulib.c **** NRK_INVALID_PIN( LED_3 )
+ 152:../../src/platform/tmote/source/ulib.c **** NRK_PIN( GPIO34,GPIO34, NRK_PORTE )
+ 153:../../src/platform/tmote/source/ulib.c **** NRK_PIN( FIFOP, FIFOP, NRK_PORTE )
+ 154:../../src/platform/tmote/source/ulib.c **** 
+ 155:../../src/platform/tmote/source/ulib.c **** 
+ 156:../../src/platform/tmote/source/ulib.c **** //-------------------------------
+ 157:../../src/platform/tmote/source/ulib.c **** // Port F
+ 158:../../src/platform/tmote/source/ulib.c **** NRK_PIN( ADC_INPUT_0, ADC_INPUT_0, NRK_PORTF )
+ 159:../../src/platform/tmote/source/ulib.c **** NRK_PIN( ADC_INPUT_1, ADC_INPUT_1, NRK_PORTF )
+ 160:../../src/platform/tmote/source/ulib.c **** NRK_PIN( ADC_INPUT_2, ADC_INPUT_2, NRK_PORTF )
+ 161:../../src/platform/tmote/source/ulib.c **** NRK_PIN( ADC_INPUT_3, ADC_INPUT_3, NRK_PORTF )
+ 162:../../src/platform/tmote/source/ulib.c **** NRK_PIN( ADC_INPUT_4, ADC_INPUT_4, NRK_PORTF )
+ 163:../../src/platform/tmote/source/ulib.c **** NRK_PIN( ADC_INPUT_5, ADC_INPUT_5, NRK_PORTF )
+ 164:../../src/platform/tmote/source/ulib.c **** NRK_PIN( ADC_INPUT_6, ADC_INPUT_6, NRK_PORTF )
+ 165:../../src/platform/tmote/source/ulib.c **** NRK_PIN( ADC_INPUT_7, ADC_INPUT_7, NRK_PORTF )
+ 166:../../src/platform/tmote/source/ulib.c **** 
+ 167:../../src/platform/tmote/source/ulib.c **** //-------------------------------
+ 168:../../src/platform/tmote/source/ulib.c **** // GPIO handling functions
+ 169:../../src/platform/tmote/source/ulib.c **** 
+ 170:../../src/platform/tmote/source/ulib.c **** int8_t nrk_gpio_set(uint8_t pin)
+ 171:../../src/platform/tmote/source/ulib.c **** {
+ 172:../../src/platform/tmote/source/ulib.c ****         if (pin == NRK_INVALID_PIN_VAL) return -1;
+ 173:../../src/platform/tmote/source/ulib.c ****         switch (pin & 0x07) {
+ 174:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTA:
+ 175:../../src/platform/tmote/source/ulib.c ****                         do { P1OUT |= BM((pin & 0xF8) >> 3); } while(0); break; 
+ 176:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTB:
+ 177:../../src/platform/tmote/source/ulib.c ****                         do { P2OUT |= BM((pin & 0xF8) >> 3); } while(0); break; 
+ 178:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTC:
+ 179:../../src/platform/tmote/source/ulib.c ****                         do { P3OUT |= BM((pin & 0xF8) >> 3); } while(0); break; 
+ 180:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTD:
+ 530               	.LM18:
+ 531               		/* prologue: frame size = 0 */
+ 532               	.L__FrameSize_nrk_gpio_set=0x0
+ 533               	.L__FrameOffset_nrk_gpio_set=0x0
+ 534               		/* prologue end (size=0) */
+ 535               	
+ 536 0054 4D4F      		mov.b	r15, r13
+ 181:../../src/platform/tmote/source/ulib.c **** } while(0); break; 
+ 538               	.LM19:
+ 539 0056 7F93      		cmp.b	#llo(-1), r15
+ 540 0058 0C24      		jeq	.L24
+ 182:../../src/platform/tmote/source/ulib.c ****                case NRK_PORTE:
+ 542               	.LM20:
+ 543 005a 0E4D      		mov	r13, r14 
+ 544 005c 3EF0 0700 		and	#llo(7), r14
+ 545 0060 2E93      		cmp	#llo(2), r14
+ 546 0062 6024      		jeq	.L16
+ 547 0064 3E90 0300 		cmp	#llo(3), r14
+ 548 0068 2634      		jge	.L26
+ 549 006a 0E93      		cmp	#llo(0), r14
+ 550 006c 1424      		jeq	.L12
+ 551 006e 1E93      		cmp	#llo(1), r14
+ 552 0070 0224      		jeq	.L14
+ 553               	.L24:
+ 183:../../src/platform/tmote/source/ulib.c ****                        do { P5OUT |= BM((pin & 0xF8) >> 3); } while(0); break; 
+ 184:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTF:
+ 185:../../src/platform/tmote/source/ulib.c ****                         do { P6OUT |= BM((pin & 0xF8) >> 3); } while(0); break; 
+ 186:../../src/platform/tmote/source/ulib.c ****                 default: return -1;
+ 187:../../src/platform/tmote/source/ulib.c ****         }
+ 188:../../src/platform/tmote/source/ulib.c ****         return 1;
+ 189:../../src/platform/tmote/source/ulib.c **** }
+ 190:../../src/platform/tmote/source/ulib.c **** 
+ 191:../../src/platform/tmote/source/ulib.c **** int8_t nrk_gpio_clr(uint8_t pin)
+ 192:../../src/platform/tmote/source/ulib.c **** {
+ 193:../../src/platform/tmote/source/ulib.c ****         if (pin == NRK_INVALID_PIN_VAL) return -1;
+ 194:../../src/platform/tmote/source/ulib.c ****         switch (pin & 0x07) {
+ 195:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTA:
+ 555               	.LM21:
+ 556 0072 3F43      		mov	#llo(-1), r15 
+ 196:../../src/platform/tmote/source/ulib.c ****            do { P1OUT &= ~BM((pin & 0xF8) >> 3); } while(0); break;
+ 197:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTB:
+ 198:../../src/platform/tmote/source/ulib.c ****                         do { P2OUT &= ~BM((pin & 0xF8) >> 3); } while(0); break;
+ 558               	.LM22:
+ 559 0074 3041      		ret
+ 560               	.L14:
+ 562               	.LM23:
+ 563 0076 12C3      		clrc
+ 564 0078 4D10      		rrc.b	r13
+ 565 007a 4D11      		rra.b	r13
+ 566 007c 4D11      		rra.b	r13
+ 567 007e 0F4D      		mov	r13, r15 
+ 568 0080 3FF0 1F00 		and	#llo(31), r15
+ 569 0084 0F93      		tst	r15
+ 570 0086 0324      		jz	.Lsend86
+ 571               	.Lsst86:
+ 572 0088 0E5E      		rla	r14
+ 573 008a 1F83      		dec	r15
+ 574 008c FD23      		jnz	.Lsst86
+ 575               	.Lsend86:
+ 576 008e C2DE 2900 		bis.b	r14, &0x0029
+ 577               	.L11:
+ 579               	.LM24:
+ 580 0092 1F43      		mov	#llo(1), r15 
+ 582               	.LM25:
+ 583 0094 3041      		ret
+ 584               	.L12:
+ 586               	.LM26:
+ 587 0096 12C3      		clrc
+ 588 0098 4D10      		rrc.b	r13
+ 589 009a 4D11      		rra.b	r13
+ 590 009c 4D11      		rra.b	r13
+ 591 009e 1F43      		mov	#llo(1), r15 
+ 592 00a0 0E4D      		mov	r13, r14 
+ 593 00a2 3EF0 1F00 		and	#llo(31), r14
+ 594 00a6 0E93      		tst	r14
+ 595 00a8 0324      		jz	.Lsend105
+ 596               	.Lsst105:
+ 597 00aa 0F5F      		rla	r15
+ 598 00ac 1E83      		dec	r14
+ 599 00ae FD23      		jnz	.Lsst105
+ 600               	.Lsend105:
+ 601 00b0 C2DF 2100 		bis.b	r15, &0x0021
+ 602 00b4 EE3F      		jmp	.L11
+ 603               	.L26:
+ 604 00b6 2E92      		cmp	#llo(4), r14
+ 605 00b8 2524      		jeq	.L20
+ 606 00ba 2E92      		cmp	#llo(4), r14
+ 607 00bc 1338      		jl	.L18
+ 608 00be 3E90 0500 		cmp	#llo(5), r14
+ 609 00c2 D723      		jne	.L24
+ 611               	.LM27:
+ 612 00c4 12C3      		clrc
+ 613 00c6 4D10      		rrc.b	r13
+ 614 00c8 4D11      		rra.b	r13
+ 615 00ca 4D11      		rra.b	r13
+ 616 00cc 1F43      		mov	#llo(1), r15 
+ 617 00ce 0E4D      		mov	r13, r14 
+ 618 00d0 3EF0 1F00 		and	#llo(31), r14
+ 619 00d4 0E93      		tst	r14
+ 620 00d6 0324      		jz	.Lsend122
+ 621               	.Lsst122:
+ 622 00d8 0F5F      		rla	r15
+ 623 00da 1E83      		dec	r14
+ 624 00dc FD23      		jnz	.Lsst122
+ 625               	.Lsend122:
+ 626 00de C2DF 3500 		bis.b	r15, &0x0035
+ 627 00e2 D73F      		jmp	.L11
+ 628               	.L18:
+ 630               	.LM28:
+ 631 00e4 12C3      		clrc
+ 632 00e6 4D10      		rrc.b	r13
+ 633 00e8 4D11      		rra.b	r13
+ 634 00ea 4D11      		rra.b	r13
+ 635 00ec 1F43      		mov	#llo(1), r15 
+ 636 00ee 0E4D      		mov	r13, r14 
+ 637 00f0 3EF0 1F00 		and	#llo(31), r14
+ 638 00f4 0E93      		tst	r14
+ 639 00f6 0324      		jz	.Lsend133
+ 640               	.Lsst133:
+ 641 00f8 0F5F      		rla	r15
+ 642 00fa 1E83      		dec	r14
+ 643 00fc FD23      		jnz	.Lsst133
+ 644               	.Lsend133:
+ 645 00fe C2DF 1D00 		bis.b	r15, &0x001D
+ 646 0102 C73F      		jmp	.L11
+ 647               	.L20:
+ 649               	.LM29:
+ 650 0104 12C3      		clrc
+ 651 0106 4D10      		rrc.b	r13
+ 652 0108 4D11      		rra.b	r13
+ 653 010a 4D11      		rra.b	r13
+ 654 010c 1F43      		mov	#llo(1), r15 
+ 655 010e 0E4D      		mov	r13, r14 
+ 656 0110 3EF0 1F00 		and	#llo(31), r14
+ 657 0114 0E93      		tst	r14
+ 658 0116 0324      		jz	.Lsend144
+ 659               	.Lsst144:
+ 660 0118 0F5F      		rla	r15
+ 661 011a 1E83      		dec	r14
+ 662 011c FD23      		jnz	.Lsst144
+ 663               	.Lsend144:
+ 664 011e C2DF 3100 		bis.b	r15, &0x0031
+ 665 0122 B73F      		jmp	.L11
+ 666               	.L16:
+ 668               	.LM30:
+ 669 0124 12C3      		clrc
+ 670 0126 4D10      		rrc.b	r13
+ 671 0128 4D11      		rra.b	r13
+ 672 012a 4D11      		rra.b	r13
+ 673 012c 1F43      		mov	#llo(1), r15 
+ 674 012e 0E4D      		mov	r13, r14 
+ 675 0130 3EF0 1F00 		and	#llo(31), r14
+ 676 0134 0E93      		tst	r14
+ 677 0136 0324      		jz	.Lsend155
+ 678               	.Lsst155:
+ 679 0138 0F5F      		rla	r15
+ 680 013a 1E83      		dec	r14
+ 681 013c FD23      		jnz	.Lsst155
+ 682               	.Lsend155:
+ 683 013e C2DF 1900 		bis.b	r15, &0x0019
+ 684 0142 A73F      		jmp	.L11
+ 685               	
+ 686               		/* epilogue: not required */
+ 687               		/* function nrk_gpio_set size 126 (126) */
+ 688               	.Lfe6:
+ 690               	/********* End of function ******/
+ 691               	
+ 692               	.Lscope5:
+ 694               		.p2align 1,0
+ 697               	.global	nrk_gpio_clr
+ 699               	/***********************
+ 700               	 * Function `nrk_gpio_clr' 
+ 701               	 ***********************/
+ 702               	nrk_gpio_clr:
+ 199:../../src/platform/tmote/source/ulib.c ****              case NRK_PORTC:
+ 200:../../src/platform/tmote/source/ulib.c ****                         do { P3OUT &= ~BM((pin & 0xF8) >> 3); } while(0); break; 
+ 201:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTD:
+ 704               	.LM31:
+ 705               		/* prologue: frame size = 0 */
+ 706               	.L__FrameSize_nrk_gpio_clr=0x0
+ 707               	.L__FrameOffset_nrk_gpio_clr=0x0
+ 708               		/* prologue end (size=0) */
+ 709               	
+ 710 0144 4D4F      		mov.b	r15, r13
+ 202:../../src/platform/tmote/source/ulib.c ****                      do { P4OUT &= ~BM((pin & 0xF8) >> 3); } while(0); break; 
+ 712               	.LM32:
+ 713 0146 7F93      		cmp.b	#llo(-1), r15
+ 714 0148 0C24      		jeq	.L42
+ 203:../../src/platform/tmote/source/ulib.c ****                case NRK_PORTE:
+ 716               	.LM33:
+ 717 014a 0E4D      		mov	r13, r14 
+ 718 014c 3EF0 0700 		and	#llo(7), r14
+ 719 0150 2E93      		cmp	#llo(2), r14
+ 720 0152 6024      		jeq	.L34
+ 721 0154 3E90 0300 		cmp	#llo(3), r14
+ 722 0158 2634      		jge	.L44
+ 723 015a 0E93      		cmp	#llo(0), r14
+ 724 015c 1424      		jeq	.L30
+ 725 015e 1E93      		cmp	#llo(1), r14
+ 726 0160 0224      		jeq	.L32
+ 727               	.L42:
+ 204:../../src/platform/tmote/source/ulib.c ****                        do { P5OUT &= ~BM((pin & 0xF8) >> 3); } while(0); break; 
+ 205:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTF:
+ 206:../../src/platform/tmote/source/ulib.c ****                         do { P6OUT &= ~BM((pin & 0xF8) >> 3); } while(0); break; 
+ 207:../../src/platform/tmote/source/ulib.c ****                 default: return -1;
+ 208:../../src/platform/tmote/source/ulib.c ****         }
+ 209:../../src/platform/tmote/source/ulib.c ****         return 1;
+ 210:../../src/platform/tmote/source/ulib.c **** }
+ 211:../../src/platform/tmote/source/ulib.c **** 
+ 212:../../src/platform/tmote/source/ulib.c **** int8_t nrk_gpio_get(uint8_t pin)
+ 213:../../src/platform/tmote/source/ulib.c **** {
+ 214:../../src/platform/tmote/source/ulib.c ****     if (pin == NRK_INVALID_PIN_VAL) return -1;
+ 215:../../src/platform/tmote/source/ulib.c ****         switch (pin & 0x07) {
+ 216:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTA:
+ 729               	.LM34:
+ 730 0162 3F43      		mov	#llo(-1), r15 
+ 217:../../src/platform/tmote/source/ulib.c ****            return (P1IN & BM((pin & 0xF8) >> 3));
+ 218:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTB:
+ 219:../../src/platform/tmote/source/ulib.c ****                         return (P2IN & BM((pin & 0xF8) >> 3));
+ 732               	.LM35:
+ 733 0164 3041      		ret
+ 734               	.L32:
+ 736               	.LM36:
+ 737 0166 12C3      		clrc
+ 738 0168 4D10      		rrc.b	r13
+ 739 016a 4D11      		rra.b	r13
+ 740 016c 4D11      		rra.b	r13
+ 741 016e 0F4D      		mov	r13, r15 
+ 742 0170 3FF0 1F00 		and	#llo(31), r15
+ 743 0174 0F93      		tst	r15
+ 744 0176 0324      		jz	.Lsend189
+ 745               	.Lsst189:
+ 746 0178 0E5E      		rla	r14
+ 747 017a 1F83      		dec	r15
+ 748 017c FD23      		jnz	.Lsst189
+ 749               	.Lsend189:
+ 750 017e C2CE 2900 		bic.b       r14, &0x0029
+ 751               	.L29:
+ 753               	.LM37:
+ 754 0182 1F43      		mov	#llo(1), r15 
+ 756               	.LM38:
+ 757 0184 3041      		ret
+ 758               	.L30:
+ 760               	.LM39:
+ 761 0186 12C3      		clrc
+ 762 0188 4D10      		rrc.b	r13
+ 763 018a 4D11      		rra.b	r13
+ 764 018c 4D11      		rra.b	r13
+ 765 018e 1F43      		mov	#llo(1), r15 
+ 766 0190 0E4D      		mov	r13, r14 
+ 767 0192 3EF0 1F00 		and	#llo(31), r14
+ 768 0196 0E93      		tst	r14
+ 769 0198 0324      		jz	.Lsend208
+ 770               	.Lsst208:
+ 771 019a 0F5F      		rla	r15
+ 772 019c 1E83      		dec	r14
+ 773 019e FD23      		jnz	.Lsst208
+ 774               	.Lsend208:
+ 775 01a0 C2CF 2100 		bic.b       r15, &0x0021
+ 776 01a4 EE3F      		jmp	.L29
+ 777               	.L44:
+ 778 01a6 2E92      		cmp	#llo(4), r14
+ 779 01a8 2524      		jeq	.L38
+ 780 01aa 2E92      		cmp	#llo(4), r14
+ 781 01ac 1338      		jl	.L36
+ 782 01ae 3E90 0500 		cmp	#llo(5), r14
+ 783 01b2 D723      		jne	.L42
+ 785               	.LM40:
+ 786 01b4 12C3      		clrc
+ 787 01b6 4D10      		rrc.b	r13
+ 788 01b8 4D11      		rra.b	r13
+ 789 01ba 4D11      		rra.b	r13
+ 790 01bc 1F43      		mov	#llo(1), r15 
+ 791 01be 0E4D      		mov	r13, r14 
+ 792 01c0 3EF0 1F00 		and	#llo(31), r14
+ 793 01c4 0E93      		tst	r14
+ 794 01c6 0324      		jz	.Lsend225
+ 795               	.Lsst225:
+ 796 01c8 0F5F      		rla	r15
+ 797 01ca 1E83      		dec	r14
+ 798 01cc FD23      		jnz	.Lsst225
+ 799               	.Lsend225:
+ 800 01ce C2CF 3500 		bic.b       r15, &0x0035
+ 801 01d2 D73F      		jmp	.L29
+ 802               	.L36:
+ 804               	.LM41:
+ 805 01d4 12C3      		clrc
+ 806 01d6 4D10      		rrc.b	r13
+ 807 01d8 4D11      		rra.b	r13
+ 808 01da 4D11      		rra.b	r13
+ 809 01dc 1F43      		mov	#llo(1), r15 
+ 810 01de 0E4D      		mov	r13, r14 
+ 811 01e0 3EF0 1F00 		and	#llo(31), r14
+ 812 01e4 0E93      		tst	r14
+ 813 01e6 0324      		jz	.Lsend236
+ 814               	.Lsst236:
+ 815 01e8 0F5F      		rla	r15
+ 816 01ea 1E83      		dec	r14
+ 817 01ec FD23      		jnz	.Lsst236
+ 818               	.Lsend236:
+ 819 01ee C2CF 1D00 		bic.b       r15, &0x001D
+ 820 01f2 C73F      		jmp	.L29
+ 821               	.L38:
+ 823               	.LM42:
+ 824 01f4 12C3      		clrc
+ 825 01f6 4D10      		rrc.b	r13
+ 826 01f8 4D11      		rra.b	r13
+ 827 01fa 4D11      		rra.b	r13
+ 828 01fc 1F43      		mov	#llo(1), r15 
+ 829 01fe 0E4D      		mov	r13, r14 
+ 830 0200 3EF0 1F00 		and	#llo(31), r14
+ 831 0204 0E93      		tst	r14
+ 832 0206 0324      		jz	.Lsend247
+ 833               	.Lsst247:
+ 834 0208 0F5F      		rla	r15
+ 835 020a 1E83      		dec	r14
+ 836 020c FD23      		jnz	.Lsst247
+ 837               	.Lsend247:
+ 838 020e C2CF 3100 		bic.b       r15, &0x0031
+ 839 0212 B73F      		jmp	.L29
+ 840               	.L34:
+ 842               	.LM43:
+ 843 0214 12C3      		clrc
+ 844 0216 4D10      		rrc.b	r13
+ 845 0218 4D11      		rra.b	r13
+ 846 021a 4D11      		rra.b	r13
+ 847 021c 1F43      		mov	#llo(1), r15 
+ 848 021e 0E4D      		mov	r13, r14 
+ 849 0220 3EF0 1F00 		and	#llo(31), r14
+ 850 0224 0E93      		tst	r14
+ 851 0226 0324      		jz	.Lsend258
+ 852               	.Lsst258:
+ 853 0228 0F5F      		rla	r15
+ 854 022a 1E83      		dec	r14
+ 855 022c FD23      		jnz	.Lsst258
+ 856               	.Lsend258:
+ 857 022e C2CF 1900 		bic.b       r15, &0x0019
+ 858 0232 A73F      		jmp	.L29
+ 859               	
+ 860               		/* epilogue: not required */
+ 861               		/* function nrk_gpio_clr size 126 (126) */
+ 862               	.Lfe7:
+ 864               	/********* End of function ******/
+ 865               	
+ 866               	.Lscope6:
+ 868               		.p2align 1,0
+ 871               	.global	nrk_gpio_get
+ 873               	/***********************
+ 874               	 * Function `nrk_gpio_get' 
+ 875               	 ***********************/
+ 876               	nrk_gpio_get:
+ 220:../../src/platform/tmote/source/ulib.c ****              case NRK_PORTC:
+ 221:../../src/platform/tmote/source/ulib.c ****                         return (P3IN & BM((pin & 0xF8) >> 3));
+ 222:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTD:
+ 878               	.LM44:
+ 879               		/* prologue: frame size = 0 */
+ 880               	.L__FrameSize_nrk_gpio_get=0x0
+ 881               	.L__FrameOffset_nrk_gpio_get=0x0
+ 882               		/* prologue end (size=0) */
+ 883               	
+ 884 0234 4D4F      		mov.b	r15, r13
+ 223:../../src/platform/tmote/source/ulib.c ****                      return (P4IN & BM((pin & 0xF8) >> 3));
+ 886               	.LM45:
+ 887 0236 7F93      		cmp.b	#llo(-1), r15
+ 888 0238 0C24      		jeq	.L54
+ 224:../../src/platform/tmote/source/ulib.c ****                case NRK_PORTE:
+ 890               	.LM46:
+ 891 023a 0E4D      		mov	r13, r14 
+ 892 023c 3EF0 0700 		and	#llo(7), r14
+ 893 0240 2E93      		cmp	#llo(2), r14
+ 894 0242 6124      		jeq	.L50
+ 895 0244 3E90 0300 		cmp	#llo(3), r14
+ 896 0248 2734      		jge	.L56
+ 897 024a 0E93      		cmp	#llo(0), r14
+ 898 024c 1524      		jeq	.L48
+ 899 024e 1E93      		cmp	#llo(1), r14
+ 900 0250 0224      		jeq	.L49
+ 901               	.L54:
+ 225:../../src/platform/tmote/source/ulib.c ****                        return (P5IN & BM((pin & 0xF8) >> 3));
+ 226:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTF:
+ 227:../../src/platform/tmote/source/ulib.c ****                         return (P6IN & BM((pin & 0xF8) >> 3));
+ 228:../../src/platform/tmote/source/ulib.c ****                 default: return -1;
+ 229:../../src/platform/tmote/source/ulib.c ****         }
+ 230:../../src/platform/tmote/source/ulib.c ****         return 1;
+ 231:../../src/platform/tmote/source/ulib.c **** }
+ 232:../../src/platform/tmote/source/ulib.c **** 
+ 233:../../src/platform/tmote/source/ulib.c **** int8_t nrk_gpio_toggle(uint8_t pin)
+ 234:../../src/platform/tmote/source/ulib.c **** {
+ 235:../../src/platform/tmote/source/ulib.c ****     if (pin == NRK_INVALID_PIN_VAL) return -1;
+ 236:../../src/platform/tmote/source/ulib.c ****         switch (pin & 0x07) {
+ 237:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTA:
+ 903               	.LM47:
+ 904 0252 3F43      		mov	#llo(-1), r15 
+ 238:../../src/platform/tmote/source/ulib.c ****            if ((P1IN & BM((pin & 0xF8) >> 3)) == 0) {
+ 239:../../src/platform/tmote/source/ulib.c ****                                 do { P1OUT |= BM((pin & 0xF8) >> 3); } while(0);
+ 240:../../src/platform/tmote/source/ulib.c ****                         } else {
+ 906               	.LM48:
+ 907 0254 3041      		ret
+ 908               	.L49:
+ 910               	.LM49:
+ 911 0256 12C3      		clrc
+ 912 0258 4D10      		rrc.b	r13
+ 913 025a 4D11      		rra.b	r13
+ 914 025c 4D11      		rra.b	r13
+ 915 025e 0F4D      		mov	r13, r15 
+ 916 0260 3FF0 1F00 		and	#llo(31), r15
+ 917 0264 0F93      		tst	r15
+ 918 0266 0324      		jz	.Lsend296
+ 919               	.Lsst296:
+ 920 0268 0E5E      		rla	r14
+ 921 026a 1F83      		dec	r15
+ 922 026c FD23      		jnz	.Lsst296
+ 923               	.Lsend296:
+ 924 026e 5F42 2800 		mov.b	&0x0028, r15
+ 925 0272 4FFE      		and.b	r14, r15
+ 926               	.L61:
+ 927 0274 8F11      		sxt	r15
+ 929               	.LM50:
+ 930 0276 3041      		ret
+ 931               	.L48:
+ 933               	.LM51:
+ 934 0278 12C3      		clrc
+ 935 027a 4D10      		rrc.b	r13
+ 936 027c 4D11      		rra.b	r13
+ 937 027e 4D11      		rra.b	r13
+ 938 0280 1F43      		mov	#llo(1), r15 
+ 939 0282 0E4D      		mov	r13, r14 
+ 940 0284 3EF0 1F00 		and	#llo(31), r14
+ 941 0288 0E93      		tst	r14
+ 942 028a 0324      		jz	.Lsend312
+ 943               	.Lsst312:
+ 944 028c 0F5F      		rla	r15
+ 945 028e 1E83      		dec	r14
+ 946 0290 FD23      		jnz	.Lsst312
+ 947               	.Lsend312:
+ 948 0292 5FF2 2000 		and.b	&0x0020, r15
+ 950               	.LM52:
+ 951 0296 EE3F      		jmp	.L61
+ 952               	.L56:
+ 953 0298 2E92      		cmp	#llo(4), r14
+ 954 029a 2524      		jeq	.L52
+ 955 029c 2E92      		cmp	#llo(4), r14
+ 956 029e 1338      		jl	.L51
+ 957 02a0 3E90 0500 		cmp	#llo(5), r14
+ 958 02a4 D623      		jne	.L54
+ 960               	.LM53:
+ 961 02a6 12C3      		clrc
+ 962 02a8 4D10      		rrc.b	r13
+ 963 02aa 4D11      		rra.b	r13
+ 964 02ac 4D11      		rra.b	r13
+ 965 02ae 1F43      		mov	#llo(1), r15 
+ 966 02b0 0E4D      		mov	r13, r14 
+ 967 02b2 3EF0 1F00 		and	#llo(31), r14
+ 968 02b6 0E93      		tst	r14
+ 969 02b8 0324      		jz	.Lsend330
+ 970               	.Lsst330:
+ 971 02ba 0F5F      		rla	r15
+ 972 02bc 1E83      		dec	r14
+ 973 02be FD23      		jnz	.Lsst330
+ 974               	.Lsend330:
+ 975 02c0 5FF2 3400 		and.b	&0x0034, r15
+ 976 02c4 D73F      		jmp	.L61
+ 977               	.L51:
+ 979               	.LM54:
+ 980 02c6 12C3      		clrc
+ 981 02c8 4D10      		rrc.b	r13
+ 982 02ca 4D11      		rra.b	r13
+ 983 02cc 4D11      		rra.b	r13
+ 984 02ce 1F43      		mov	#llo(1), r15 
+ 985 02d0 0E4D      		mov	r13, r14 
+ 986 02d2 3EF0 1F00 		and	#llo(31), r14
+ 987 02d6 0E93      		tst	r14
+ 988 02d8 0324      		jz	.Lsend341
+ 989               	.Lsst341:
+ 990 02da 0F5F      		rla	r15
+ 991 02dc 1E83      		dec	r14
+ 992 02de FD23      		jnz	.Lsst341
+ 993               	.Lsend341:
+ 994 02e0 5FF2 1C00 		and.b	&0x001C, r15
+ 996               	.LM55:
+ 997 02e4 C73F      		jmp	.L61
+ 998               	.L52:
+ 1000               	.LM56:
+ 1001 02e6 12C3      		clrc
+ 1002 02e8 4D10      		rrc.b	r13
+ 1003 02ea 4D11      		rra.b	r13
+ 1004 02ec 4D11      		rra.b	r13
+ 1005 02ee 1F43      		mov	#llo(1), r15 
+ 1006 02f0 0E4D      		mov	r13, r14 
+ 1007 02f2 3EF0 1F00 		and	#llo(31), r14
+ 1008 02f6 0E93      		tst	r14
+ 1009 02f8 0324      		jz	.Lsend353
+ 1010               	.Lsst353:
+ 1011 02fa 0F5F      		rla	r15
+ 1012 02fc 1E83      		dec	r14
+ 1013 02fe FD23      		jnz	.Lsst353
+ 1014               	.Lsend353:
+ 1015 0300 5FF2 3000 		and.b	&0x0030, r15
+ 1017               	.LM57:
+ 1018 0304 B73F      		jmp	.L61
+ 1019               	.L50:
+ 1021               	.LM58:
+ 1022 0306 12C3      		clrc
+ 1023 0308 4D10      		rrc.b	r13
+ 1024 030a 4D11      		rra.b	r13
+ 1025 030c 4D11      		rra.b	r13
+ 1026 030e 1F43      		mov	#llo(1), r15 
+ 1027 0310 0E4D      		mov	r13, r14 
+ 1028 0312 3EF0 1F00 		and	#llo(31), r14
+ 1029 0316 0E93      		tst	r14
+ 1030 0318 0324      		jz	.Lsend365
+ 1031               	.Lsst365:
+ 1032 031a 0F5F      		rla	r15
+ 1033 031c 1E83      		dec	r14
+ 1034 031e FD23      		jnz	.Lsst365
+ 1035               	.Lsend365:
+ 1036 0320 5FF2 1800 		and.b	&0x0018, r15
+ 1038               	.LM59:
+ 1039 0324 A73F      		jmp	.L61
+ 1040               	
+ 1041               		/* epilogue: not required */
+ 1042               		/* function nrk_gpio_get size 127 (127) */
+ 1043               	.Lfe8:
+ 1045               	/********* End of function ******/
+ 1046               	
+ 1047               	.Lscope7:
+ 1049               		.p2align 1,0
+ 1052               	.global	nrk_gpio_toggle
+ 1054               	/***********************
+ 1055               	 * Function `nrk_gpio_toggle' 
+ 1056               	 ***********************/
+ 1057               	nrk_gpio_toggle:
+ 241:../../src/platform/tmote/source/ulib.c ****                              do { P1OUT &= ~BM((pin & 0xF8) >> 3); } while(0);
+ 242:../../src/platform/tmote/source/ulib.c ****                         }
+ 243:../../src/platform/tmote/source/ulib.c ****                         break;
+ 1059               	.LM60:
+ 1060               		/* prologue: frame size = 0 */
+ 1061               	.L__FrameSize_nrk_gpio_toggle=0x0
+ 1062               	.L__FrameOffset_nrk_gpio_toggle=0x0
+ 1063               		/* prologue end (size=0) */
+ 1064               	
+ 1065 0326 4E4F      		mov.b	r15, r14
+ 244:../../src/platform/tmote/source/ulib.c ****              case NRK_PORTB:
+ 1067               	.LM61:
+ 1068 0328 7F93      		cmp.b	#llo(-1), r15
+ 1069 032a 0C24      		jeq	.L95
+ 245:../../src/platform/tmote/source/ulib.c ****                        if ((P2IN & BM((pin & 0xF8) >> 3)) == 0) {
+ 1071               	.LM62:
+ 1072 032c 0D4E      		mov	r14, r13 
+ 1073 032e 3DF0 0700 		and	#llo(7), r13
+ 1074 0332 2D93      		cmp	#llo(2), r13
+ 1075 0334 C324      		jeq	.L75
+ 1076 0336 3D90 0300 		cmp	#llo(3), r13
+ 1077 033a 4D34      		jge	.L97
+ 1078 033c 0D93      		cmp	#llo(0), r13
+ 1079 033e 2724      		jeq	.L65
+ 1080 0340 1D93      		cmp	#llo(1), r13
+ 1081 0342 0224      		jeq	.L70
+ 1082               	.L95:
+ 246:../../src/platform/tmote/source/ulib.c ****                                do { P2OUT |= BM((pin & 0xF8) >> 3); } while(0);
+ 247:../../src/platform/tmote/source/ulib.c ****                         } else {
+ 248:../../src/platform/tmote/source/ulib.c ****                                 do { P2OUT &= ~BM((pin & 0xF8) >> 3); } while(0);
+ 249:../../src/platform/tmote/source/ulib.c ****                         }
+ 250:../../src/platform/tmote/source/ulib.c ****                         break;
+ 251:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTC:
+ 252:../../src/platform/tmote/source/ulib.c ****                         if ((P3IN & BM((pin & 0xF8) >> 3)) == 0) {
+ 253:../../src/platform/tmote/source/ulib.c ****                                 do { P3OUT |= BM((pin & 0xF8) >> 3); } while(0);
+ 254:../../src/platform/tmote/source/ulib.c ****                         } else {
+ 255:../../src/platform/tmote/source/ulib.c ****                                 do { P3OUT &= ~BM((pin & 0xF8) >> 3); } while(0);
+ 256:../../src/platform/tmote/source/ulib.c ****                         }
+ 257:../../src/platform/tmote/source/ulib.c ****                         break;
+ 258:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTD:
+ 259:../../src/platform/tmote/source/ulib.c ****                         if ((P4IN & BM((pin & 0xF8) >> 3)) == 0) {
+ 260:../../src/platform/tmote/source/ulib.c ****                                 do { P4OUT |= BM((pin & 0xF8) >> 3); } while(0);
+ 261:../../src/platform/tmote/source/ulib.c ****                         } else {
+ 262:../../src/platform/tmote/source/ulib.c ****                                 do { P4OUT &= ~BM((pin & 0xF8) >> 3); } while(0);
+ 263:../../src/platform/tmote/source/ulib.c ****                         }
+ 264:../../src/platform/tmote/source/ulib.c ****                         break;
+ 265:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTE:
+ 266:../../src/platform/tmote/source/ulib.c ****                         if ((P5IN & BM((pin & 0xF8) >> 3)) == 0) {
+ 267:../../src/platform/tmote/source/ulib.c ****                                 do { P5OUT |= BM((pin & 0xF8) >> 3); } while(0);
+ 268:../../src/platform/tmote/source/ulib.c ****                         } else {
+ 269:../../src/platform/tmote/source/ulib.c ****                                 do { P5OUT &= ~BM((pin & 0xF8) >> 3); } while(0);
+ 270:../../src/platform/tmote/source/ulib.c ****                         }
+ 271:../../src/platform/tmote/source/ulib.c ****                         break;
+ 272:../../src/platform/tmote/source/ulib.c ****                 case NRK_PORTF:
+ 273:../../src/platform/tmote/source/ulib.c ****                         if ((P6IN & BM((pin & 0xF8) >> 3)) == 0) {
+ 274:../../src/platform/tmote/source/ulib.c ****                                 do { P6OUT |= BM((pin & 0xF8) >> 3); } while(0);
+ 275:../../src/platform/tmote/source/ulib.c ****                         } else {
+ 276:../../src/platform/tmote/source/ulib.c ****                                 do { P6OUT &= ~BM((pin & 0xF8) >> 3); } while(0);
+ 277:../../src/platform/tmote/source/ulib.c ****                         }
+ 278:../../src/platform/tmote/source/ulib.c ****                         break;
+ 279:../../src/platform/tmote/source/ulib.c ****                 default: return -1;
+ 280:../../src/platform/tmote/source/ulib.c ****         }
+ 281:../../src/platform/tmote/source/ulib.c ****         return 1;
+ 282:../../src/platform/tmote/source/ulib.c **** }
+ 283:../../src/platform/tmote/source/ulib.c **** 
+ 284:../../src/platform/tmote/source/ulib.c **** int8_t nrk_gpio_direction(uint8_t pin, uint8_t pin_direction)
+ 285:../../src/platform/tmote/source/ulib.c **** {
+ 286:../../src/platform/tmote/source/ulib.c ****         if (pin == NRK_INVALID_PIN_VAL) return -1;
+ 287:../../src/platform/tmote/source/ulib.c ****         if (pin_direction == NRK_PIN_INPUT) {
+ 288:../../src/platform/tmote/source/ulib.c ****                 switch (pin & 0x07) {
+ 1084               	.LM63:
+ 1085 0344 3F43      		mov	#llo(-1), r15 
+ 289:../../src/platform/tmote/source/ulib.c ****                              P1DIR &= ~BM((pin & 0xF8) >> 3); 
+ 290:../../src/platform/tmote/source/ulib.c ****                                 P1OUT |= BM((pin & 0xF8) >> 3); 
+ 291:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 1087               	.LM64:
+ 1088 0346 3041      		ret
+ 1089               	.L70:
+ 1091               	.LM65:
+ 1092 0348 5F42 2800 		mov.b	&0x0028, r15
+ 1093 034c 7FF3      		and.b	#-1,r15
+ 1094 034e 12C3      		clrc
+ 1095 0350 4E10      		rrc.b	r14
+ 1096 0352 4E11      		rra.b	r14
+ 1097 0354 4E11      		rra.b	r14
+ 1098 0356 7EF3      		and.b	#-1,r14
+ 1099 0358 0C4E      		mov	r14, r12 
+ 1100 035a 0C93      		tst	r12
+ 1101 035c 0324      		jz	.Lsend402
+ 1102               	.Lsst402:
+ 1103 035e 0F11      		rra	r15
+ 1104 0360 1C83      		dec	r12
+ 1105 0362 FD23      		jnz	.Lsst402
+ 1106               	.Lsend402:
+ 1107 0364 1FF3      		and	#llo(1), r15
+ 1108 0366 0A20      		jne	.L71
+ 1110               	.LM66:
+ 1111 0368 0F4E      		mov	r14, r15 
+ 1112 036a 0F93      		tst	r15
+ 1113 036c 0324      		jz	.Lsend408
+ 1114               	.Lsst408:
+ 1115 036e 0D5D      		rla	r13
+ 1116 0370 1F83      		dec	r15
+ 1117 0372 FD23      		jnz	.Lsst408
+ 1118               	.Lsend408:
+ 1119 0374 C2DD 2900 		bis.b	r13, &0x0029
+ 1120               	.L64:
+ 1122               	.LM67:
+ 1123 0378 1F43      		mov	#llo(1), r15 
+ 1125               	.LM68:
+ 1126 037a 3041      		ret
+ 1127               	.L71:
+ 1129               	.LM69:
+ 1130 037c 0F4E      		mov	r14, r15 
+ 1131 037e 0F93      		tst	r15
+ 1132 0380 0324      		jz	.Lsend424
+ 1133               	.Lsst424:
+ 1134 0382 0D5D      		rla	r13
+ 1135 0384 1F83      		dec	r15
+ 1136 0386 FD23      		jnz	.Lsst424
+ 1137               	.Lsend424:
+ 1138 0388 C2CD 2900 		bic.b       r13, &0x0029
+ 1140               	.LM70:
+ 1141 038c F53F      		jmp	.L64
+ 1142               	.L65:
+ 1144               	.LM71:
+ 1145 038e 5F42 2000 		mov.b	&0x0020, r15
+ 1146 0392 7FF3      		and.b	#-1,r15
+ 1147 0394 12C3      		clrc
+ 1148 0396 4E10      		rrc.b	r14
+ 1149 0398 4E11      		rra.b	r14
+ 1150 039a 4E11      		rra.b	r14
+ 1151 039c 4D4E      		mov.b	r14, r13
+ 1152 039e 0E4D      		mov	r13, r14 
+ 1153 03a0 0E93      		tst	r14
+ 1154 03a2 0324      		jz	.Lsend437
+ 1155               	.Lsst437:
+ 1156 03a4 0F11      		rra	r15
+ 1157 03a6 1E83      		dec	r14
+ 1158 03a8 FD23      		jnz	.Lsst437
+ 1159               	.Lsend437:
+ 1160 03aa 1FF3      		and	#llo(1), r15
+ 1161 03ac 0A20      		jne	.L66
+ 1163               	.LM72:
+ 1164 03ae 1F43      		mov	#llo(1), r15 
+ 1165 03b0 0E4D      		mov	r13, r14 
+ 1166 03b2 0E93      		tst	r14
+ 1167 03b4 0324      		jz	.Lsend444
+ 1168               	.Lsst444:
+ 1169 03b6 0F5F      		rla	r15
+ 1170 03b8 1E83      		dec	r14
+ 1171 03ba FD23      		jnz	.Lsst444
+ 1172               	.Lsend444:
+ 1173 03bc C2DF 2100 		bis.b	r15, &0x0021
+ 1174 03c0 DB3F      		jmp	.L64
+ 1175               	.L66:
+ 1177               	.LM73:
+ 1178 03c2 1F43      		mov	#llo(1), r15 
+ 1179 03c4 0E4D      		mov	r13, r14 
+ 1180 03c6 0E93      		tst	r14
+ 1181 03c8 0324      		jz	.Lsend453
+ 1182               	.Lsst453:
+ 1183 03ca 0F5F      		rla	r15
+ 1184 03cc 1E83      		dec	r14
+ 1185 03ce FD23      		jnz	.Lsst453
+ 1186               	.Lsend453:
+ 1187 03d0 C2CF 2100 		bic.b       r15, &0x0021
+ 1189               	.LM74:
+ 1190 03d4 D13F      		jmp	.L64
+ 1191               	.L97:
+ 1192 03d6 2D92      		cmp	#llo(4), r13
+ 1193 03d8 4D24      		jeq	.L85
+ 1194 03da 2D92      		cmp	#llo(4), r13
+ 1195 03dc 2738      		jl	.L80
+ 1196 03de 3D90 0500 		cmp	#llo(5), r13
+ 1197 03e2 B023      		jne	.L95
+ 1199               	.LM75:
+ 1200 03e4 5F42 3400 		mov.b	&0x0034, r15
+ 1201 03e8 7FF3      		and.b	#-1,r15
+ 1202 03ea 12C3      		clrc
+ 1203 03ec 4E10      		rrc.b	r14
+ 1204 03ee 4E11      		rra.b	r14
+ 1205 03f0 4E11      		rra.b	r14
+ 1206 03f2 4D4E      		mov.b	r14, r13
+ 1207 03f4 0E4D      		mov	r13, r14 
+ 1208 03f6 0E93      		tst	r14
+ 1209 03f8 0324      		jz	.Lsend472
+ 1210               	.Lsst472:
+ 1211 03fa 0F11      		rra	r15
+ 1212 03fc 1E83      		dec	r14
+ 1213 03fe FD23      		jnz	.Lsst472
+ 1214               	.Lsend472:
+ 1215 0400 1FF3      		and	#llo(1), r15
+ 1216 0402 0A20      		jne	.L91
+ 1218               	.LM76:
+ 1219 0404 1F43      		mov	#llo(1), r15 
+ 1220 0406 0E4D      		mov	r13, r14 
+ 1221 0408 0E93      		tst	r14
+ 1222 040a 0324      		jz	.Lsend479
+ 1223               	.Lsst479:
+ 1224 040c 0F5F      		rla	r15
+ 1225 040e 1E83      		dec	r14
+ 1226 0410 FD23      		jnz	.Lsst479
+ 1227               	.Lsend479:
+ 1228 0412 C2DF 3500 		bis.b	r15, &0x0035
+ 1229 0416 B03F      		jmp	.L64
+ 1230               	.L91:
+ 1232               	.LM77:
+ 1233 0418 1F43      		mov	#llo(1), r15 
+ 1234 041a 0E4D      		mov	r13, r14 
+ 1235 041c 0E93      		tst	r14
+ 1236 041e 0324      		jz	.Lsend488
+ 1237               	.Lsst488:
+ 1238 0420 0F5F      		rla	r15
+ 1239 0422 1E83      		dec	r14
+ 1240 0424 FD23      		jnz	.Lsst488
+ 1241               	.Lsend488:
+ 1242 0426 C2CF 3500 		bic.b       r15, &0x0035
+ 1244               	.LM78:
+ 1245 042a A63F      		jmp	.L64
+ 1246               	.L80:
+ 1248               	.LM79:
+ 1249 042c 5F42 1C00 		mov.b	&0x001C, r15
+ 1250 0430 7FF3      		and.b	#-1,r15
+ 1251 0432 12C3      		clrc
+ 1252 0434 4E10      		rrc.b	r14
+ 1253 0436 4E11      		rra.b	r14
+ 1254 0438 4E11      		rra.b	r14
+ 1255 043a 4D4E      		mov.b	r14, r13
+ 1256 043c 0E4D      		mov	r13, r14 
+ 1257 043e 0E93      		tst	r14
+ 1258 0440 0324      		jz	.Lsend501
+ 1259               	.Lsst501:
+ 1260 0442 0F11      		rra	r15
+ 1261 0444 1E83      		dec	r14
+ 1262 0446 FD23      		jnz	.Lsst501
+ 1263               	.Lsend501:
+ 1264 0448 1FF3      		and	#llo(1), r15
+ 1265 044a 0A20      		jne	.L81
+ 1267               	.LM80:
+ 1268 044c 1F43      		mov	#llo(1), r15 
+ 1269 044e 0E4D      		mov	r13, r14 
+ 1270 0450 0E93      		tst	r14
+ 1271 0452 0324      		jz	.Lsend508
+ 1272               	.Lsst508:
+ 1273 0454 0F5F      		rla	r15
+ 1274 0456 1E83      		dec	r14
+ 1275 0458 FD23      		jnz	.Lsst508
+ 1276               	.Lsend508:
+ 1277 045a C2DF 1D00 		bis.b	r15, &0x001D
+ 1278 045e 8C3F      		jmp	.L64
+ 1279               	.L81:
+ 1281               	.LM81:
+ 1282 0460 1F43      		mov	#llo(1), r15 
+ 1283 0462 0E4D      		mov	r13, r14 
+ 1284 0464 0E93      		tst	r14
+ 1285 0466 0324      		jz	.Lsend517
+ 1286               	.Lsst517:
+ 1287 0468 0F5F      		rla	r15
+ 1288 046a 1E83      		dec	r14
+ 1289 046c FD23      		jnz	.Lsst517
+ 1290               	.Lsend517:
+ 1291 046e C2CF 1D00 		bic.b       r15, &0x001D
+ 1293               	.LM82:
+ 1294 0472 823F      		jmp	.L64
+ 1295               	.L85:
+ 1297               	.LM83:
+ 1298 0474 5F42 3000 		mov.b	&0x0030, r15
+ 1299 0478 7FF3      		and.b	#-1,r15
+ 1300 047a 12C3      		clrc
+ 1301 047c 4E10      		rrc.b	r14
+ 1302 047e 4E11      		rra.b	r14
+ 1303 0480 4E11      		rra.b	r14
+ 1304 0482 4D4E      		mov.b	r14, r13
+ 1305 0484 0E4D      		mov	r13, r14 
+ 1306 0486 0E93      		tst	r14
+ 1307 0488 0324      		jz	.Lsend530
+ 1308               	.Lsst530:
+ 1309 048a 0F11      		rra	r15
+ 1310 048c 1E83      		dec	r14
+ 1311 048e FD23      		jnz	.Lsst530
+ 1312               	.Lsend530:
+ 1313 0490 1FF3      		and	#llo(1), r15
+ 1314 0492 0A20      		jne	.L86
+ 1316               	.LM84:
+ 1317 0494 1F43      		mov	#llo(1), r15 
+ 1318 0496 0E4D      		mov	r13, r14 
+ 1319 0498 0E93      		tst	r14
+ 1320 049a 0324      		jz	.Lsend537
+ 1321               	.Lsst537:
+ 1322 049c 0F5F      		rla	r15
+ 1323 049e 1E83      		dec	r14
+ 1324 04a0 FD23      		jnz	.Lsst537
+ 1325               	.Lsend537:
+ 1326 04a2 C2DF 3100 		bis.b	r15, &0x0031
+ 1327 04a6 683F      		jmp	.L64
+ 1328               	.L86:
+ 1330               	.LM85:
+ 1331 04a8 1F43      		mov	#llo(1), r15 
+ 1332 04aa 0E4D      		mov	r13, r14 
+ 1333 04ac 0E93      		tst	r14
+ 1334 04ae 0324      		jz	.Lsend546
+ 1335               	.Lsst546:
+ 1336 04b0 0F5F      		rla	r15
+ 1337 04b2 1E83      		dec	r14
+ 1338 04b4 FD23      		jnz	.Lsst546
+ 1339               	.Lsend546:
+ 1340 04b6 C2CF 3100 		bic.b       r15, &0x0031
+ 1342               	.LM86:
+ 1343 04ba 5E3F      		jmp	.L64
+ 1344               	.L75:
+ 1346               	.LM87:
+ 1347 04bc 5F42 1800 		mov.b	&0x0018, r15
+ 1348 04c0 7FF3      		and.b	#-1,r15
+ 1349 04c2 12C3      		clrc
+ 1350 04c4 4E10      		rrc.b	r14
+ 1351 04c6 4E11      		rra.b	r14
+ 1352 04c8 4E11      		rra.b	r14
+ 1353 04ca 4D4E      		mov.b	r14, r13
+ 1354 04cc 0E4D      		mov	r13, r14 
+ 1355 04ce 0E93      		tst	r14
+ 1356 04d0 0324      		jz	.Lsend559
+ 1357               	.Lsst559:
+ 1358 04d2 0F11      		rra	r15
+ 1359 04d4 1E83      		dec	r14
+ 1360 04d6 FD23      		jnz	.Lsst559
+ 1361               	.Lsend559:
+ 1362 04d8 1FF3      		and	#llo(1), r15
+ 1363 04da 0A20      		jne	.L76
+ 1365               	.LM88:
+ 1366 04dc 1F43      		mov	#llo(1), r15 
+ 1367 04de 0E4D      		mov	r13, r14 
+ 1368 04e0 0E93      		tst	r14
+ 1369 04e2 0324      		jz	.Lsend566
+ 1370               	.Lsst566:
+ 1371 04e4 0F5F      		rla	r15
+ 1372 04e6 1E83      		dec	r14
+ 1373 04e8 FD23      		jnz	.Lsst566
+ 1374               	.Lsend566:
+ 1375 04ea C2DF 1900 		bis.b	r15, &0x0019
+ 1376 04ee 443F      		jmp	.L64
+ 1377               	.L76:
+ 1379               	.LM89:
+ 1380 04f0 1F43      		mov	#llo(1), r15 
+ 1381 04f2 0E4D      		mov	r13, r14 
+ 1382 04f4 0E93      		tst	r14
+ 1383 04f6 0324      		jz	.Lsend575
+ 1384               	.Lsst575:
+ 1385 04f8 0F5F      		rla	r15
+ 1386 04fa 1E83      		dec	r14
+ 1387 04fc FD23      		jnz	.Lsst575
+ 1388               	.Lsend575:
+ 1389 04fe C2CF 1900 		bic.b       r15, &0x0019
+ 1391               	.LM90:
+ 1392 0502 3A3F      		jmp	.L64
+ 1393               	
+ 1394               		/* epilogue: not required */
+ 1395               		/* function nrk_gpio_toggle size 251 (251) */
+ 1396               	.Lfe9:
+ 1398               	/********* End of function ******/
+ 1399               	
+ 1400               	.Lscope8:
+ 1402               		.p2align 1,0
+ 1406               	.global	nrk_gpio_direction
+ 1408               	/***********************
+ 1409               	 * Function `nrk_gpio_direction' 
+ 1410               	 ***********************/
+ 1411               	nrk_gpio_direction:
+ 292:../../src/platform/tmote/source/ulib.c ****                      case NRK_PORTB:
+ 293:../../src/platform/tmote/source/ulib.c ****                                 P2DIR &= ~BM((pin & 0xF8) >> 3); 
+ 294:../../src/platform/tmote/source/ulib.c ****                                 P2OUT |= BM((pin & 0xF8) >> 3); 
+ 1413               	.LM91:
+ 1414               		/* prologue: frame size = 0 */
+ 1415               	.L__FrameSize_nrk_gpio_direction=0x0
+ 1416               	.L__FrameOffset_nrk_gpio_direction=0x0
+ 1417               		/* prologue end (size=0) */
+ 1418               	
+ 1419 0504 4D4F      		mov.b	r15, r13
+ 295:../../src/platform/tmote/source/ulib.c ****                              break;
+ 1421               	.LM92:
+ 1422 0506 7F93      		cmp.b	#llo(-1), r15
+ 1423 0508 0E24      		jeq	.L119
+ 296:../../src/platform/tmote/source/ulib.c ****                        case NRK_PORTC:
+ 1425               	.LM93:
+ 1426 050a 4E93      		cmp.b	#llo(0), r14
+ 1427 050c 8120      		jne	.L100
+ 297:../../src/platform/tmote/source/ulib.c ****                                P3DIR &= ~BM((pin & 0xF8) >> 3); 
+ 1429               	.LM94:
+ 1430 050e 0F4D      		mov	r13, r15 
+ 1431 0510 3FF0 0700 		and	#llo(7), r15
+ 1432 0514 2F93      		cmp	#llo(2), r15
+ 1433 0516 6A24      		jeq	.L104
+ 1434 0518 3F90 0300 		cmp	#llo(3), r15
+ 1435 051c 2A34      		jge	.L110
+ 1436 051e 0F93      		cmp	#llo(0), r15
+ 1437 0520 1624      		jeq	.L102
+ 1438 0522 1F93      		cmp	#llo(1), r15
+ 1439 0524 0224      		jeq	.L103
+ 1440               	.L119:
+ 298:../../src/platform/tmote/source/ulib.c ****                                P3OUT |= BM((pin & 0xF8) >> 3); 
+ 299:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 300:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTD:
+ 301:../../src/platform/tmote/source/ulib.c ****                                 P4DIR &= ~BM((pin & 0xF8) >> 3); 
+ 302:../../src/platform/tmote/source/ulib.c ****                                 P4OUT |= BM((pin & 0xF8) >> 3); 
+ 303:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 304:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTE:
+ 305:../../src/platform/tmote/source/ulib.c ****                                 P5DIR &= ~BM((pin & 0xF8) >> 3); 
+ 306:../../src/platform/tmote/source/ulib.c ****                                 P5OUT |= BM((pin & 0xF8) >> 3); 
+ 307:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 308:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTF:
+ 309:../../src/platform/tmote/source/ulib.c ****                                 P6DIR &= ~BM((pin & 0xF8) >> 3);
+ 310:../../src/platform/tmote/source/ulib.c ****                                 P6OUT |= BM((pin & 0xF8) >> 3); 
+ 311:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 312:../../src/platform/tmote/source/ulib.c ****                         default: return -1;
+ 313:../../src/platform/tmote/source/ulib.c ****                 }
+ 314:../../src/platform/tmote/source/ulib.c ****         } else {
+ 315:../../src/platform/tmote/source/ulib.c ****                 switch (pin & 0x07) {
+ 316:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTA:
+ 317:../../src/platform/tmote/source/ulib.c ****                                 P1DIR |= BM((pin & 0xF8) >> 3); break;
+ 318:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTB:
+ 319:../../src/platform/tmote/source/ulib.c ****                                 P2DIR |= BM((pin & 0xF8) >> 3); break;
+ 320:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTC:
+ 321:../../src/platform/tmote/source/ulib.c ****                                 P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 322:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTD:
+ 323:../../src/platform/tmote/source/ulib.c ****                                 P4DIR |= BM((pin & 0xF8) >> 3); break;
+ 324:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTE:
+ 325:../../src/platform/tmote/source/ulib.c ****                                 P5DIR |= BM((pin & 0xF8) >> 3); break;
+ 326:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTF:
+ 327:../../src/platform/tmote/source/ulib.c ****                                 P6DIR |= BM((pin & 0xF8) >> 3); break;
+ 328:../../src/platform/tmote/source/ulib.c ****                         default: return -1;
+ 329:../../src/platform/tmote/source/ulib.c ****                 }
+ 330:../../src/platform/tmote/source/ulib.c ****         }
+ 331:../../src/platform/tmote/source/ulib.c ****         return 1;
+ 332:../../src/platform/tmote/source/ulib.c **** }
+ 333:../../src/platform/tmote/source/ulib.c **** 
+ 334:../../src/platform/tmote/source/ulib.c **** int8_t nrk_gpio_pullups(uint8_t enable)
+ 335:../../src/platform/tmote/source/ulib.c **** {
+ 336:../../src/platform/tmote/source/ulib.c **** return NRK_ERROR;
+ 337:../../src/platform/tmote/source/ulib.c **** }
+ 338:../../src/platform/tmote/source/ulib.c **** 
+ 1442               	.LM95:
+ 1443 0526 3F43      		mov	#llo(-1), r15 
+ 339:../../src/platform/tmote/source/ulib.c **** 0) {
+ 340:../../src/platform/tmote/source/ulib.c **** 	 return( !(P2IN & BM(BUTTON))); 
+ 341:../../src/platform/tmote/source/ulib.c **** 	} 
+ 342:../../src/platform/tmote/source/ulib.c **** return -1;
+ 1445               	.LM96:
+ 1446 0528 3041      		ret
+ 1447               	.L103:
+ 1449               	.LM97:
+ 1450 052a 12C3      		clrc
+ 1451 052c 4D10      		rrc.b	r13
+ 1452 052e 4D11      		rra.b	r13
+ 1453 0530 4D11      		rra.b	r13
+ 1454 0532 0E4D      		mov	r13, r14 
+ 1455 0534 3EF0 1F00 		and	#llo(31), r14
+ 1456 0538 0E93      		tst	r14
+ 1457 053a 0324      		jz	.Lsend613
+ 1458               	.Lsst613:
+ 1459 053c 0F5F      		rla	r15
+ 1460 053e 1E83      		dec	r14
+ 1461 0540 FD23      		jnz	.Lsst613
+ 1462               	.Lsend613:
+ 1463 0542 C2CF 2A00 		bic.b       r15, &0x002A
+ 1465               	.LM98:
+ 1466 0546 C2DF 2900 		bis.b	r15, &0x0029
+ 1467               	.L111:
+ 1469               	.LM99:
+ 1470 054a 1F43      		mov	#llo(1), r15 
+ 1472               	.LM100:
+ 1473 054c 3041      		ret
+ 1474               	.L102:
+ 1476               	.LM101:
+ 1477 054e 12C3      		clrc
+ 1478 0550 4D10      		rrc.b	r13
+ 1479 0552 4D11      		rra.b	r13
+ 1480 0554 4D11      		rra.b	r13
+ 1481 0556 1F43      		mov	#llo(1), r15 
+ 1482 0558 0E4D      		mov	r13, r14 
+ 1483 055a 3EF0 1F00 		and	#llo(31), r14
+ 1484 055e 0E93      		tst	r14
+ 1485 0560 0324      		jz	.Lsend634
+ 1486               	.Lsst634:
+ 1487 0562 0F5F      		rla	r15
+ 1488 0564 1E83      		dec	r14
+ 1489 0566 FD23      		jnz	.Lsst634
+ 1490               	.Lsend634:
+ 1491 0568 C2CF 2200 		bic.b       r15, &0x0022
+ 1493               	.LM102:
+ 1494 056c C2DF 2100 		bis.b	r15, &0x0021
+ 1496               	.LM103:
+ 1497 0570 EC3F      		jmp	.L111
+ 1498               	.L110:
+ 1499 0572 2F92      		cmp	#llo(4), r15
+ 1500 0574 2924      		jeq	.L106
+ 1501 0576 2F92      		cmp	#llo(4), r15
+ 1502 0578 1538      		jl	.L105
+ 1503 057a 3F90 0500 		cmp	#llo(5), r15
+ 1504 057e D323      		jne	.L119
+ 1506               	.LM104:
+ 1507 0580 12C3      		clrc
+ 1508 0582 4D10      		rrc.b	r13
+ 1509 0584 4D11      		rra.b	r13
+ 1510 0586 4D11      		rra.b	r13
+ 1511 0588 1F43      		mov	#llo(1), r15 
+ 1512 058a 0E4D      		mov	r13, r14 
+ 1513 058c 3EF0 1F00 		and	#llo(31), r14
+ 1514 0590 0E93      		tst	r14
+ 1515 0592 0324      		jz	.Lsend654
+ 1516               	.Lsst654:
+ 1517 0594 0F5F      		rla	r15
+ 1518 0596 1E83      		dec	r14
+ 1519 0598 FD23      		jnz	.Lsst654
+ 1520               	.Lsend654:
+ 1521 059a C2CF 3600 		bic.b       r15, &0x0036
+ 1523               	.LM105:
+ 1524 059e C2DF 3500 		bis.b	r15, &0x0035
+ 1526               	.LM106:
+ 1527 05a2 D33F      		jmp	.L111
+ 1528               	.L105:
+ 1530               	.LM107:
+ 1531 05a4 12C3      		clrc
+ 1532 05a6 4D10      		rrc.b	r13
+ 1533 05a8 4D11      		rra.b	r13
+ 1534 05aa 4D11      		rra.b	r13
+ 1535 05ac 1F43      		mov	#llo(1), r15 
+ 1536 05ae 0E4D      		mov	r13, r14 
+ 1537 05b0 3EF0 1F00 		and	#llo(31), r14
+ 1538 05b4 0E93      		tst	r14
+ 1539 05b6 0324      		jz	.Lsend668
+ 1540               	.Lsst668:
+ 1541 05b8 0F5F      		rla	r15
+ 1542 05ba 1E83      		dec	r14
+ 1543 05bc FD23      		jnz	.Lsst668
+ 1544               	.Lsend668:
+ 1545 05be C2CF 1E00 		bic.b       r15, &0x001E
+ 1547               	.LM108:
+ 1548 05c2 C2DF 1D00 		bis.b	r15, &0x001D
+ 1550               	.LM109:
+ 1551 05c6 C13F      		jmp	.L111
+ 1552               	.L106:
+ 1554               	.LM110:
+ 1555 05c8 12C3      		clrc
+ 1556 05ca 4D10      		rrc.b	r13
+ 1557 05cc 4D11      		rra.b	r13
+ 1558 05ce 4D11      		rra.b	r13
+ 1559 05d0 1F43      		mov	#llo(1), r15 
+ 1560 05d2 0E4D      		mov	r13, r14 
+ 1561 05d4 3EF0 1F00 		and	#llo(31), r14
+ 1562 05d8 0E93      		tst	r14
+ 1563 05da 0324      		jz	.Lsend682
+ 1564               	.Lsst682:
+ 1565 05dc 0F5F      		rla	r15
+ 1566 05de 1E83      		dec	r14
+ 1567 05e0 FD23      		jnz	.Lsst682
+ 1568               	.Lsend682:
+ 1569 05e2 C2CF 3200 		bic.b       r15, &0x0032
+ 1571               	.LM111:
+ 1572 05e6 C2DF 3100 		bis.b	r15, &0x0031
+ 1574               	.LM112:
+ 1575 05ea AF3F      		jmp	.L111
+ 1576               	.L104:
+ 1578               	.LM113:
+ 1579 05ec 12C3      		clrc
+ 1580 05ee 4D10      		rrc.b	r13
+ 1581 05f0 4D11      		rra.b	r13
+ 1582 05f2 4D11      		rra.b	r13
+ 1583 05f4 1F43      		mov	#llo(1), r15 
+ 1584 05f6 0E4D      		mov	r13, r14 
+ 1585 05f8 3EF0 1F00 		and	#llo(31), r14
+ 1586 05fc 0E93      		tst	r14
+ 1587 05fe 0324      		jz	.Lsend696
+ 1588               	.Lsst696:
+ 1589 0600 0F5F      		rla	r15
+ 1590 0602 1E83      		dec	r14
+ 1591 0604 FD23      		jnz	.Lsst696
+ 1592               	.Lsend696:
+ 1593 0606 C2CF 1A00 		bic.b       r15, &0x001A
+ 1595               	.LM114:
+ 1596 060a C2DF 1900 		bis.b	r15, &0x0019
+ 1598               	.LM115:
+ 1599 060e 9D3F      		jmp	.L111
+ 1601               	.LM116:
+ 1602               	.L100:
+ 1604               	.LM117:
+ 1605 0610 0E4D      		mov	r13, r14 
+ 1606 0612 3EF0 0700 		and	#llo(7), r14
+ 1607 0616 2E93      		cmp	#llo(2), r14
+ 1608 0618 5D24      		jeq	.L115
+ 1609 061a 3E90 0300 		cmp	#llo(3), r14
+ 1610 061e 2334      		jge	.L121
+ 1611 0620 0E93      		cmp	#llo(0), r14
+ 1612 0622 1124      		jeq	.L113
+ 1613 0624 1E93      		cmp	#llo(1), r14
+ 1614 0626 7F23      		jne	.L119
+ 1616               	.LM118:
+ 1617 0628 12C3      		clrc
+ 1618 062a 4D10      		rrc.b	r13
+ 1619 062c 4D11      		rra.b	r13
+ 1620 062e 4D11      		rra.b	r13
+ 1621 0630 0F4D      		mov	r13, r15 
+ 1622 0632 3FF0 1F00 		and	#llo(31), r15
+ 1623 0636 0F93      		tst	r15
+ 1624 0638 0324      		jz	.Lsend722
+ 1625               	.Lsst722:
+ 1626 063a 0E5E      		rla	r14
+ 1627 063c 1F83      		dec	r15
+ 1628 063e FD23      		jnz	.Lsst722
+ 1629               	.Lsend722:
+ 1630 0640 C2DE 2A00 		bis.b	r14, &0x002A
+ 1631 0644 823F      		jmp	.L111
+ 1632               	.L113:
+ 1634               	.LM119:
+ 1635 0646 12C3      		clrc
+ 1636 0648 4D10      		rrc.b	r13
+ 1637 064a 4D11      		rra.b	r13
+ 1638 064c 4D11      		rra.b	r13
+ 1639 064e 1F43      		mov	#llo(1), r15 
+ 1640 0650 0E4D      		mov	r13, r14 
+ 1641 0652 3EF0 1F00 		and	#llo(31), r14
+ 1642 0656 0E93      		tst	r14
+ 1643 0658 0324      		jz	.Lsend733
+ 1644               	.Lsst733:
+ 1645 065a 0F5F      		rla	r15
+ 1646 065c 1E83      		dec	r14
+ 1647 065e FD23      		jnz	.Lsst733
+ 1648               	.Lsend733:
+ 1649 0660 C2DF 2200 		bis.b	r15, &0x0022
+ 1650 0664 723F      		jmp	.L111
+ 1651               	.L121:
+ 1652 0666 2E92      		cmp	#llo(4), r14
+ 1653 0668 2524      		jeq	.L117
+ 1654 066a 2E92      		cmp	#llo(4), r14
+ 1655 066c 1338      		jl	.L116
+ 1656 066e 3E90 0500 		cmp	#llo(5), r14
+ 1657 0672 5923      		jne	.L119
+ 1659               	.LM120:
+ 1660 0674 12C3      		clrc
+ 1661 0676 4D10      		rrc.b	r13
+ 1662 0678 4D11      		rra.b	r13
+ 1663 067a 4D11      		rra.b	r13
+ 1664 067c 1F43      		mov	#llo(1), r15 
+ 1665 067e 0E4D      		mov	r13, r14 
+ 1666 0680 3EF0 1F00 		and	#llo(31), r14
+ 1667 0684 0E93      		tst	r14
+ 1668 0686 0324      		jz	.Lsend750
+ 1669               	.Lsst750:
+ 1670 0688 0F5F      		rla	r15
+ 1671 068a 1E83      		dec	r14
+ 1672 068c FD23      		jnz	.Lsst750
+ 1673               	.Lsend750:
+ 1674 068e C2DF 3600 		bis.b	r15, &0x0036
+ 1675 0692 5B3F      		jmp	.L111
+ 1676               	.L116:
+ 1678               	.LM121:
+ 1679 0694 12C3      		clrc
+ 1680 0696 4D10      		rrc.b	r13
+ 1681 0698 4D11      		rra.b	r13
+ 1682 069a 4D11      		rra.b	r13
+ 1683 069c 1F43      		mov	#llo(1), r15 
+ 1684 069e 0E4D      		mov	r13, r14 
+ 1685 06a0 3EF0 1F00 		and	#llo(31), r14
+ 1686 06a4 0E93      		tst	r14
+ 1687 06a6 0324      		jz	.Lsend761
+ 1688               	.Lsst761:
+ 1689 06a8 0F5F      		rla	r15
+ 1690 06aa 1E83      		dec	r14
+ 1691 06ac FD23      		jnz	.Lsst761
+ 1692               	.Lsend761:
+ 1693 06ae C2DF 1E00 		bis.b	r15, &0x001E
+ 1694 06b2 4B3F      		jmp	.L111
+ 1695               	.L117:
+ 1697               	.LM122:
+ 1698 06b4 12C3      		clrc
+ 1699 06b6 4D10      		rrc.b	r13
+ 1700 06b8 4D11      		rra.b	r13
+ 1701 06ba 4D11      		rra.b	r13
+ 1702 06bc 1F43      		mov	#llo(1), r15 
+ 1703 06be 0E4D      		mov	r13, r14 
+ 1704 06c0 3EF0 1F00 		and	#llo(31), r14
+ 1705 06c4 0E93      		tst	r14
+ 1706 06c6 0324      		jz	.Lsend772
+ 1707               	.Lsst772:
+ 1708 06c8 0F5F      		rla	r15
+ 1709 06ca 1E83      		dec	r14
+ 1710 06cc FD23      		jnz	.Lsst772
+ 1711               	.Lsend772:
+ 1712 06ce C2DF 3200 		bis.b	r15, &0x0032
+ 1713 06d2 3B3F      		jmp	.L111
+ 1714               	.L115:
+ 1716               	.LM123:
+ 1717 06d4 12C3      		clrc
+ 1718 06d6 4D10      		rrc.b	r13
+ 1719 06d8 4D11      		rra.b	r13
+ 1720 06da 4D11      		rra.b	r13
+ 1721 06dc 1F43      		mov	#llo(1), r15 
+ 1722 06de 0E4D      		mov	r13, r14 
+ 1723 06e0 3EF0 1F00 		and	#llo(31), r14
+ 1724 06e4 0E93      		tst	r14
+ 1725 06e6 0324      		jz	.Lsend783
+ 1726               	.Lsst783:
+ 1727 06e8 0F5F      		rla	r15
+ 1728 06ea 1E83      		dec	r14
+ 1729 06ec FD23      		jnz	.Lsst783
+ 1730               	.Lsend783:
+ 1731 06ee C2DF 1A00 		bis.b	r15, &0x001A
+ 1732 06f2 2B3F      		jmp	.L111
+ 1733               	
+ 1734               		/* epilogue: not required */
+ 1735               		/* function nrk_gpio_direction size 260 (260) */
+ 1736               	.Lfe10:
+ 1738               	/********* End of function ******/
+ 1739               	
+ 1740               	.Lscope9:
+ 1742               		.p2align 1,0
+ 1745               	.global	nrk_gpio_pullups
+ 1747               	/***********************
+ 1748               	 * Function `nrk_gpio_pullups' 
+ 1749               	 ***********************/
+ 1750               	nrk_gpio_pullups:
+ 343:../../src/platform/tmote/source/ulib.c **** (uint8_t enable)
+ 344:../../src/platform/tmote/source/ulib.c **** {
+ 345:../../src/platform/tmote/source/ulib.c **** return NRK_ERROR;
+ 1752               	.LM124:
+ 1753               		/* prologue: frame size = 0 */
+ 1754               	.L__FrameSize_nrk_gpio_pullups=0x0
+ 1755               	.L__FrameOffset_nrk_gpio_pullups=0x0
+ 1756               		/* prologue end (size=0) */
+ 1757               	
+ 346:../../src/platform/tmote/source/ulib.c ****               default: return -1;
+ 347:../../src/platform/tmote/source/ulib.c ****                 }
+ 1759               	.LM125:
+ 1760 06f4 3F43      		mov	#llo(-1), r15 
+ 1761 06f6 3041      		ret
+ 1762               	
+ 1763               		/* epilogue: not required */
+ 1764               		/* function nrk_gpio_pullups size 2 (1) */
+ 1765               	.Lfe11:
+ 1767               	/********* End of function ******/
+ 1768               	
+ 1769               	.Lscope10:
+ 1771               		.p2align 1,0
+ 1774               	.global	nrk_get_button
+ 1776               	/***********************
+ 1777               	 * Function `nrk_get_button' 
+ 1778               	 ***********************/
+ 1779               	nrk_get_button:
+ 348:../../src/platform/tmote/source/ulib.c ****  case NRK_PORTF:
+ 349:../../src/platform/tmote/source/ulib.c ****                                 P6DIR |= BM((pin & 0xF8) >> 3); break;
+ 350:../../src/platform/tmote/source/ulib.c ****                         default: return -1;
+ 1781               	.LM126:
+ 1782               		/* prologue: frame size = 0 */
+ 1783               	.L__FrameSize_nrk_get_button=0x0
+ 1784               	.L__FrameOffset_nrk_get_button=0x0
+ 1785               		/* prologue end (size=0) */
+ 1786               	
+ 351:../../src/platform/tmote/source/ulib.c ****                     case NRK_PORTF:
+ 1788               	.LM127:
+ 1789 06f8 4F93      		cmp.b	#llo(0), r15
+ 1790 06fa 0820      		jne	.L124
+ 352:../../src/platform/tmote/source/ulib.c **** ;
+ 1792               	.LM128:
+ 1793 06fc 5F42 2800 		mov.b	&0x0028, r15
+ 1794 0700 4F5F      		rla.b	r15
+ 1795 0702 4F43      		clr.b	r15
+ 1796 0704 4F6F      		rlc.b	r15
+ 1797 0706 7FF3      		and.b	#-1,r15
+ 1798 0708 1FE3      		xor	#llo(1), r15
+ 353:../../src/platform/tmote/source/ulib.c ****       P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 354:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTD:
+ 355:../../src/platform/tmote/source/ulib.c ****                                 P4DIR |= BM((pin & 0xF8) >> 3); break;
+ 1800               	.LM129:
+ 1801 070a 3041      		ret
+ 1802               	.L124:
+ 1804               	.LM130:
+ 1805 070c 3F43      		mov	#llo(-1), r15 
+ 1807               	.LM131:
+ 1808 070e 3041      		ret
+ 1809               	
+ 1810               		/* epilogue: not required */
+ 1811               		/* function nrk_get_button size 12 (12) */
+ 1812               	.Lfe12:
+ 1814               	/********* End of function ******/
+ 1815               	
+ 1816               	.Lscope11:
+ 1818               		.p2align 1,0
+ 1821               	.global	nrk_led_toggle
+ 1823               	/***********************
+ 1824               	 * Function `nrk_led_toggle' 
+ 1825               	 ***********************/
+ 1826               	nrk_led_toggle:
+ 356:../../src/platform/tmote/source/ulib.c ****       P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 357:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTD:
+ 358:../../src/platform/tmote/source/ulib.c ****                                 P4DIR |= BM((pin & 0xF8) >> 3); break;
+ 359:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTE:
+ 360:../../src/platform/tmote/source/ulib.c ****                                 P5DIR |= BM((pin & 0xF8) >> 3); break;
+ 361:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTF:
+ 362:../../src/platform/tmote/source/ulib.c ****                                 P6DIR |= BM((pin & 0xF8) >> 3); break;
+ 363:../../src/platform/tmote/source/ulib.c ****                         default: return -1;
+ 364:../../src/platform/tmote/source/ulib.c ****                 }
+ 365:../../src/platform/tmote/source/ulib.c ****         }
+ 366:../../src/platform/tmote/source/ulib.c ****         return 1;
+ 367:../../src/platform/tmote/source/ulib.c **** }
+ 1828               	.LM132:
+ 1829               		/* prologue: frame size = 0 */
+ 1830               	.L__FrameSize_nrk_led_toggle=0x0
+ 1831               	.L__FrameOffset_nrk_led_toggle=0x0
+ 1832               		/* prologue end (size=0) */
+ 1833               	
+ 368:../../src/platform/tmote/source/ulib.c ****                 P6DIR |= BM((pin & 0xF8) >> 3); break;
+ 1835               	.LM133:
+ 1836 0710 0F93      		cmp	#llo(0), r15
+ 1837 0712 0F24      		jeq	.L131
+ 369:../../src/platform/tmote/source/ulib.c ****   P5DIR |= BM((pin & 0xF8) >> 3); break;
+ 1839               	.LM134:
+ 1840 0714 1F93      		cmp	#llo(1), r15
+ 1841 0716 0A24      		jeq	.L132
+ 370:../../src/platform/tmote/source/ulib.c ****     P4DIR |= BM((pin & 0xF8) >> 3); break;
+ 1843               	.LM135:
+ 1844 0718 2F93      		cmp	#llo(2), r15
+ 1845 071a 0224      		jeq	.L133
+ 371:../../src/platform/tmote/source/ulib.c ****       P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 372:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTD:
+ 1847               	.LM136:
+ 1848 071c 3F43      		mov	#llo(-1), r15 
+ 373:../../src/platform/tmote/source/ulib.c **** reak;
+ 1850               	.LM137:
+ 1851 071e 3041      		ret
+ 1852               	.L133:
+ 1853 0720 7F40 3400 		mov.b	#llo(52), r15
+ 1854               	.L130:
+ 1855 0724 B012 0000 		call	#nrk_gpio_toggle
+ 1856 0728 1F43      		mov	#llo(1), r15 
+ 1857 072a 3041      		ret
+ 1858               	.L132:
+ 1859 072c 7F40 2C00 		mov.b	#llo(44), r15
+ 1860 0730 F93F      		jmp	.L130
+ 1861               	.L131:
+ 1862 0732 7F40 2400 		mov.b	#llo(36), r15
+ 1863 0736 F63F      		jmp	.L130
+ 1864               	
+ 1865               		/* epilogue: not required */
+ 1866               		/* function nrk_led_toggle size 22 (22) */
+ 1867               	.Lfe13:
+ 1869               	/********* End of function ******/
+ 1870               	
+ 1871               	.Lscope12:
+ 1873               		.p2align 1,0
+ 1876               	.global	nrk_led_clr
+ 1878               	/***********************
+ 1879               	 * Function `nrk_led_clr' 
+ 1880               	 ***********************/
+ 1881               	nrk_led_clr:
+ 374:../../src/platform/tmote/source/ulib.c ****           P1DIR |= BM((pin & 0xF8) >> 3); break;
+ 375:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTB:
+ 376:../../src/platform/tmote/source/ulib.c ****                                 P2DIR |= BM((pin & 0xF8) >> 3); break;
+ 1883               	.LM138:
+ 1884               		/* prologue: frame size = 0 */
+ 1885               	.L__FrameSize_nrk_led_clr=0x0
+ 1886               	.L__FrameOffset_nrk_led_clr=0x0
+ 1887               		/* prologue end (size=0) */
+ 1888               	
+ 377:../../src/platform/tmote/source/ulib.c ****           P1DIR |= BM((pin & 0xF8) >> 3); break;
+ 1890               	.LM139:
+ 1891 0738 0F93      		cmp	#llo(0), r15
+ 1892 073a 0F24      		jeq	.L140
+ 378:../../src/platform/tmote/source/ulib.c ****     } else {
+ 1894               	.LM140:
+ 1895 073c 1F93      		cmp	#llo(1), r15
+ 1896 073e 0A24      		jeq	.L141
+ 379:../../src/platform/tmote/source/ulib.c ****               P6OUT |= BM((pin & 0xF8) >> 3); 
+ 1898               	.LM141:
+ 1899 0740 2F93      		cmp	#llo(2), r15
+ 1900 0742 0224      		jeq	.L142
+ 380:../../src/platform/tmote/source/ulib.c ****                        case NRK_PORTF:
+ 381:../../src/platform/tmote/source/ulib.c ****                                 P6DIR &= ~BM((pin & 0xF8) >> 3);
+ 1902               	.LM142:
+ 1903 0744 3F43      		mov	#llo(-1), r15 
+ 382:../../src/platform/tmote/source/ulib.c **** = BM((pin & 0xF8) >> 3); 
+ 1905               	.LM143:
+ 1906 0746 3041      		ret
+ 1907               	.L142:
+ 1908 0748 7F40 3400 		mov.b	#llo(52), r15
+ 1909               	.L139:
+ 1910 074c B012 0000 		call	#nrk_gpio_set
+ 1911 0750 1F43      		mov	#llo(1), r15 
+ 1912 0752 3041      		ret
+ 1913               	.L141:
+ 1914 0754 7F40 2C00 		mov.b	#llo(44), r15
+ 1915 0758 F93F      		jmp	.L139
+ 1916               	.L140:
+ 1917 075a 7F40 2400 		mov.b	#llo(36), r15
+ 1918 075e F63F      		jmp	.L139
+ 1919               	
+ 1920               		/* epilogue: not required */
+ 1921               		/* function nrk_led_clr size 22 (22) */
+ 1922               	.Lfe14:
+ 1924               	/********* End of function ******/
+ 1925               	
+ 1926               	.Lscope13:
+ 1928               		.p2align 1,0
+ 1931               	.global	nrk_led_set
+ 1933               	/***********************
+ 1934               	 * Function `nrk_led_set' 
+ 1935               	 ***********************/
+ 1936               	nrk_led_set:
+ 383:../../src/platform/tmote/source/ulib.c **** ;
+ 384:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTE:
+ 385:../../src/platform/tmote/source/ulib.c ****                                 P5DIR &= ~BM((pin & 0xF8) >> 3); 
+ 1938               	.LM144:
+ 1939               		/* prologue: frame size = 0 */
+ 1940               	.L__FrameSize_nrk_led_set=0x0
+ 1941               	.L__FrameOffset_nrk_led_set=0x0
+ 1942               		/* prologue end (size=0) */
+ 1943               	
+ 386:../../src/platform/tmote/source/ulib.c **** T |= BM((pin & 0xF8) >> 3); 
+ 1945               	.LM145:
+ 1946 0760 0F93      		cmp	#llo(0), r15
+ 1947 0762 0F24      		jeq	.L149
+ 387:../../src/platform/tmote/source/ulib.c ****                                break;
+ 1949               	.LM146:
+ 1950 0764 1F93      		cmp	#llo(1), r15
+ 1951 0766 0A24      		jeq	.L150
+ 388:../../src/platform/tmote/source/ulib.c ****                        case NRK_PORTE:
+ 1953               	.LM147:
+ 1954 0768 2F93      		cmp	#llo(2), r15
+ 1955 076a 0224      		jeq	.L151
+ 389:../../src/platform/tmote/source/ulib.c **** IR &= ~BM((pin & 0xF8) >> 3); 
+ 390:../../src/platform/tmote/source/ulib.c ****                                 P4OUT |= BM((pin & 0xF8) >> 3); 
+ 1957               	.LM148:
+ 1958 076c 3F43      		mov	#llo(-1), r15 
+ 391:../../src/platform/tmote/source/ulib.c ****                               break;
+ 1960               	.LM149:
+ 1961 076e 3041      		ret
+ 1962               	.L151:
+ 1963 0770 7F40 3400 		mov.b	#llo(52), r15
+ 1964               	.L148:
+ 1965 0774 B012 0000 		call	#nrk_gpio_clr
+ 1966 0778 1F43      		mov	#llo(1), r15 
+ 1967 077a 3041      		ret
+ 1968               	.L150:
+ 1969 077c 7F40 2C00 		mov.b	#llo(44), r15
+ 1970 0780 F93F      		jmp	.L148
+ 1971               	.L149:
+ 1972 0782 7F40 2400 		mov.b	#llo(36), r15
+ 1973 0786 F63F      		jmp	.L148
+ 1974               	
+ 1975               		/* epilogue: not required */
+ 1976               		/* function nrk_led_set size 22 (22) */
+ 1977               	.Lfe15:
+ 1979               	/********* End of function ******/
+ 1980               	
+ 1981               	.Lscope14:
+ 1983               		.p2align 1,0
+ 1986               	.global	IO_SET_E
+ 1988               	/***********************
+ 1989               	 * Function `IO_SET_E' 
+ 1990               	 ***********************/
+ 1991               	IO_SET_E:
+ 392:../../src/platform/tmote/source/ulib.c ****                        case NRK_PORTE:
+ 393:../../src/platform/tmote/source/ulib.c ****                                 P5DIR &= ~BM((pin & 0xF8) >> 3); 
+ 394:../../src/platform/tmote/source/ulib.c ****                                 P5OUT |= BM((pin & 0xF8) >> 3); 
+ 395:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 1993               	.LM150:
+ 1994               		/* prologue: frame size = 0 */
+ 1995               	.L__FrameSize_IO_SET_E=0x0
+ 1996               	.L__FrameOffset_IO_SET_E=0x0
+ 1997               		/* prologue end (size=0) */
+ 1998               	
+ 1999 0788 4E4F      		mov.b	r15, r14
+ 396:../../src/platform/tmote/source/ulib.c **** :
+ 2001               	.LM151:
+ 2002 078a 1F43      		mov	#llo(1), r15 
+ 2003 078c 7EF3      		and.b	#-1,r14
+ 2004 078e 0E93      		tst	r14
+ 2005 0790 0324      		jz	.Lsend937
+ 2006               	.Lsst937:
+ 2007 0792 0F5F      		rla	r15
+ 2008 0794 1E83      		dec	r14
+ 2009 0796 FD23      		jnz	.Lsst937
+ 2010               	.Lsend937:
+ 2011 0798 C2DF 3100 		bis.b	r15, &0x0031
+ 397:../../src/platform/tmote/source/ulib.c **** IR &= ~BM((pin & 0xF8) >> 3); 
+ 2013               	.LM152:
+ 2014 079c 3041      		ret
+ 2015               	
+ 2016               		/* epilogue: not required */
+ 2017               		/* function IO_SET_E size 11 (10) */
+ 2018               	.Lfe16:
+ 2020               	/********* End of function ******/
+ 2021               	
+ 2022               	.Lscope15:
+ 2024               		.p2align 1,0
+ 2027               	.global	IO_CLR_E
+ 2029               	/***********************
+ 2030               	 * Function `IO_CLR_E' 
+ 2031               	 ***********************/
+ 2032               	IO_CLR_E:
+ 398:../../src/platform/tmote/source/ulib.c ****                                P4OUT |= BM((pin & 0xF8) >> 3); 
+ 399:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 400:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTE:
+ 2034               	.LM153:
+ 2035               		/* prologue: frame size = 0 */
+ 2036               	.L__FrameSize_IO_CLR_E=0x0
+ 2037               	.L__FrameOffset_IO_CLR_E=0x0
+ 2038               		/* prologue end (size=0) */
+ 2039               	
+ 2040 079e 4E4F      		mov.b	r15, r14
+ 401:../../src/platform/tmote/source/ulib.c ****                              P5DIR &= ~BM((pin & 0xF8) >> 3); 
+ 2042               	.LM154:
+ 2043 07a0 1F43      		mov	#llo(1), r15 
+ 2044 07a2 7EF3      		and.b	#-1,r14
+ 2045 07a4 0E93      		tst	r14
+ 2046 07a6 0324      		jz	.Lsend947
+ 2047               	.Lsst947:
+ 2048 07a8 0F5F      		rla	r15
+ 2049 07aa 1E83      		dec	r14
+ 2050 07ac FD23      		jnz	.Lsst947
+ 2051               	.Lsend947:
+ 2052 07ae C2CF 3100 		bic.b       r15, &0x0031
+ 402:../../src/platform/tmote/source/ulib.c **** T |= BM((pin & 0xF8) >> 3); 
+ 2054               	.LM155:
+ 2055 07b2 3041      		ret
+ 2056               	
+ 2057               		/* epilogue: not required */
+ 2058               		/* function IO_CLR_E size 11 (10) */
+ 2059               	.Lfe17:
+ 2061               	/********* End of function ******/
+ 2062               	
+ 2063               	.Lscope16:
+ 2065               		.p2align 1,0
+ 2068               	.global	IO_SET_F
+ 2070               	/***********************
+ 2071               	 * Function `IO_SET_F' 
+ 2072               	 ***********************/
+ 2073               	IO_SET_F:
+ 403:../../src/platform/tmote/source/ulib.c ****                                break;
+ 404:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTE:
+ 405:../../src/platform/tmote/source/ulib.c ****                                 P5DIR &= ~BM((pin & 0xF8) >> 3); 
+ 2075               	.LM156:
+ 2076               		/* prologue: frame size = 0 */
+ 2077               	.L__FrameSize_IO_SET_F=0x0
+ 2078               	.L__FrameOffset_IO_SET_F=0x0
+ 2079               		/* prologue end (size=0) */
+ 2080               	
+ 2081 07b4 4E4F      		mov.b	r15, r14
+ 406:../../src/platform/tmote/source/ulib.c ****                              P5OUT |= BM((pin & 0xF8) >> 3); 
+ 2083               	.LM157:
+ 2084 07b6 1F43      		mov	#llo(1), r15 
+ 2085 07b8 7EF3      		and.b	#-1,r14
+ 2086 07ba 0E93      		tst	r14
+ 2087 07bc 0324      		jz	.Lsend957
+ 2088               	.Lsst957:
+ 2089 07be 0F5F      		rla	r15
+ 2090 07c0 1E83      		dec	r14
+ 2091 07c2 FD23      		jnz	.Lsst957
+ 2092               	.Lsend957:
+ 2093 07c4 C2DF 3500 		bis.b	r15, &0x0035
+ 407:../../src/platform/tmote/source/ulib.c **** ;
+ 2095               	.LM158:
+ 2096 07c8 3041      		ret
+ 2097               	
+ 2098               		/* epilogue: not required */
+ 2099               		/* function IO_SET_F size 11 (10) */
+ 2100               	.Lfe18:
+ 2102               	/********* End of function ******/
+ 2103               	
+ 2104               	.Lscope17:
+ 2106               		.p2align 1,0
+ 2109               	.global	IO_CLR_F
+ 2111               	/***********************
+ 2112               	 * Function `IO_CLR_F' 
+ 2113               	 ***********************/
+ 2114               	IO_CLR_F:
+ 408:../../src/platform/tmote/source/ulib.c **** ORTD:
+ 409:../../src/platform/tmote/source/ulib.c ****                                 P4DIR &= ~BM((pin & 0xF8) >> 3); 
+ 410:../../src/platform/tmote/source/ulib.c ****                                 P4OUT |= BM((pin & 0xF8) >> 3); 
+ 2116               	.LM159:
+ 2117               		/* prologue: frame size = 0 */
+ 2118               	.L__FrameSize_IO_CLR_F=0x0
+ 2119               	.L__FrameOffset_IO_CLR_F=0x0
+ 2120               		/* prologue end (size=0) */
+ 2121               	
+ 2122 07ca 4E4F      		mov.b	r15, r14
+ 411:../../src/platform/tmote/source/ulib.c ****                              break;
+ 2124               	.LM160:
+ 2125 07cc 1F43      		mov	#llo(1), r15 
+ 2126 07ce 7EF3      		and.b	#-1,r14
+ 2127 07d0 0E93      		tst	r14
+ 2128 07d2 0324      		jz	.Lsend967
+ 2129               	.Lsst967:
+ 2130 07d4 0F5F      		rla	r15
+ 2131 07d6 1E83      		dec	r14
+ 2132 07d8 FD23      		jnz	.Lsst967
+ 2133               	.Lsend967:
+ 2134 07da C2CF 3500 		bic.b       r15, &0x0035
+ 412:../../src/platform/tmote/source/ulib.c ****                        case NRK_PORTE:
+ 2136               	.LM161:
+ 2137 07de 3041      		ret
+ 2138               	
+ 2139               		/* epilogue: not required */
+ 2140               		/* function IO_CLR_F size 11 (10) */
+ 2141               	.Lfe19:
+ 2143               	/********* End of function ******/
+ 2144               	
+ 2145               	.Lscope18:
+ 2147               		.p2align 1,0
+ 2150               	.global	putc0
+ 2152               	/***********************
+ 2153               	 * Function `putc0' 
+ 2154               	 ***********************/
+ 2155               	putc0:
+ 413:../../src/platform/tmote/source/ulib.c **** IR &= ~BM((pin & 0xF8) >> 3); 
+ 414:../../src/platform/tmote/source/ulib.c ****                                 P4OUT |= BM((pin & 0xF8) >> 3); 
+ 415:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 2157               	.LM162:
+ 2158               		/* prologue: frame size = 0 */
+ 2159               	.L__FrameSize_putc0=0x0
+ 2160               	.L__FrameOffset_putc0=0x0
+ 2161               		/* prologue end (size=0) */
+ 2162               	
+ 416:../../src/platform/tmote/source/ulib.c ****                      case NRK_PORTE:
+ 417:../../src/platform/tmote/source/ulib.c ****                                 P5DIR &= ~BM((pin & 0xF8) >> 3); 
+ 2164               	.LM163:
+ 2165 07e0 3041      		ret
+ 2166               	
+ 2167               		/* epilogue: not required */
+ 2168               		/* function putc0 size 1 (0) */
+ 2169               	.Lfe20:
+ 2171               	/********* End of function ******/
+ 2172               	
+ 2173               	.Lscope19:
+ 2175               		.p2align 1,0
+ 2178               	.global	putchar
+ 2180               	/***********************
+ 2181               	 * Function `putchar' 
+ 2182               	 ***********************/
+ 2183               	putchar:
+ 418:../../src/platform/tmote/source/ulib.c **** T |= BM((pin & 0xF8) >> 3); 
+ 419:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 420:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTE:
+ 421:../../src/platform/tmote/source/ulib.c ****                                 P5DIR &= ~BM((pin & 0xF8) >> 3); 
+ 2185               	.LM164:
+ 2186               		/* prologue: frame size = 0 */
+ 2187               	.L__FrameSize_putchar=0x0
+ 2188               	.L__FrameOffset_putchar=0x0
+ 2189               		/* prologue end (size=0) */
+ 2190               	
+ 422:../../src/platform/tmote/source/ulib.c ****                             P5OUT |= BM((pin & 0xF8) >> 3); 
+ 423:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 424:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTF:
+ 2192               	.LM165:
+ 2193 07e2 1F43      		mov	#llo(1), r15 
+ 2194 07e4 3041      		ret
+ 2195               	
+ 2196               		/* epilogue: not required */
+ 2197               		/* function putchar size 2 (1) */
+ 2198               	.Lfe21:
+ 2200               	/********* End of function ******/
+ 2201               	
+ 2202               	.Lscope20:
+ 2204               		.p2align 1,0
+ 2207               	.global	setup_uart0
+ 2209               	/***********************
+ 2210               	 * Function `setup_uart0' 
+ 2211               	 ***********************/
+ 2212               	setup_uart0:
+ 425:../../src/platform/tmote/source/ulib.c **** = ~BM((pin & 0xF8) >> 3); 
+ 426:../../src/platform/tmote/source/ulib.c ****                                 P5OUT |= BM((pin & 0xF8) >> 3); 
+ 427:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 428:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTF:
+ 2214               	.LM166:
+ 2215               		/* prologue: frame size = 0 */
+ 2216               	.L__FrameSize_setup_uart0=0x0
+ 2217               	.L__FrameOffset_setup_uart0=0x0
+ 2218               		/* prologue end (size=0) */
+ 2219               	
+ 429:../../src/platform/tmote/source/ulib.c **** = ~BM((pin & 0xF8) >> 3); 
+ 430:../../src/platform/tmote/source/ulib.c ****                                 P5OUT |= BM((pin & 0xF8) >> 3); 
+ 431:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 432:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTF:
+ 2221               	.LM167:
+ 2222 07e6 3041      		ret
+ 2223               	
+ 2224               		/* epilogue: not required */
+ 2225               		/* function setup_uart0 size 1 (0) */
+ 2226               	.Lfe22:
+ 2228               	/********* End of function ******/
+ 2229               	
+ 2230               	.Lscope21:
+ 2232               		.p2align 1,0
+ 2235               	.global	setup_uart1
+ 2237               	/***********************
+ 2238               	 * Function `setup_uart1' 
+ 2239               	 ***********************/
+ 2240               	setup_uart1:
+ 433:../../src/platform/tmote/source/ulib.c **** = ~BM((pin & 0xF8) >> 3); 
+ 434:../../src/platform/tmote/source/ulib.c ****                                 P5OUT |= BM((pin & 0xF8) >> 3); 
+ 435:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 436:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTF:
+ 2242               	.LM168:
+ 2243               		/* prologue: frame size = 0 */
+ 2244               	.L__FrameSize_setup_uart1=0x0
+ 2245               	.L__FrameOffset_setup_uart1=0x0
+ 2246               		/* prologue end (size=0) */
+ 2247               	
+ 437:../../src/platform/tmote/source/ulib.c **** = ~BM((pin & 0xF8) >> 3); 
+ 438:../../src/platform/tmote/source/ulib.c ****                                 P5OUT |= BM((pin & 0xF8) >> 3); 
+ 439:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 440:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTF:
+ 2249               	.LM169:
+ 2250 07e8 3041      		ret
+ 2251               	
+ 2252               		/* epilogue: not required */
+ 2253               		/* function setup_uart1 size 1 (0) */
+ 2254               	.Lfe23:
+ 2256               	/********* End of function ******/
+ 2257               	
+ 2258               	.Lscope22:
+ 2260               		.p2align 1,0
+ 2263               	.global	nrk_setup_uart
+ 2265               	/***********************
+ 2266               	 * Function `nrk_setup_uart' 
+ 2267               	 ***********************/
+ 2268               	nrk_setup_uart:
+ 441:../../src/platform/tmote/source/ulib.c **** = ~BM((pin & 0xF8) >> 3); 
+ 442:../../src/platform/tmote/source/ulib.c ****                                 P5OUT |= BM((pin & 0xF8) >> 3); 
+ 443:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 444:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTF:
+ 445:../../src/platform/tmote/source/ulib.c ****                                 P6DIR &= ~BM((pin & 0xF8) >> 3);
+ 446:../../src/platform/tmote/source/ulib.c ****                                 P6OUT |= BM((pin & 0xF8) >> 3); 
+ 447:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 448:../../src/platform/tmote/source/ulib.c ****                         default: return -1;
+ 449:../../src/platform/tmote/source/ulib.c ****                 }
+ 450:../../src/platform/tmote/source/ulib.c ****         } else {
+ 451:../../src/platform/tmote/source/ulib.c ****                 switch (pin & 0x07) {
+ 452:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTA:
+ 453:../../src/platform/tmote/source/ulib.c ****                                 P1DIR |= BM((pin & 0xF8) >> 3); break;
+ 2270               	.LM170:
+ 2271               		/* prologue: frame size = 0 */
+ 2272               	.L__FrameSize_nrk_setup_uart=0x0
+ 2273               	.L__FrameOffset_nrk_setup_uart=0x0
+ 2274               		/* prologue end (size=0) */
+ 2275               	
+ 454:../../src/platform/tmote/source/ulib.c ****     } else {
+ 455:../../src/platform/tmote/source/ulib.c ****                 switch (pin & 0x07) {
+ 2277               	.LM171:
+ 2278 07ea B012 0000 		call	#setup_uart1
+ 456:../../src/platform/tmote/source/ulib.c **** >> 3); 
+ 457:../../src/platform/tmote/source/ulib.c ****                                 break;
+ 458:../../src/platform/tmote/source/ulib.c ****                         default: return -1;
+ 459:../../src/platform/tmote/source/ulib.c ****                 }
+ 460:../../src/platform/tmote/source/ulib.c ****         } else {
+ 461:../../src/platform/tmote/source/ulib.c ****                 switch (pin & 0x07) {
+ 462:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTA:
+ 463:../../src/platform/tmote/source/ulib.c ****                                 P1DIR |= BM((pin & 0xF8) >> 3); break;
+ 464:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTB:
+ 465:../../src/platform/tmote/source/ulib.c ****                                 P2DIR |= BM((pin & 0xF8) >> 3); break;
+ 466:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTC:
+ 467:../../src/platform/tmote/source/ulib.c ****                                 P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 468:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTD:
+ 2280               	.LM172:
+ 2281 07ee 3041      		ret
+ 2282               	
+ 2283               		/* epilogue: not required */
+ 2284               		/* function nrk_setup_uart size 3 (2) */
+ 2285               	.Lfe24:
+ 2287               	/********* End of function ******/
+ 2288               	
+ 2289               	.Lscope23:
+ 2291               		.p2align 1,0
+ 2293               	.global	getc0
+ 2295               	/***********************
+ 2296               	 * Function `getc0' 
+ 2297               	 ***********************/
+ 2298               	getc0:
+ 469:../../src/platform/tmote/source/ulib.c **** reak;
+ 470:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTC:
+ 471:../../src/platform/tmote/source/ulib.c ****                                 P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 472:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTD:
+ 473:../../src/platform/tmote/source/ulib.c ****                                 P4DIR |= BM((pin & 0xF8) >> 3); break;
+ 2300               	.LM173:
+ 2301               		/* prologue: frame size = 0 */
+ 2302               	.L__FrameSize_getc0=0x0
+ 2303               	.L__FrameOffset_getc0=0x0
+ 2304               		/* prologue end (size=0) */
+ 2305               	
+ 2306               	.LBB4:
+ 474:../../src/platform/tmote/source/ulib.c ****       P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 475:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTD:
+ 476:../../src/platform/tmote/source/ulib.c ****                                 P4DIR |= BM((pin & 0xF8) >> 3); break;
+ 2308               	.LM174:
+ 2309 07f0 7FF3      		and.b	#-1,r15
+ 2310               	.LBE4:
+ 477:../../src/platform/tmote/source/ulib.c ****       P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 2312               	.LM175:
+ 2313 07f2 3041      		ret
+ 2314               	
+ 2315               		/* epilogue: not required */
+ 2316               		/* function getc0 size 2 (1) */
+ 2317               	.Lfe25:
+ 2319               	/********* End of function ******/
+ 2320               	
+ 2324               	.Lscope24:
+ 2326               		.p2align 1,0
+ 2328               	.global	PORT_INIT
+ 2330               	/***********************
+ 2331               	 * Function `PORT_INIT' 
+ 2332               	 ***********************/
+ 2333               	PORT_INIT:
+ 478:../../src/platform/tmote/source/ulib.c ****         P2DIR |= BM((pin & 0xF8) >> 3); break;
+ 479:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTC:
+ 480:../../src/platform/tmote/source/ulib.c ****                                 P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 2335               	.LM176:
+ 2336               		/* prologue: frame size = 0 */
+ 2337               	.L__FrameSize_PORT_INIT=0x0
+ 2338               	.L__FrameOffset_PORT_INIT=0x0
+ 2339               		/* prologue end (size=0) */
+ 2340               	
+ 481:../../src/platform/tmote/source/ulib.c ****         P2DIR |= BM((pin & 0xF8) >> 3); break;
+ 482:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTC:
+ 483:../../src/platform/tmote/source/ulib.c ****                                 P3DIR |= BM((pin & 0xF8) >> 3); break;
+ 484:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTD:
+ 485:../../src/platform/tmote/source/ulib.c ****                                 P4DIR |= BM((pin & 0xF8) >> 3); break;
+ 486:../../src/platform/tmote/source/ulib.c ****                         case NRK_PORTE:
+ 487:../../src/platform/tmote/source/ulib.c ****                                 P5DIR |= BM((pin & 0xF8) >> 3); break;
+ 2342               	.LM177:
+ 2343 07f4 3041      		ret
+ 2344               	
+ 2345               		/* epilogue: not required */
+ 2346               		/* function PORT_INIT size 1 (0) */
+ 2347               	.Lfe26:
+ 2349               	/********* End of function ******/
+ 2350               	
+ 2351               	.Lscope25:
+ 2353               		.comm _nrk_signal_list,4,2
+ 2354               		.comm error_task,1
+ 2355               		.comm error_num,1
+ 2604               		.text
+ 2606               	Letext:
+ 2607               	
+ 2608               	/*********************************************************************
+ 2609               	 * File ../../src/platform/tmote/source/ulib.c: code size: 1052 words (0x41c)
+ 2610               	 * incl. words in prologues: 0, epilogues: 17
+ 2611               	 *********************************************************************/
+DEFINED SYMBOLS
+                            *ABS*:00000000 ulib.c
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:5      *ABS*:00000130 __MPY
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:6      *ABS*:00000132 __MPYS
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:7      *ABS*:00000134 __MAC
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:8      *ABS*:00000136 __MACS
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:9      *ABS*:00000138 __OP2
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:10     *ABS*:0000013a __RESLO
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:11     *ABS*:0000013c __RESHI
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:12     *ABS*:0000013e __SUMEXT
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:203    .text:00000000 nrk_uart_rx_signal_get
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:232    .text:00000004 nrk_uart_data_ready
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:268    .text:00000010 getc1
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:304    .text:00000014 nrk_kprintf
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:335    .text:00000016 nrk_setup_ports
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:453    .text:00000046 NRK_LED_0
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:1411   .text:00000504 nrk_gpio_direction
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:458    .text:00000047 NRK_LED_1
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:463    .text:00000048 NRK_LED_2
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:373    .text:00000036 NRK_DEBUG_0
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:378    .text:00000037 NRK_DEBUG_1
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:383    .text:00000038 NRK_DEBUG_2
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:388    .text:00000039 NRK_DEBUG_3
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:393    .text:0000003a NRK_BUTTON
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:398    .text:0000003b NRK_SCK
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:403    .text:0000003c NRK_MOSI
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:408    .text:0000003d NRK_MISO
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:413    .text:0000003e NRK_GPIO26
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:418    .text:0000003f NRK_GPIO28
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:423    .text:00000040 NRK_UART1_RXD
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:428    .text:00000041 NRK_UART1_TXD
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:433    .text:00000042 NRK_CCA
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:438    .text:00000043 NRK_SFD
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:443    .text:00000044 NRK_UART0_RXD
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:448    .text:00000045 NRK_UART0_TXD
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:468    .text:00000049 NRK_LED_3
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:473    .text:0000004a NRK_GPIO34
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:478    .text:0000004b NRK_FIFOP
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:483    .text:0000004c NRK_ADC_INPUT_0
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:488    .text:0000004d NRK_ADC_INPUT_1
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:493    .text:0000004e NRK_ADC_INPUT_2
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:498    .text:0000004f NRK_ADC_INPUT_3
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:503    .text:00000050 NRK_ADC_INPUT_4
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:508    .text:00000051 NRK_ADC_INPUT_5
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:513    .text:00000052 NRK_ADC_INPUT_6
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:518    .text:00000053 NRK_ADC_INPUT_7
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:528    .text:00000054 nrk_gpio_set
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:702    .text:00000144 nrk_gpio_clr
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:876    .text:00000234 nrk_gpio_get
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:1057   .text:00000326 nrk_gpio_toggle
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:1750   .text:000006f4 nrk_gpio_pullups
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:1779   .text:000006f8 nrk_get_button
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:1826   .text:00000710 nrk_led_toggle
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:1881   .text:00000738 nrk_led_clr
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:1936   .text:00000760 nrk_led_set
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:1991   .text:00000788 IO_SET_E
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2032   .text:0000079e IO_CLR_E
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2073   .text:000007b4 IO_SET_F
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2114   .text:000007ca IO_CLR_F
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2155   .text:000007e0 putc0
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2183   .text:000007e2 putchar
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2212   .text:000007e6 setup_uart0
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2240   .text:000007e8 setup_uart1
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2268   .text:000007ea nrk_setup_uart
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2298   .text:000007f0 getc0
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2333   .text:000007f4 PORT_INIT
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+C:\DOCUME~1\paja\LOCALS~1\Temp/cc7r8YIP.s:2606   .text:000007f6 Letext
+
+NO UNDEFINED SYMBOLS

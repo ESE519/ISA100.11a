@@ -13,9 +13,11 @@
 #define MY_ID 2 //change
 
 //#define MY_TX_SLOT_SYNC  2
-//#define MY_RX_SLOT  17
+//#define s  17
 #define MY_RX_SLOT  2
 #define MY_TX_SLOT  3
+#define MY_TX_SLOT1  5
+
 
 #define MY_CLK_SRC_ID  0
 
@@ -87,7 +89,7 @@ void Task1()
   
   isa_set_channel_pattern(1);
 
-  isa_init (ISA_REPEATER, MY_ID, MY_ID);//change
+  isa_init (ISA_REPEATER, MY_ID, MY_CLK_SRC_ID);//change
   
   isa_set_schedule(ISA_REPEATER, MY_CLK_SRC_ID);
 
@@ -113,6 +115,13 @@ void Task1()
 
   //i=0;
   while(1){
+
+	  //Spit out log info
+	  if (txCount % 1000 == 0){
+	printf ("TxCount: %d\r\nRXCount: %d\r\nPacketLoss:%d", txCount,rxCount, packetsLost);
+	  }
+
+
 //nrk_gpio_toggle(NRK_DEBUG_0);
        if( isa_rx_pkt_check()!=0 ) {
 
@@ -127,10 +136,10 @@ void Task1()
 	    //sprintf( &tx_buf[PKT_DATA_START],"Hello Mingzhe!");
 	    //length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
 	    //isa_tx_pkt(tx_buf,length,configDHDR(),MY_TX_SLOT);
-/*
+
 	    length=strlen(&rx_buf[PKT_DATA_START])+PKT_DATA_START+1; //change
-	    isa_tx_pkt(rx_buf,length,configDHDR(),MY_TX_SLOT1);//change forward the message from recipient
-*/
+	    isa_tx_pkt(rx_buf,length,configDHDR(5),MY_TX_SLOT1);//change forward the message from recipient
+
 	    //printf(" Forward message is sent.\n\r");
  	    //printf("pkt length:%d",length);
 	    //printf("%d\r\n",cnt++);
@@ -139,7 +148,7 @@ void Task1()
 	   // printf("\r\n");
 
 	}
-	
+
        if(isa_tx_pkt_check(MY_TX_SLOT)!=0){
        	  // printf("Pending TX\r\n");
        	}
@@ -152,17 +161,19 @@ void Task1()
 
 	sprintf( &tx_buf[PKT_DATA_START],"2");
 	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
-	isa_tx_pkt(tx_buf,length,configDHDR(),MY_TX_SLOT);
+	isa_tx_pkt(tx_buf,length,configDHDR(0),MY_TX_SLOT);
 
-	isa_wait_until_rx_or_tx ();
-	putchar('\n');
-	putchar('\r');
+
 	/*sprintf( &tx_buf2[PKT_DATA_START],"Hello from slot 2!");
 	length=strlen(&tx_buf2[PKT_DATA_START])+PKT_DATA_START+1;
 	isa_tx_pkt(tx_buf2,length,configDHDR(),2);
 	isa_wait_until_rx_or_tx ();*/
 
        }
+
+       isa_wait_until_rx_or_tx ();
+   //    	putchar('\n');
+    //   	putchar('\r');
   }
   
 

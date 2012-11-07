@@ -49,13 +49,13 @@ int8_t isa_set_schedule (isa_node_mode_t isa_node_mode, uint8_t clk_src_id)
     else if (isa_node_mode==ISA_REPEATER){ //change
         isa_tdma_rx_mask |= ((uint32_t) 1) << 2;
 	isa_tdma_tx_mask |= ((uint32_t) 1) << 3;//change for test
-	//isa_tdma_rx_mask |= ((uint32_t) 1) << 2;
-	//isa_tdma_tx_mask |= ((uint32_t) 1) << 3;
+	isa_tdma_tx_mask |= ((uint32_t) 1) << 5;
+	isa_tdma_rx_mask |= ((uint32_t) 1) << 7;
 
 	isa_sched[2] = 1;
-	isa_sched[3] = 1;//change for test
-	//isa_sched[2] = 1;
-	//isa_sched[3] = 1;
+	isa_sched[7] = 1;//change for test
+	isa_sched[5] = 1;
+	isa_sched[3] = 1;
 
     }
     else if(isa_node_mode==ISA_RECIPIENT){

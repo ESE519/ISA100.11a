@@ -1,0 +1,158 @@
+10
+
+dir
+3524
+svn://mlab.seas.upenn.edu/Projects/Projects/evm/ISA100_11a/code/current/nano-RK-well-sync/projects
+svn://mlab.seas.upenn.edu/Projects
+
+
+
+2012-03-06T21:10:23.331550Z
+3502
+isa_group
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6f2535f0-0a29-41e6-88c8-b250f56a4b15
+
+self_test
+dir
+
+basic_sensors
+dir
+
+basic_reserves
+dir
+
+basic_signals
+dir
+
+ecg_demo
+dir
+
+basic_rtl
+dir
+
+basic_bmac
+dir
+
+msp_basic_tasks
+dir
+
+msp_basic_adc
+dir
+
+SAMPL
+dir
+
+basic_mmc
+dir
+
+final_project
+dir
+
+widom
+dir
+
+lab2
+dir
+
+basic_serial
+dir
+
+DebugNWStack
+dir
+
+basic_task_stats
+dir
+
+basic_timer
+dir
+
+basic_SLIPstream
+dir
+
+ecg_project
+dir
+
+basic_sem
+dir
+
+basic_tasks
+dir
+
+network_stack_new
+dir
+
+basic_networking
+dir
+
+basic_eeprom
+dir
+
+basic_adc
+dir
+
+fun
+dir
+
+basic_rf
+dir
+
+demo_samples
+dir
+
+reserve_test
+dir
+
+README.txt
+file
+
+
+
+
+2012-01-27T21:06:52.451182Z
+9db27da7c828257ff0623734137401ec
+2011-12-29T22:00:47.938166Z
+3352
+isa_group
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+181
+
+network_stack
+dir
+
+msp_basic_tasksTmote
+dir
+

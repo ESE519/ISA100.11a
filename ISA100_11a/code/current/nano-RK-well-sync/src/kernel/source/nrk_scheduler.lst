@@ -633,7 +633,7 @@
  594 02ec D11C      		adc r13,__zero_reg__
  595 02ee A196      		adiw r28,33
  597               	.LM57:
- 598 02f0 53E0      		ldi r21,lo8(3)
+ 598 02f0 55E0      		ldi r21,lo8(5)
  599 02f2 C516      		cp r12,r21
  600 02f4 D104      		cpc r13,__zero_reg__
  601 02f6 01F0      		breq .+2
@@ -897,9 +897,9 @@
  767               		.comm _nrk_signal_list,4,1
  768               		.comm nrk_idle_task_stk,128,1
  769               		.comm nrk_kernel_stk_ptr,2,1
- 770               		.comm nrk_task_TCB,99,1
+ 770               		.comm nrk_task_TCB,165,1
  771               		.comm nrk_wakeup_signal,1,1
- 772               		.comm _nrk_readyQ,20,1
+ 772               		.comm _nrk_readyQ,30,1
  773               		.comm _free_node,2,1
  774               		.comm _head_node,2,1
  775               		.comm nrk_cur_task_prio,1,1
@@ -908,7 +908,7 @@
  778               		.comm nrk_high_ready_TCB,2,1
  779               		.comm _nrk_resource_cnt,1,1
  780               		.comm nrk_system_time,8,1
- 781               		.comm nrk_sem_list,6,1
+ 781               		.comm nrk_sem_list,15,1
  782               		.comm error_task,1,1
  783               		.comm error_num,1,1
  784               		.comm _nrk_cpu_state,1,1
@@ -921,16 +921,16 @@
  815               	/* File "../../../src/kernel/source/nrk_scheduler.c": code  506 = 0x01fa ( 481), prologues  12, epi
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_scheduler.c
-     /tmp/ccahtfxy.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccahtfxy.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccahtfxy.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccahtfxy.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccahtfxy.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccahtfxy.s:128    .text:00000000 _nrk_scheduler
+     /tmp/ccMRvAoJ.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccMRvAoJ.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccMRvAoJ.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccMRvAoJ.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccMRvAoJ.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccMRvAoJ.s:128    .text:00000000 _nrk_scheduler
                             *COM*:00000001 _nrk_prev_timer_val
                             *COM*:00000008 nrk_system_time
                             *COM*:00000002 nrk_cur_task_TCB
-                            *COM*:00000063 nrk_task_TCB
+                            *COM*:000000a5 nrk_task_TCB
                             *COM*:00000001 nrk_wakeup_signal
                             *COM*:00000001 nrk_high_ready_prio
                             *COM*:00000002 nrk_high_ready_TCB
@@ -939,11 +939,11 @@ DEFINED SYMBOLS
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr
-                            *COM*:00000014 _nrk_readyQ
+                            *COM*:0000001e _nrk_readyQ
                             *COM*:00000002 _free_node
                             *COM*:00000002 _head_node
                             *COM*:00000001 _nrk_resource_cnt
-                            *COM*:00000006 nrk_sem_list
+                            *COM*:0000000f nrk_sem_list
                             *COM*:00000001 error_task
                             *COM*:00000001 error_num
                             *COM*:00000002 next_next_wakeup

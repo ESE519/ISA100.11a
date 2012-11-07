@@ -1,0 +1,655 @@
+   1               		.file	"nrk_ext_int.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 111               	.global	nrk_ext_int_enable
+ 113               	nrk_ext_int_enable:
+ 114               		.stabd	46,0,0
+   1:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** /******************************************************************************
+   2:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  All rights reserved.
+   5:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *
+   6:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *
+  10:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *
+  14:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  GNU General Public License for more details.
+  18:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *
+  19:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *
+  22:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *  Anthony Rowe
+  24:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** *******************************************************************************/
+  25:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+  26:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** #include <include.h>
+  27:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** #include <avr/interrupt.h>
+  28:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** #include <ulib.h>
+  29:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** #include <nrk_ext_int.h>
+  30:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** #include <nrk_error.h>
+  31:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** #include <nrk_cfg.h>
+  32:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+  33:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+  34:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** int8_t  nrk_ext_int_enable(uint8_t pin )
+  35:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** {
+ 116               	.LM0:
+ 117               	.LFBB1:
+ 118               	/* prologue: frame size=0 */
+ 119               	/* prologue end (size=0) */
+  36:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_EXT_INT_0) { EIMSK |= BM(INT0); return NRK_OK; }
+ 121               	.LM1:
+ 122 0000 8823      		tst r24
+ 123 0002 01F4      		brne .L2
+ 125               	.LM2:
+ 126 0004 E89A      		sbi 61-0x20,0
+ 127 0006 00C0      		rjmp .L26
+ 128               	.L2:
+  37:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_EXT_INT_1) { EIMSK |= BM(INT1); return NRK_OK; }
+ 130               	.LM3:
+ 131 0008 8130      		cpi r24,lo8(1)
+ 132 000a 01F4      		brne .L5
+ 133 000c E99A      		sbi 61-0x20,1
+ 134 000e 00C0      		rjmp .L26
+ 135               	.L5:
+  38:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_EXT_INT_2) { EIMSK |= BM(INT2); return NRK_OK; }
+ 137               	.LM4:
+ 138 0010 8230      		cpi r24,lo8(2)
+ 139 0012 01F4      		brne .L7
+ 140 0014 EA9A      		sbi 61-0x20,2
+ 141 0016 00C0      		rjmp .L26
+ 142               	.L7:
+  39:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_0 ) { PCMSK0 |= BM(PCINT0); return NRK_OK; }
+ 144               	.LM5:
+ 145 0018 8330      		cpi r24,lo8(3)
+ 146 001a 01F4      		brne .L9
+ 147 001c 8091 6B00 		lds r24,107
+ 148 0020 8160      		ori r24,lo8(1)
+ 149 0022 00C0      		rjmp .L27
+ 150               	.L9:
+  40:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_1 ) { PCMSK0 |= BM(PCINT1); return NRK_OK; }
+ 152               	.LM6:
+ 153 0024 8430      		cpi r24,lo8(4)
+ 154 0026 01F4      		brne .L11
+ 155 0028 8091 6B00 		lds r24,107
+ 156 002c 8260      		ori r24,lo8(2)
+ 157 002e 00C0      		rjmp .L27
+ 158               	.L11:
+  41:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_2 ) { PCMSK0 |= BM(PCINT2); return NRK_OK; }
+ 160               	.LM7:
+ 161 0030 8530      		cpi r24,lo8(5)
+ 162 0032 01F4      		brne .L13
+ 163 0034 8091 6B00 		lds r24,107
+ 164 0038 8460      		ori r24,lo8(4)
+ 165 003a 00C0      		rjmp .L27
+ 166               	.L13:
+  42:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_3 ) { PCMSK0 |= BM(PCINT3); return NRK_OK; }
+ 168               	.LM8:
+ 169 003c 8630      		cpi r24,lo8(6)
+ 170 003e 01F4      		brne .L15
+ 171 0040 8091 6B00 		lds r24,107
+ 172 0044 8860      		ori r24,lo8(8)
+ 173 0046 00C0      		rjmp .L27
+ 174               	.L15:
+  43:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_4 ) { PCMSK0 |= BM(PCINT4); return NRK_OK; }
+ 176               	.LM9:
+ 177 0048 8730      		cpi r24,lo8(7)
+ 178 004a 01F4      		brne .L17
+ 179 004c 8091 6B00 		lds r24,107
+ 180 0050 8061      		ori r24,lo8(16)
+ 181 0052 00C0      		rjmp .L27
+ 182               	.L17:
+  44:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_5 ) { PCMSK0 |= BM(PCINT5); return NRK_OK; }
+ 184               	.LM10:
+ 185 0054 8830      		cpi r24,lo8(8)
+ 186 0056 01F4      		brne .L19
+ 187 0058 8091 6B00 		lds r24,107
+ 188 005c 8062      		ori r24,lo8(32)
+ 189 005e 00C0      		rjmp .L27
+ 190               	.L19:
+  45:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_6 ) { PCMSK0 |= BM(PCINT6); return NRK_OK; }
+ 192               	.LM11:
+ 193 0060 8930      		cpi r24,lo8(9)
+ 194 0062 01F4      		brne .L21
+ 195 0064 8091 6B00 		lds r24,107
+ 196 0068 8064      		ori r24,lo8(64)
+ 197               	.L27:
+ 198 006a 8093 6B00 		sts 107,r24
+ 199               	.L26:
+ 200 006e 81E0      		ldi r24,lo8(1)
+ 201 0070 90E0      		ldi r25,hi8(1)
+ 202 0072 0895      		ret
+ 203               	.L21:
+  46:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_7 ) { PCMSK0 |= BM(PCINT7); return NRK_OK; }
+ 205               	.LM12:
+ 206 0074 8A30      		cpi r24,lo8(10)
+ 207 0076 01F0      		breq .L23
+ 208 0078 8FEF      		ldi r24,lo8(-1)
+ 209 007a 9FEF      		ldi r25,hi8(-1)
+ 210 007c 0895      		ret
+ 211               	.L23:
+ 212 007e 8091 6B00 		lds r24,107
+ 213 0082 8068      		ori r24,lo8(-128)
+ 214 0084 8093 6B00 		sts 107,r24
+ 215 0088 81E0      		ldi r24,lo8(1)
+ 216 008a 90E0      		ldi r25,hi8(1)
+  47:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** return NRK_ERROR;
+  48:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** }
+ 218               	.LM13:
+ 219 008c 0895      		ret
+ 220               	/* epilogue: frame size=0 */
+ 221               	/* epilogue: noreturn */
+ 222               	/* epilogue end (size=0) */
+ 223               	/* function nrk_ext_int_enable size 71 (71) */
+ 225               	.Lscope1:
+ 227               		.stabd	78,0,0
+ 230               	.global	nrk_ext_int_disable
+ 232               	nrk_ext_int_disable:
+ 233               		.stabd	46,0,0
+  49:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+  50:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** int8_t  nrk_ext_int_disable(uint8_t pin )
+  51:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** {
+ 235               	.LM14:
+ 236               	.LFBB2:
+ 237               	/* prologue: frame size=0 */
+ 238               	/* prologue end (size=0) */
+  52:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_EXT_INT_0) { EIMSK &= ~BM(INT0); return NRK_OK; }
+ 240               	.LM15:
+ 241 008e 8823      		tst r24
+ 242 0090 01F4      		brne .L29
+ 244               	.LM16:
+ 245 0092 E898      		cbi 61-0x20,0
+ 246 0094 00C0      		rjmp .L53
+ 247               	.L29:
+  53:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_EXT_INT_1) { EIMSK &= ~BM(INT1); return NRK_OK; }
+ 249               	.LM17:
+ 250 0096 8130      		cpi r24,lo8(1)
+ 251 0098 01F0      		breq .L54
+  54:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_EXT_INT_2) { EIMSK &= ~BM(INT1); return NRK_OK; }
+ 253               	.LM18:
+ 254 009a 8230      		cpi r24,lo8(2)
+ 255 009c 01F4      		brne .L34
+ 256               	.L54:
+ 257 009e E998      		cbi 61-0x20,1
+ 258 00a0 00C0      		rjmp .L53
+ 259               	.L34:
+  55:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_0 ) { PCMSK0 &= ~BM(PCINT0); return NRK_OK; }
+ 261               	.LM19:
+ 262 00a2 8330      		cpi r24,lo8(3)
+ 263 00a4 01F4      		brne .L36
+ 264 00a6 8091 6B00 		lds r24,107
+ 265 00aa 8E7F      		andi r24,lo8(-2)
+ 266 00ac 00C0      		rjmp .L55
+ 267               	.L36:
+  56:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_1 ) { PCMSK0 &= ~BM(PCINT1); return NRK_OK; }
+ 269               	.LM20:
+ 270 00ae 8430      		cpi r24,lo8(4)
+ 271 00b0 01F4      		brne .L38
+ 272 00b2 8091 6B00 		lds r24,107
+ 273 00b6 8D7F      		andi r24,lo8(-3)
+ 274 00b8 00C0      		rjmp .L55
+ 275               	.L38:
+  57:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_2 ) { PCMSK0 &= ~BM(PCINT2); return NRK_OK; }
+ 277               	.LM21:
+ 278 00ba 8530      		cpi r24,lo8(5)
+ 279 00bc 01F4      		brne .L40
+ 280 00be 8091 6B00 		lds r24,107
+ 281 00c2 8B7F      		andi r24,lo8(-5)
+ 282 00c4 00C0      		rjmp .L55
+ 283               	.L40:
+  58:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_3 ) { PCMSK0 &= ~BM(PCINT3); return NRK_OK; }
+ 285               	.LM22:
+ 286 00c6 8630      		cpi r24,lo8(6)
+ 287 00c8 01F4      		brne .L42
+ 288 00ca 8091 6B00 		lds r24,107
+ 289 00ce 877F      		andi r24,lo8(-9)
+ 290 00d0 00C0      		rjmp .L55
+ 291               	.L42:
+  59:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_4 ) { PCMSK0 &= ~BM(PCINT4); return NRK_OK; }
+ 293               	.LM23:
+ 294 00d2 8730      		cpi r24,lo8(7)
+ 295 00d4 01F4      		brne .L44
+ 296 00d6 8091 6B00 		lds r24,107
+ 297 00da 8F7E      		andi r24,lo8(-17)
+ 298 00dc 00C0      		rjmp .L55
+ 299               	.L44:
+  60:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_5 ) { PCMSK0 &= ~BM(PCINT5); return NRK_OK; }
+ 301               	.LM24:
+ 302 00de 8830      		cpi r24,lo8(8)
+ 303 00e0 01F4      		brne .L46
+ 304 00e2 8091 6B00 		lds r24,107
+ 305 00e6 8F7D      		andi r24,lo8(-33)
+ 306 00e8 00C0      		rjmp .L55
+ 307               	.L46:
+  61:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_6 ) { PCMSK0 &= ~BM(PCINT6); return NRK_OK; }
+ 309               	.LM25:
+ 310 00ea 8930      		cpi r24,lo8(9)
+ 311 00ec 01F4      		brne .L48
+ 312 00ee 8091 6B00 		lds r24,107
+ 313 00f2 8F7B      		andi r24,lo8(-65)
+ 314               	.L55:
+ 315 00f4 8093 6B00 		sts 107,r24
+ 316               	.L53:
+ 317 00f8 81E0      		ldi r24,lo8(1)
+ 318 00fa 90E0      		ldi r25,hi8(1)
+ 319 00fc 0895      		ret
+ 320               	.L48:
+  62:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_7 ) { PCMSK0 &= ~BM(PCINT7); return NRK_OK; }
+ 322               	.LM26:
+ 323 00fe 8A30      		cpi r24,lo8(10)
+ 324 0100 01F0      		breq .L50
+ 325 0102 8FEF      		ldi r24,lo8(-1)
+ 326 0104 9FEF      		ldi r25,hi8(-1)
+ 327 0106 0895      		ret
+ 328               	.L50:
+ 329 0108 8091 6B00 		lds r24,107
+ 330 010c 8F77      		andi r24,lo8(127)
+ 331 010e 8093 6B00 		sts 107,r24
+ 332 0112 81E0      		ldi r24,lo8(1)
+ 333 0114 90E0      		ldi r25,hi8(1)
+  63:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** return NRK_ERROR;
+  64:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** }
+ 335               	.LM27:
+ 336 0116 0895      		ret
+ 337               	/* epilogue: frame size=0 */
+ 338               	/* epilogue: noreturn */
+ 339               	/* epilogue end (size=0) */
+ 340               	/* function nrk_ext_int_disable size 69 (69) */
+ 342               	.Lscope2:
+ 344               		.stabd	78,0,0
+ 349               	.global	nrk_ext_int_configure
+ 351               	nrk_ext_int_configure:
+ 352               		.stabd	46,0,0
+  65:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+  66:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+  67:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+  68:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** int8_t  nrk_ext_int_configure(uint8_t pin, uint8_t mode, void *callback_func)
+  69:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** {
+ 354               	.LM28:
+ 355               	.LFBB3:
+ 356               	/* prologue: frame size=0 */
+ 357               	/* prologue end (size=0) */
+  70:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_EXT_INT_0)
+ 359               	.LM29:
+ 360 0118 8823      		tst r24
+ 361 011a 01F4      		brne .L57
+  71:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	{
+  72:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	ext_int0_callback=callback_func;
+ 363               	.LM30:
+ 364 011c 5093 0000 		sts (ext_int0_callback)+1,r21
+ 365 0120 4093 0000 		sts ext_int0_callback,r20
+  73:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_LOW_TRIGGER) EICRA &= ~(BM(ISC01) | BM(ISC00));
+ 367               	.LM31:
+ 368 0124 6623      		tst r22
+ 369 0126 01F4      		brne .L59
+ 370 0128 8091 6900 		lds r24,105
+ 371 012c 8C7F      		andi r24,lo8(-4)
+ 372 012e 00C0      		rjmp .L90
+ 373               	.L59:
+  74:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_LEVEL_TRIGGER) 
+ 375               	.LM32:
+ 376 0130 6130      		cpi r22,lo8(1)
+ 377 0132 01F4      		brne .L62
+  75:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 		{ EICRA &= (~BM(ISC01)); EICRA |= BM(ISC00); }
+ 379               	.LM33:
+ 380 0134 8091 6900 		lds r24,105
+ 381 0138 8D7F      		andi r24,lo8(-3)
+ 382 013a 8093 6900 		sts 105,r24
+ 383 013e 8091 6900 		lds r24,105
+ 384 0142 8160      		ori r24,lo8(1)
+ 385 0144 00C0      		rjmp .L90
+ 386               	.L62:
+  76:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_FALLING_EDGE) 
+ 388               	.LM34:
+ 389 0146 6230      		cpi r22,lo8(2)
+ 390 0148 01F4      		brne .L64
+  77:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 		{ EICRA |= BM(ISC01); EICRA &= (~BM(ISC00)); }
+ 392               	.LM35:
+ 393 014a 8091 6900 		lds r24,105
+ 394 014e 8260      		ori r24,lo8(2)
+ 395 0150 8093 6900 		sts 105,r24
+ 396 0154 8091 6900 		lds r24,105
+ 397 0158 8E7F      		andi r24,lo8(-2)
+ 398 015a 00C0      		rjmp .L90
+ 399               	.L64:
+  78:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_RISING_EDGE) EICRA |= BM(ISC01) | BM(ISC00);
+ 401               	.LM36:
+ 402 015c 6330      		cpi r22,lo8(3)
+ 403 015e 01F0      		breq .+2
+ 404 0160 00C0      		rjmp .L66
+ 405 0162 8091 6900 		lds r24,105
+ 406 0166 8360      		ori r24,lo8(3)
+ 407 0168 00C0      		rjmp .L90
+ 408               	.L57:
+  79:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	return NRK_OK;
+  80:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	}
+  81:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_EXT_INT_1)
+ 410               	.LM37:
+ 411 016a 8130      		cpi r24,lo8(1)
+ 412 016c 01F4      		brne .L68
+  82:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	{
+  83:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	ext_int1_callback=callback_func;
+ 414               	.LM38:
+ 415 016e 5093 0000 		sts (ext_int1_callback)+1,r21
+ 416 0172 4093 0000 		sts ext_int1_callback,r20
+  84:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_LOW_TRIGGER) EICRA &= ~(BM(ISC11) | BM(ISC10));
+ 418               	.LM39:
+ 419 0176 6623      		tst r22
+ 420 0178 01F4      		brne .L70
+ 421 017a 8091 6900 		lds r24,105
+ 422 017e 837F      		andi r24,lo8(-13)
+ 423 0180 00C0      		rjmp .L90
+ 424               	.L70:
+  85:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_LEVEL_TRIGGER) 
+ 426               	.LM40:
+ 427 0182 6130      		cpi r22,lo8(1)
+ 428 0184 01F4      		brne .L72
+  86:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 		{ EICRA &= (~BM(ISC11)); EICRA |= BM(ISC10); }
+ 430               	.LM41:
+ 431 0186 8091 6900 		lds r24,105
+ 432 018a 877F      		andi r24,lo8(-9)
+ 433 018c 8093 6900 		sts 105,r24
+ 434 0190 8091 6900 		lds r24,105
+ 435 0194 8460      		ori r24,lo8(4)
+ 436 0196 00C0      		rjmp .L90
+ 437               	.L72:
+  87:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_FALLING_EDGE) 
+ 439               	.LM42:
+ 440 0198 6230      		cpi r22,lo8(2)
+ 441 019a 01F4      		brne .L74
+  88:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 		{ EICRA |= BM(ISC11); EICRA &= (~BM(ISC10)); }
+ 443               	.LM43:
+ 444 019c 8091 6900 		lds r24,105
+ 445 01a0 8860      		ori r24,lo8(8)
+ 446 01a2 8093 6900 		sts 105,r24
+ 447 01a6 8091 6900 		lds r24,105
+ 448 01aa 8B7F      		andi r24,lo8(-5)
+ 449 01ac 00C0      		rjmp .L90
+ 450               	.L74:
+  89:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_RISING_EDGE) EICRA |= BM(ISC11) | BM(ISC10);
+ 452               	.LM44:
+ 453 01ae 6330      		cpi r22,lo8(3)
+ 454 01b0 01F0      		breq .+2
+ 455 01b2 00C0      		rjmp .L66
+ 456 01b4 8091 6900 		lds r24,105
+ 457 01b8 8C60      		ori r24,lo8(12)
+ 458               	.L90:
+ 459 01ba 8093 6900 		sts 105,r24
+ 460 01be 00C0      		rjmp .L89
+ 461               	.L68:
+  90:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	return NRK_OK;
+  91:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	}
+  92:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_EXT_INT_2)
+ 463               	.LM45:
+ 464 01c0 8230      		cpi r24,lo8(2)
+ 465 01c2 01F4      		brne .L77
+  93:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	{
+  94:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	ext_int1_callback=callback_func;
+ 467               	.LM46:
+ 468 01c4 5093 0000 		sts (ext_int1_callback)+1,r21
+ 469 01c8 4093 0000 		sts ext_int1_callback,r20
+  95:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_LOW_TRIGGER) EICRA &= ~(BM(ISC21) | BM(ISC20));
+ 471               	.LM47:
+ 472 01cc 6623      		tst r22
+ 473 01ce 01F4      		brne .L79
+ 474 01d0 8091 6900 		lds r24,105
+ 475 01d4 8F7C      		andi r24,lo8(-49)
+ 476 01d6 00C0      		rjmp .L90
+ 477               	.L79:
+  96:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_LEVEL_TRIGGER) 
+ 479               	.LM48:
+ 480 01d8 6130      		cpi r22,lo8(1)
+ 481 01da 01F4      		brne .L81
+  97:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 		{ EICRA &= (~BM(ISC21)); EICRA |= BM(ISC20); }
+ 483               	.LM49:
+ 484 01dc 8091 6900 		lds r24,105
+ 485 01e0 8F7D      		andi r24,lo8(-33)
+ 486 01e2 8093 6900 		sts 105,r24
+ 487 01e6 8091 6900 		lds r24,105
+ 488 01ea 8061      		ori r24,lo8(16)
+ 489 01ec 00C0      		rjmp .L90
+ 490               	.L81:
+  98:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_FALLING_EDGE) 
+ 492               	.LM50:
+ 493 01ee 6230      		cpi r22,lo8(2)
+ 494 01f0 01F4      		brne .L83
+  99:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 		{ EICRA |= BM(ISC21); EICRA &= (~BM(ISC20)); }
+ 496               	.LM51:
+ 497 01f2 8091 6900 		lds r24,105
+ 498 01f6 8062      		ori r24,lo8(32)
+ 499 01f8 8093 6900 		sts 105,r24
+ 500 01fc 8091 6900 		lds r24,105
+ 501 0200 8F7E      		andi r24,lo8(-17)
+ 502 0202 00C0      		rjmp .L90
+ 503               	.L83:
+ 100:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(mode==NRK_RISING_EDGE) EICRA |= BM(ISC21) | BM(ISC20);
+ 505               	.LM52:
+ 506 0204 6330      		cpi r22,lo8(3)
+ 507 0206 01F4      		brne .L66
+ 508 0208 8091 6900 		lds r24,105
+ 509 020c 8063      		ori r24,lo8(48)
+ 510 020e 00C0      		rjmp .L90
+ 511               	.L77:
+ 101:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	return NRK_OK;
+ 102:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	}
+ 103:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+ 104:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+ 105:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+ 106:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** if(pin==NRK_PC_INT_0 || pin==NRK_PC_INT_1 || pin==NRK_PC_INT_2 || pin==NRK_PC_INT_3 || pin==NRK_PC_
+ 513               	.LM53:
+ 514 0210 8350      		subi r24,lo8(-(-3))
+ 515 0212 8830      		cpi r24,lo8(8)
+ 516 0214 00F0      		brlo .L86
+ 517 0216 8FEF      		ldi r24,lo8(-1)
+ 518 0218 9FEF      		ldi r25,hi8(-1)
+ 519 021a 0895      		ret
+ 520               	.L86:
+ 107:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	PCICR |= BM(PCIE0);	
+ 522               	.LM54:
+ 523 021c 8091 6800 		lds r24,104
+ 524 0220 8160      		ori r24,lo8(1)
+ 525 0222 8093 6800 		sts 104,r24
+ 108:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	pc_int0_callback=callback_func;
+ 527               	.LM55:
+ 528 0226 5093 0000 		sts (pc_int0_callback)+1,r21
+ 529 022a 4093 0000 		sts pc_int0_callback,r20
+ 530               	.L89:
+ 531 022e 81E0      		ldi r24,lo8(1)
+ 532 0230 90E0      		ldi r25,hi8(1)
+ 533 0232 0895      		ret
+ 534               	.L66:
+ 109:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	return NRK_OK;
+ 536               	.LM56:
+ 537 0234 81E0      		ldi r24,lo8(1)
+ 538 0236 90E0      		ldi r25,hi8(1)
+ 110:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	}
+ 111:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** return NRK_ERROR;
+ 112:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** }
+ 540               	.LM57:
+ 541 0238 0895      		ret
+ 542               	/* epilogue: frame size=0 */
+ 543               	/* epilogue: noreturn */
+ 544               	/* epilogue end (size=0) */
+ 545               	/* function nrk_ext_int_configure size 145 (145) */
+ 547               	.Lscope3:
+ 549               		.stabd	78,0,0
+ 551               	.global	__vector_1
+ 553               	__vector_1:
+ 554               		.stabd	46,0,0
+ 113:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+ 114:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+ 115:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** SIGNAL(PCINT0_vect) {
+ 116:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(pc_int0_callback!=NULL) pc_int0_callback();
+ 117:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	else
+ 118:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	nrk_kernel_error_add(NRK_SEG_FAULT,0);
+ 119:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	return;  	
+ 120:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** }
+ 121:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+ 122:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 
+ 123:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** SIGNAL(INT0_vect) {
+ 556               	.LM58:
+ 557               	.LFBB4:
+ 558               	/* prologue: frame size=0 */
+ 559 023a 1F92      		push __zero_reg__
+ 560 023c 0F92      		push __tmp_reg__
+ 561 023e 0FB6      		in __tmp_reg__,__SREG__
+ 562 0240 0F92      		push __tmp_reg__
+ 563 0242 1124      		clr __zero_reg__
+ 564 0244 2F93      		push r18
+ 565 0246 3F93      		push r19
+ 566 0248 4F93      		push r20
+ 567 024a 5F93      		push r21
+ 568 024c 6F93      		push r22
+ 569 024e 7F93      		push r23
+ 570 0250 8F93      		push r24
+ 571 0252 9F93      		push r25
+ 572 0254 AF93      		push r26
+ 573 0256 BF93      		push r27
+ 574 0258 EF93      		push r30
+ 575 025a FF93      		push r31
+ 576               	/* prologue end (size=17) */
+ 124:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	if(ext_int0_callback!=NULL) ext_int0_callback();
+ 578               	.LM59:
+ 579 025c E091 0000 		lds r30,ext_int0_callback
+ 580 0260 F091 0000 		lds r31,(ext_int0_callback)+1
+ 581 0264 3097      		sbiw r30,0
+ 582 0266 01F0      		breq .L92
+ 584               	.LM60:
+ 585 0268 0995      		icall
+ 586 026a 00C0      		rjmp .L95
+ 587               	.L92:
+ 125:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	else
+ 126:../../../src/kernel/hal/atmega1281/nrk_ext_int.c **** 	nrk_kernel_error_add(NRK_SEG_FAULT,0);
+ 589               	.LM61:
+ 590 026c 60E0      		ldi r22,lo8(0)
+ 591 026e 8AE0      		ldi r24,lo8(10)
+ 592 0270 0E94 0000 		call nrk_kernel_error_add
+ 593               	.L95:
+ 594               	/* epilogue: frame size=0 */
+ 595 0274 FF91      		pop r31
+ 596 0276 EF91      		pop r30
+ 597 0278 BF91      		pop r27
+ 598 027a AF91      		pop r26
+ 599 027c 9F91      		pop r25
+ 600 027e 8F91      		pop r24
+ 601 0280 7F91      		pop r23
+ 602 0282 6F91      		pop r22
+ 603 0284 5F91      		pop r21
+ 604 0286 4F91      		pop r20
+ 605 0288 3F91      		pop r19
+ 606 028a 2F91      		pop r18
+ 607 028c 0F90      		pop __tmp_reg__
+ 608 028e 0FBE      		out __SREG__,__tmp_reg__
+ 609 0290 0F90      		pop __tmp_reg__
+ 610 0292 1F90      		pop __zero_reg__
+ 611 0294 1895      		reti
+ 612               	/* epilogue end (size=17) */
+ 613               	/* function __vector_1 size 46 (12) */
+ 615               	.Lscope4:
+ 617               		.stabd	78,0,0
+ 619               	.global	__vector_9
+ 621               	__vector_9:
+ 622               		.stabd	46,0,0
+ 624               	.LM62:
+ 625               	.LFBB5:
+ 626               	/* prologue: frame size=0 */
+ 627 0296 1F92      		push __zero_reg__
+ 628 0298 0F92      		push __tmp_reg__
+ 629 029a 0FB6      		in __tmp_reg__,__SREG__
+ 630 029c 0F92      		push __tmp_reg__
+ 631 029e 1124      		clr __zero_reg__
+ 632 02a0 2F93      		push r18
+ 633 02a2 3F93      		push r19
+ 634 02a4 4F93      		push r20
+ 635 02a6 5F93      		push r21
+ 636 02a8 6F93      		push r22
+ 637 02aa 7F93      		push r23
+ 638 02ac 8F93      		push r24
+ 639 02ae 9F93      		push r25
+ 640 02b0 AF93      		push r26
+ 641 02b2 BF93      		push r27
+ 642 02b4 EF93      		push r30
+ 643 02b6 FF93      		push r31
+ 644               	/* prologue end (size=17) */
+ 646               	.LM63:
+ 647 02b8 E091 0000 		lds r30,pc_int0_callback
+ 648 02bc F091 0000 		lds r31,(pc_int0_callback)+1
+ 649 02c0 3097      		sbiw r30,0
+ 650 02c2 01F0      		breq .L97
+ 652               	.LM64:
+ 653 02c4 0995      		icall
+ 654 02c6 00C0      		rjmp .L100
+ 655               	.L97:
+ 657               	.LM65:
+ 658 02c8 60E0      		ldi r22,lo8(0)
+ 659 02ca 8AE0      		ldi r24,lo8(10)
+ 660 02cc 0E94 0000 		call nrk_kernel_error_add
+ 661               	.L100:
+ 662               	/* epilogue: frame size=0 */
+ 663 02d0 FF91      		pop r31
+ 664 02d2 EF91      		pop r30
+ 665 02d4 BF91      		pop r27
+ 666 02d6 AF91      		pop r26
+ 667 02d8 9F91      		pop r25
+ 668 02da 8F91      		pop r24
+ 669 02dc 7F91      		pop r23
+ 670 02de 6F91      		pop r22
+ 671 02e0 5F91      		pop r21
+ 672 02e2 4F91      		pop r20
+ 673 02e4 3F91      		pop r19
+ 674 02e6 2F91      		pop r18
+ 675 02e8 0F90      		pop __tmp_reg__
+ 676 02ea 0FBE      		out __SREG__,__tmp_reg__
+ 677 02ec 0F90      		pop __tmp_reg__
+ 678 02ee 1F90      		pop __zero_reg__
+ 679 02f0 1895      		reti
+ 680               	/* epilogue end (size=17) */
+ 681               	/* function __vector_9 size 46 (12) */
+ 683               	.Lscope5:
+ 685               		.stabd	78,0,0
+ 686               		.comm _nrk_signal_list,4,1
+ 687               		.comm ext_int0_callback,2,1
+ 688               		.comm ext_int1_callback,2,1
+ 689               		.comm ext_int2_callback,2,1
+ 690               		.comm pc_int0_callback,2,1
+ 691               		.comm error_task,1,1
+ 692               		.comm error_num,1,1
+ 701               	.Letext0:
+ 702               	/* File "../../../src/kernel/hal/atmega1281/nrk_ext_int.c": code  377 = 0x0179 ( 309), prologues  3
+DEFINED SYMBOLS
+                            *ABS*:00000000 nrk_ext_int.c
+     /tmp/ccMgVn5r.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccMgVn5r.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccMgVn5r.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccMgVn5r.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccMgVn5r.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccMgVn5r.s:113    .text:00000000 nrk_ext_int_enable
+     /tmp/ccMgVn5r.s:232    .text:0000008e nrk_ext_int_disable
+     /tmp/ccMgVn5r.s:351    .text:00000118 nrk_ext_int_configure
+                            *COM*:00000002 ext_int0_callback
+                            *COM*:00000002 ext_int1_callback
+                            *COM*:00000002 pc_int0_callback
+     /tmp/ccMgVn5r.s:553    .text:0000023a __vector_1
+     /tmp/ccMgVn5r.s:621    .text:00000296 __vector_9
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000002 ext_int2_callback
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+nrk_kernel_error_add

@@ -1,0 +1,76 @@
+ifeq ($(DEBUG),y)
+	CFLAGS += -O -g		# -O is need to expand inlines
+else
+	CFLAGS += -O2
+endif
+
+ROOT_DIR = /home/ayb/nano-RK
+TARGET	= $(ROOT_DIR)/projects/network_stack_new/NetworkGateway.c
+
+PWD = /etc
+
+GUMSTIX_BUILDROOT   = $(PWD)/gumstix-buildroot
+BUILD_ARM           = $(wildcard $(GUMSTIX_BUILDROOT)/build_arm*)
+CROSS_COMPILE       = $(patsubst %gcc, %, $(wildcard $(BUILD_ARM)/staging_dir/bin/arm-linux-uclibc*-gcc))
+
+ifeq ($(strip $(CROSS_COMPILE)),)
+$(error Unable to detect Cross Compiler)
+endif
+
+TARGET_ARCH=-Os -march=armv5te -mtune=xscale -Wa,-mcpu=xscale
+CC = $(CROSS_COMPILE)gcc
+
+#
+# If you need additional serch paths for include files, then use the -I flag
+# and add them to the CPPFLAGS variable
+#
+
+CPPFLAGS = -I$(ROOT_DIR)/projects/network_stack_new/
+#CPPFLAGS += -I$(ROOT_DIR)/tools/SLIPstream/SLIPstream-client/
+
+#
+# If you need addional search paths for library files, then use the -L flag
+# and add them to LDFLAGS.
+#
+
+# LDFLAGS += -L somedir
+
+#
+# If you need additional libraries, then use -lxxx to search for libxxx.a
+#
+
+# LDLIBS += -lxxx
+
+SRCS = NetworkGateway.c TopologyGeneration.c NGPack.c slipstream.c
+OBJS = $(SRCS:.c=.o)
+
+#.PHONY: all
+
+#all:	depend $(TARGET)
+
+#
+# You can change the $(TARGET).c if that's not your main file and you can
+# add additional .o files to the end of the line
+#
+
+#$(TARGET) : $(OBJS)
+
+#clean:
+#	rm -rf $(OBJS) core .depend $(TARGET)
+
+#depend .depend dep:
+#	$(CC) $(CFLAGS) $(CPPFLAGS) -M $(SRCS) > .depend
+#    $(CC) $(CFLAGS) $(CPPFLAGS) -o ngr $(SRCS) 
+
+all:
+	clear 
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o ngr $(SRCS) 
+
+.PHONY : clean
+clean:
+	rm -f ngr $(OBJS) 
+	 
+
+ifeq (.depend,$(wildcard .depend))
+include .depend
+endif

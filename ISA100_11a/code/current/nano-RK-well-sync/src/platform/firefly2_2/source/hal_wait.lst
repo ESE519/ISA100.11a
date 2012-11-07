@@ -92,12 +92,12 @@
  152               	/* File "../../../src/platform/firefly2_2/source/hal_wait.c": code   20 = 0x0014 (  19), prologues 
 DEFINED SYMBOLS
                             *ABS*:00000000 hal_wait.c
-     /tmp/ccuJgKuY.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccuJgKuY.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccuJgKuY.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccuJgKuY.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccuJgKuY.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccuJgKuY.s:110    .text:00000000 halWait
+     /tmp/cchyKc57.s:2      *ABS*:0000003f __SREG__
+     /tmp/cchyKc57.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cchyKc57.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cchyKc57.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cchyKc57.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cchyKc57.s:110    .text:00000000 halWait
                             *COM*:00000004 _nrk_signal_list
 
 UNDEFINED SYMBOLS

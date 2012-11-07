@@ -131,12 +131,12 @@
  207               	/* File "../../../src/kernel/source/nrk_idle_task.c": code   26 = 0x001a (  26), prologues   0, epi
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_idle_task.c
-     /tmp/ccmrpdrv.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccmrpdrv.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccmrpdrv.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccmrpdrv.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccmrpdrv.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccmrpdrv.s:135    .text:00000000 nrk_idle_task
+     /tmp/ccqnjTbH.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccqnjTbH.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccqnjTbH.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccqnjTbH.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccqnjTbH.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccqnjTbH.s:135    .text:00000000 nrk_idle_task
                             *COM*:00000001 _nrk_cpu_state
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000004 _nrk_signal_list

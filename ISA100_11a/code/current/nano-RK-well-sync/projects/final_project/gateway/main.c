@@ -111,7 +111,7 @@ void Task1()
   uint8_t finished = 0;
 
   printf( "Task1 PID=%d\r\n",nrk_get_pid());
-
+printf("Gateway");
   nrk_led_set(RED_LED);
 
   nrk_led_set(BLUE_LED);
@@ -154,6 +154,11 @@ void Task1()
 
 
   while(1){
+
+	  //Spit out log info
+	  	  if (txCount % 1000 == 0){
+	  	printf ("TxCount: %d\r\nRXCount: %d\r\nPacketLoss:%d", txCount,rxCount, packetsLost);
+	  	  }
        nrk_gpio_set(NRK_DEBUG_3);
        
        if( isa_rx_pkt_check()!=0 ) {
@@ -177,13 +182,15 @@ void Task1()
 	else{
 	sprintf( &tx_buf[PKT_DATA_START],"node %d,%c",MY_ID,cnt++);
   	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
-  	isa_tx_pkt(tx_buf,length,configDHDR(),MY_TX_SLOT);
+  	isa_tx_pkt(tx_buf,length,configDHDR(0),MY_TX_SLOT);
 	//printf("Len:%d\r\n",length);
   	//printf("Hello world is sent.\n\r");
   	}
 
-	nrk_gpio_clr(NRK_DEBUG_3);
+
 	isa_wait_until_rx_or_tx ();
+
+
   }
   
 

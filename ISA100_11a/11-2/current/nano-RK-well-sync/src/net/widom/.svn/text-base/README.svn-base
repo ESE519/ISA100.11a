@@ -1,0 +1,55 @@
+Widom
+------------------------
+
+Widom is MAC protocol that employs bitwise arbitration to grant medium access.
+This kind of MAC protocol belongs to a family usually called dominance 
+protocols or binary countdown protocols.
+
+The main idea of our dominance protocol is that a message stream is assigned 
+a static priority and when message streams contend for the channel, 
+they perform a tournament such that the highest-priority message is granted 
+access to the channel. 
+
+In this way, assuming that message priorities are unique, we obtain a 
+collision-free and prioritized MAC protocol and hence it is possible to 
+schedule the medium such that if message characteristics (periods, transmission 
+times, jitter, etc.) are known, then it is possible to compute upper 
+bounds on message delays.
+
+Several versions of widom where implemented. The basic implementation supports
+only a Single Broadcast Domain (SBD), that is, all nodes can ear each other and
+requires judicious used of non blocking sections in ALL code that is running on
+the microcontroller.
+
+The remaining versions implemented are under the folder "experimental-versions", 
+and are not *very* sensitive to non blocking sections. But, they do block the 
+microcontroller periodically to run the protocol. 
+
+Experimental Versions
+------------------------
+
+Folder "experimental-versions" contains several experimental versions 
+of widom; Two versions of Widom Single Broadcast Domain (SBD) that use an 
+external synchronization master:
+
+	1. WiDom SBD using CC2420 alone.
+	2. WiDom SBD using the "wings" board to transmit priority 
+	   bits and CC2420 for data messages.
+
+Three (experimental) versions of Widom Multiple Broadcast Domain (MBD):
+
+  3. WiDom MBD using CC2420 alone.
+  4. WiDom MBD using the "wings" board to transmit priority 
+	   bits and CC2420 for data messages.
+	5. WiDom MBD using an external synchronization 
+        device (stacked on the mote, communicating via PIN 28)
+
+The version/mode of the protocol is defined in widom.h. 
+
+All versions work on the firefly. Only versions 1 and 3 
+work on the micaZ because is neither has support 
+for the "wings" add-on board nor stacking of external synchronization 
+device.
+
+Author:
+  Nuno Pereira - Polytechnic Institute of Porto; nap@isep.ipp.pt

@@ -12,11 +12,11 @@
   31               	/* File "../../../src/kernel/source/nrk_reserve.c": code    0 = 0x0000 (   0), prologues   0, epilo
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_reserve.c
-     /tmp/ccza4zKF.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccza4zKF.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccza4zKF.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccza4zKF.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccza4zKF.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cccS5UpF.s:2      *ABS*:0000003f __SREG__
+     /tmp/cccS5UpF.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cccS5UpF.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cccS5UpF.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cccS5UpF.s:6      *ABS*:00000001 __zero_reg__
 
 UNDEFINED SYMBOLS
 __do_copy_data

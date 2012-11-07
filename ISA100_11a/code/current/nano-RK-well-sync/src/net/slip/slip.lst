@@ -685,26 +685,26 @@
  702               	/* File "../../../src/net/slip/slip.c": code  313 = 0x0139 ( 271), prologues  18, epilogues  24 */
 DEFINED SYMBOLS
                             *ABS*:00000000 slip.c
-     /tmp/ccwjzXM9.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccwjzXM9.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccwjzXM9.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccwjzXM9.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccwjzXM9.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccwjzXM9.s:132    .text:00000000 slip_started
-     /tmp/ccwjzXM9.s:655    .data:00000000 _slip_started
-     /tmp/ccwjzXM9.s:156    .text:0000000c get_byte
+     /tmp/ccUSDQ8q.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccUSDQ8q.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccUSDQ8q.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccUSDQ8q.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccUSDQ8q.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccUSDQ8q.s:132    .text:00000000 slip_started
+     /tmp/ccUSDQ8q.s:655    .data:00000000 _slip_started
+     /tmp/ccUSDQ8q.s:156    .text:0000000c get_byte
                             *COM*:00000002 g_dv_in
-     /tmp/ccwjzXM9.s:184    .text:0000001c slip_rx
-     /tmp/ccwjzXM9.s:664    .progmem.data:00000025 __c.2338
-     /tmp/ccwjzXM9.s:660    .progmem.data:00000000 __c.2340
-     /tmp/ccwjzXM9.s:405    .text:00000148 put_byte
+     /tmp/ccUSDQ8q.s:184    .text:0000001c slip_rx
+     /tmp/ccUSDQ8q.s:664    .progmem.data:00000025 __c.2338
+     /tmp/ccUSDQ8q.s:660    .progmem.data:00000000 __c.2340
+     /tmp/ccUSDQ8q.s:405    .text:00000148 put_byte
                             *COM*:00000001 g_delay
                             *COM*:00000002 g_dv_out
-     /tmp/ccwjzXM9.s:455    .text:00000182 slip_tx
+     /tmp/ccUSDQ8q.s:455    .text:00000182 slip_tx
                             *COM*:00000002 slip_tx_sem
-     /tmp/ccwjzXM9.s:672    .progmem.data:0000006f __c.2304
-     /tmp/ccwjzXM9.s:668    .progmem.data:00000041 __c.2309
-     /tmp/ccwjzXM9.s:595    .text:00000228 slip_init
+     /tmp/ccUSDQ8q.s:672    .progmem.data:0000006f __c.2304
+     /tmp/ccUSDQ8q.s:668    .progmem.data:00000041 __c.2309
+     /tmp/ccUSDQ8q.s:595    .text:00000228 slip_init
                             *COM*:00000001 g_echo
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk

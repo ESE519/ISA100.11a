@@ -381,7 +381,7 @@
  389 0176 9EBF      		out __SP_H__,r25
  390 0178 0FBE      		out __SREG__,__tmp_reg__
  391 017a 8DBF      		out __SP_L__,r24
- 392 017c 93E0      		ldi r25,lo8(3)
+ 392 017c 95E0      		ldi r25,lo8(5)
  393 017e A916      		cp r10,r25
  394 0180 B104      		cpc r11,__zero_reg__
  395 0182 01F4      		brne .L9
@@ -470,15 +470,15 @@
  499               	/* File "../../../src/kernel/source/nrk_stack_check.c": code  246 = 0x00f6 ( 212), prologues  16, e
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_stack_check.c
-     /tmp/ccOb2TQf.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccOb2TQf.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccOb2TQf.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccOb2TQf.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccOb2TQf.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccOb2TQf.s:133    .text:00000000 nrk_stack_check_pid
-     /tmp/ccOb2TQf.s:215    .text:0000004a dump_stack_info
-     /tmp/ccOb2TQf.s:483    .progmem.data:00000000 __c.2257
-     /tmp/ccOb2TQf.s:421    .text:000001a2 nrk_stack_check
+     /tmp/ccY0tIEo.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccY0tIEo.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccY0tIEo.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccY0tIEo.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccY0tIEo.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccY0tIEo.s:133    .text:00000000 nrk_stack_check_pid
+     /tmp/ccY0tIEo.s:215    .text:0000004a dump_stack_info
+     /tmp/ccY0tIEo.s:483    .progmem.data:00000000 __c.2257
+     /tmp/ccY0tIEo.s:421    .text:000001a2 nrk_stack_check
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr
