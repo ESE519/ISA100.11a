@@ -47,15 +47,15 @@ int8_t isa_set_schedule (isa_node_mode_t isa_node_mode, uint8_t clk_src_id)
 	//isa_sched[4] = 1;
     }
     else if (isa_node_mode==ISA_REPEATER){ //change
-        isa_tdma_rx_mask |= ((uint32_t) 1) << 2;
-	isa_tdma_tx_mask |= ((uint32_t) 1) << 3;//change for test
-	isa_tdma_tx_mask |= ((uint32_t) 1) << 5;
-	isa_tdma_rx_mask |= ((uint32_t) 1) << 7;
+        isa_tdma_rx_mask |= ((uint32_t) 1) << 5;
+	isa_tdma_tx_mask |= ((uint32_t) 1) << 7;//change for test
+	isa_tdma_tx_mask |= ((uint32_t) 1) << 8;
+	isa_tdma_rx_mask |= ((uint32_t) 1) << 9;
 
-	isa_sched[2] = 1;
-	isa_sched[7] = 1;//change for test
+	isa_sched[7] = 1;
+	isa_sched[8] = 1;//change for test
 	isa_sched[5] = 1;
-	isa_sched[3] = 1;
+	isa_sched[9] = 1;
 
     }
     else if(isa_node_mode==ISA_RECIPIENT){
@@ -111,41 +111,4 @@ void _isa_clear_sched_cache ()
 }
 
 
-/**
- * isa_get_slots_until_next_wakeup()
- *
- * This function returns the absolute number of slots between the current_slot
- * and the next RX/TX related wakeup.  It uses an internal cache to allow for
- * faster computation.
- *
- * Argument: current_slot is the current slot
- * Return: uint16_t number of slots until the next wakeup
- */
-uint16_t isa_get_slots_until_next_wakeup (uint16_t current_global_slot)
-{
-    uint16_t min_slot;
-    uint8_t test_slot;
-    uint8_t wrapped_slot;
-    uint8_t current_local_slot;
-    
-//total_slot = (((uint16_t)current_frame)<<5) + current_slot; 
-    min_slot = ISA_SLOTS_PER_FRAME + 1;
-    current_local_slot = current_global_slot%25;
 
-    //scheduled slot follows current slot
-    for (test_slot = current_local_slot+1; test_slot < ISA_SLOTS_PER_FRAME; test_slot++) {
-	//printf("isa_sched[%d] is %d.\n\r",test_slot,isa_sched[test_slot]);
-        if(isa_sched[test_slot]==0) //slot is not scheduled
-            continue;
-	min_slot = test_slot-current_local_slot;
-	return min_slot;
-    }
-
-    // scheduled slot wrapped back
-    for (test_slot = 0; test_slot<=current_local_slot;test_slot++){ 
-	if(isa_sched[test_slot]==0) //slot is not scheduled
-            continue;
-	min_slot = (ISA_SLOTS_PER_FRAME - current_local_slot + test_slot);
-	return min_slot;
-    }
-}

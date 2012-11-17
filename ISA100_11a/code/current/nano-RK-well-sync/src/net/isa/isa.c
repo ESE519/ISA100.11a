@@ -37,9 +37,12 @@
 #include <nrk_error.h>
 //#include <rtl_defs.h>
 #include <stdlib.h>
-#include <isa_scheduler.h>
+//#include <isa_scheduler.h>
+//#include <dlmo.h>
 #include <isa.h>
 #include <isa_defs.h>
+#include <isa_error.h>
+#include <dmo.h>
 
 
 #define CHANNEL_HOPPING 
@@ -56,6 +59,8 @@
 #ifdef JOIN_PROCESS
  uint8_t join_pkt_buf[RF_MAX_PAYLOAD_SIZE];
 #endif
+/* Device management object*/
+ DMO dmo;
 
 /* slot related declaration */
 volatile uint16_t global_slot;
@@ -89,7 +94,7 @@ int8_t isa_tx_done_signal;
 int8_t isa_rx_pkt_signal;
 
 /* header type */
-uint8_t DHDR;  // Data link layer header sub-header, currently used as ACK control
+
 //uint8_t DMXHR[4]; //Data link layer media access control extension sub header, mainly used for security control
 uint8_t DAUX[29]; //Data link layer auxiliary sub-header, currently used for join process
 //uint8_t DROUT[3]; //Routing sub-header, compressed variant
@@ -239,23 +244,22 @@ uint8_t isa_init (isa_node_mode_t mode, uint8_t id, uint8_t src_id)
     slot_expired = 0;
     isa_node_mode = mode;
     isa_id = id;//change
+    dmo.dlAddress = id;
     isa_clk_src_id=src_id; //change
     isa_rx_data_ready = 0;
-    isa_tx_data_ready = 0;
-
 
     isa_param.mobile_sync_timeout = 100;
     isa_param.rx_timeout = 8000;   // 8000 *.125us = 1ms
     isa_param.tx_guard_time = TX_GUARD_TIME;
     isa_param.channel = 15;
     isa_param.mac_addr = 0x1981;
-
+/*
 for (i = 0; i < ISA_SLOTS_PER_FRAME; i++) {
         isa_sched[i] = 0;
     }
     isa_tdma_rx_mask = 0;
     isa_tdma_tx_mask = 0;
-
+*/
     /* Setup the cc2420 chip */
     rf_init (&isa_rfRxInfo, isa_param.channel, 0x2421, isa_param.mac_addr);
 
@@ -287,6 +291,7 @@ for (i = 0; i < ISA_SLOTS_PER_FRAME; i++) {
 
     resync_times=0;
 
+    dlmoInit();	//Initialize the  dlmo data structure
     return NRK_OK;
 }
 
@@ -304,11 +309,12 @@ void isa_start ()
  * into the PDU header.
  *
  */
-int8_t configDHDR(uint8_t slot)
+int8_t configDHDR(DLMO_LINK * link)
 {
+
+	//lookup neighbor information to deciede whether to request clock
     int8_t DHDR = 1;
-    if (slot !=5)DHDRcount++;
-    if(1){//request ACK
+    if(1){//request ACK - always for multicast device
 	DHDR |= 1<<7;
     }
     if(1){//request signal quality in ACK
@@ -323,12 +329,10 @@ int8_t configDHDR(uint8_t slot)
     if(0){//include slow hopping offset
 	DHDR |= 1<<3;
     }
-    if((isa_node_mode == ISA_RECIPIENT || isa_node_mode == ISA_REPEATER) &&  (DHDRcount % 200==0) && (slot!=5) ){//is clock recipient
+    if(ISAMASK(link->neighbor->typeInfo, CLOCK_PREFERRED) == CLOCK_PREFERRED ){//is clock recipient
 	DHDR |= 1<<2;
-
+	//printf ("Asking for time correction");
     }
-
-
     return DHDR;
 }
 
@@ -440,6 +444,7 @@ uint8_t* isa_rx_pkt_get (uint8_t *len, int8_t *rssi)
     *len=isa_rfRxInfo.length;
     *rssi=isa_rfRxInfo.rssi;
 
+
     return isa_rfRxInfo.pPayload;
 }
 
@@ -456,11 +461,13 @@ uint8_t* isa_rx_pkt_get (uint8_t *len, int8_t *rssi)
  * Arguments: slot is the current slot that is actively in RX mode.
  */
 
-void _isa_rx (uint8_t slot)
+void _isa_rx (DLMO_LINK * link, uint8_t slot)
 {
+	uint8_t DHDR;  // Data link layer header sub-header, currently used as ACK control
 //putchar('R');
     uint8_t n;
     uint32_t node_mask;
+    uint16_t destAddr;
     volatile uint8_t timeout;
 
     #ifdef LED_DEBUG
@@ -487,7 +494,7 @@ void _isa_rx (uint8_t slot)
 		 nrk_gpio_set(NRK_DEBUG_2);
 				 nrk_gpio_clr(NRK_DEBUG_2);
 		putchar('v');
-		printf("%d", slot);
+		//printf("%d", slot);
 		//printf("sfd times out.\n\r");
 	    #endif
 		packetsLost++;
@@ -528,8 +535,9 @@ void _isa_rx (uint8_t slot)
     if (n == 1) {// successfully received packet
     	rxCount++;
     	nrk_led_toggle(BLUE_LED);
+    	//If I am the destination
+    	destAddr = isa_rfRxInfo.pPayload[DEST_INDEX];
     	//putchar ('r');
-	if (slot != 7) isa_rx_data_ready = 1;
 	//potential problem: if repeater or recipient receives noise, the DHDR would be changed. And it is highly possible that the highest bit of DHDR would be set to 0
 	//if(isa_node_mode != ISA_GATEWAY)
 	    DHDR = isa_rfRxInfo.pPayload[DHDR_INDEX];
@@ -577,6 +585,26 @@ void _isa_rx (uint8_t slot)
 	    rf_tx_tdma_packet (&isa_ack_tx,slot_start_time,isa_param.tx_guard_time,&tx_start_time);	
 	    nrk_gpio_clr(NRK_DEBUG_2);
 	}	
+
+	if (destAddr == dmo.dlAddress) {
+		dd_data_indication(isa_rfRxInfo.pPayload[SRC_INDEX] , destAddr,0,0, 0, 0, isa_rfRxInfo.pPayload);
+	}
+	else{
+		//if the dest address is not mine, then add into the queue to forward provided we have a link to forward for that dest address
+		// this part should change later on, we should check the dest then lookup the next hop or neighbor table to decide who to forward to
+		if (isTransmitLinkPresent(destAddr)){
+			//if yes, then place the message on the Queue again
+			enQueue (destAddr, 0, 10, isa_rfRxInfo.pPayload, NULL);
+			// printf("packet forwarded to %d", destAddr);
+				  isa_rx_pkt_release();
+		}
+		else{
+			printf("Dont know what to do with this packet for %d- releasing", destAddr);
+			isa_rx_pkt_release();
+		}
+	}
+
+
 //nrk_gpio_clr(NRK_DEBUG_3);
     }        
     #ifdef LED_DEBUG
@@ -611,6 +639,7 @@ void isa_rx_pkt_release()
  *
  * Return:  currently always returns 1
  */
+/*
 int8_t isa_tx_pkt (uint8_t *tx_buf, uint8_t len, uint8_t DHDR, uint8_t slot)
 {
     isa_tx_info[slot].pPayload = tx_buf; 
@@ -620,6 +649,7 @@ int8_t isa_tx_pkt (uint8_t *tx_buf, uint8_t len, uint8_t DHDR, uint8_t slot)
     isa_tx_data_ready |= ((uint32_t) 1 << slot);        // set the flag
     return 1;
 }
+*/
 
 /**
  * isa_tx_pkt_check()
@@ -632,13 +662,14 @@ int8_t isa_tx_pkt (uint8_t *tx_buf, uint8_t len, uint8_t DHDR, uint8_t slot)
  *
  * Returns: 1 if the packet was sent, 0 otherwise
  */
+/*
 int8_t isa_tx_pkt_check(uint8_t slot)
 {
     if ((isa_tx_data_ready & ((uint32_t) 1 << slot)) != 0)
         return 1;
     return 0;
 }
-
+*/
 /**
  * _isa_tx()
  *
@@ -648,8 +679,9 @@ int8_t isa_tx_pkt_check(uint8_t slot)
  *
  * Arguments: slot is the active slot set by the interrupt timer.
  */
-void _isa_tx (uint8_t slot)
+void _isa_tx (DLMO_LINK * link, uint16_t slot)
 {
+	uint8_t DHDR;  // Data link layer header sub-header, currently used as ACK control
 	uint8_t c;
     uint8_t n;
     uint8_t i;
@@ -659,18 +691,25 @@ void _isa_tx (uint8_t slot)
     uint16_t offsetNanoSec;
     int16_t time_correction;
     uint8_t tmp_nrk_prev_timer_val;
+    ISA_QUEUE *transmitEntry;
     // load header
     isa_rfTxInfo.cca = true;
-    isa_rfTxInfo.pPayload=isa_tx_info[slot].pPayload;
+    //find if there is anything in the Queue to be transmitted
+    transmitEntry = getHighPriorityEntry(link->neighbor->index)	;//This holds the neighbor id
+    if (transmitEntry == NULL){
+    	printf("Nothing in the queue to transmit on slot %d ", slot);
+    	return;
+    }
+    previous_tx_slot = slot;
+    isa_rfTxInfo.pPayload= transmitEntry->tx_buf;
     #ifdef TX_DEBUG
 	//printf("TX Payload is: %s.\n\r", isa_rfTxInfo.pPayload);
     #endif
-    isa_rfTxInfo.length=isa_tx_info[slot].length;
-
-    isa_rfTxInfo.pPayload[DHDR_INDEX] = isa_tx_info[slot].DHDR;
+    isa_rfTxInfo.length=transmitEntry->length;
+    DHDR = configDHDR(link);
+    isa_rfTxInfo.pPayload[DHDR_INDEX] = DHDR;
     isa_rfTxInfo.pPayload[SLOT_INDEX] = (global_slot & 0xFF); 
     isa_rfTxInfo.pPayload[SRC_INDEX] = isa_id;//change
-
     #ifdef JOIN_PROCESS
     if(slot>=22 && isa_node_mode == ISA_GATEWAY){
 	for(i=0;i<29;i++){
@@ -690,7 +729,8 @@ void _isa_tx (uint8_t slot)
    		//printf("T\r\n");
 	    #endif
     if(rf_tx_tdma_packet (&isa_rfTxInfo,slot_start_time,isa_param.tx_guard_time,&tx_start_time))
-    {	txCount++;
+    {	transmitEntry->transmitPending = false;
+    	txCount++;
     	nrk_gpio_clr(NRK_DEBUG_1);
     	nrk_led_toggle(RED_LED);
     //	putchar ('t');
@@ -702,10 +742,9 @@ void _isa_tx (uint8_t slot)
 	#endif
     }
     nrk_event_signal (isa_tx_done_signal);
-    isa_tx_data_ready &= ~((uint32_t) 1 << slot);       // clear the flag
-
     // ACK required
     if(DHDR & (1<<7)) {  //&& isa_node_mode!=ISA_GATEWAY){ //Azriel
+
     	//putchar('b');
     	rf_polling_rx_on ();
     	nrk_gpio_set(NRK_DEBUG_1);
@@ -739,12 +778,14 @@ void _isa_tx (uint8_t slot)
 		#endif
 		#ifdef RX_DEBUG
 		 putchar('s');
-		 printf("%d", slot);
+		// printf("%d", slot);
 
 		 //   printf("sfd times out.\n\r");
 		    #endif
 		//nrk_gpio_clr(NRK_DEBUG_1);
 		 packetsLost++;
+		 if (transmitEntry-> slot_callback == NULL )  isaFreePacket(transmitEntry);
+		 else transmitEntry-> slot_callback(transmitEntry, FAILURE);
 		 return;
 	    }
 	}
@@ -754,17 +795,17 @@ void _isa_tx (uint8_t slot)
 	if (n != 0) {
 	    n = 0;
 	    //printf("Packet on its way\n\r");
-	    if (slot !=5 && DHDRcount%200==0 ) c = 4 ;
+	    if (ISAMASK(link->neighbor->typeInfo, CLOCK_PREFERRED) == CLOCK_PREFERRED ) c = 4 ;
 	    else c = 2;
-	    if (isa_node_mode == ISA_GATEWAY) c=2;
 	    while ((n = rf_polling_rx_packet (true, c)) == 0)		 {	//changed to 2 by Azriel for gateway
-
 		if (_nrk_os_timer_get () > timeout) {
 		#ifdef RX_DEBUG
 		    printf("packet is too long, times out.\n\r");
 		#endif	
 		    packetsLost++;
 		    tmp_curSec = _nrk_os_timer_get();
+		    if (transmitEntry-> slot_callback == NULL )  isaFreePacket(transmitEntry);
+		    else transmitEntry-> slot_callback(transmitEntry, FAILURE);
 		    // spend too much time on receiving pkt.
                     return;          // huge timeout as fail safe
 		}
@@ -777,6 +818,7 @@ void _isa_tx (uint8_t slot)
 	if  (n !=1){	//size of packet must have been wrong
 		putchar('f');
 		packetsLost++;
+		printf("DHDRcount:%d", DHDRcount);
 	}
 	if (n==1)
 	rf_rx_off ();
@@ -966,9 +1008,12 @@ void _isa_tx (uint8_t slot)
         }
 
     }//wait for ACK 
+    //printf("Pointer %p", transmitEntry->slot_callback);
+    if (transmitEntry-> slot_callback == NULL )  isaFreePacket(transmitEntry);
+    else transmitEntry-> slot_callback(transmitEntry, SUCCESS);
 }
 
-
+/*
 uint8_t _isa_join_process ()
 {
     int8_t n;
@@ -1022,7 +1067,7 @@ uint8_t _isa_join_process ()
 	    }
 	}
 	rf_rx_off (); 
-	if (n == 1 /*&& isa_rfRxInfo.length>0*/) {
+	if (n == 1){ //&& isa_rfRxInfo.length>0) {
 	   // if(isa_rfRxInfo.pPayload[SRC_INDEX]==isa_clk_src_id){//change
 		// CRC and checksum passed
 		if(isa_rfRxInfo.pPayload[DAUX_INDEX+7]==10){ // DAUX packet
@@ -1065,6 +1110,8 @@ uint8_t _isa_join_process ()
     isa_rx_pkt_release();
     return _isa_join_ok;
 }
+*/
+
 
 int8_t isa_join_ready()
 {
@@ -1105,7 +1152,7 @@ uint8_t _isa_init_sync ()
     {
 
     	//printf("Init sync \r\n");
-	isa_rfRxInfo.pPayload[DHDR_INDEX]=configDHDR(0);
+	isa_rfRxInfo.pPayload[DHDR_INDEX]=1;			//configDHDR(0); This will have to change
 	//isa_rfRxInfo.pPayload[SLOT_INDEX]=global_slot;
 	
 	#ifdef LED_DEBUG
@@ -1211,6 +1258,8 @@ void isa_nw_task ()
     uint32_t slot_mask;
     uint16_t next_slot_offset = 0; 
     uint8_t FIRST = 1;
+    DLMO_LINK * link;
+
     _isa_ready = 0;
     
     // wait for isa ready 
@@ -1273,38 +1322,39 @@ void isa_nw_task ()
 	//	nrk_gpio_set(NRK_DEBUG_0);
 
 	    #endif
-            if (slot_mask & isa_tx_data_ready & isa_tdma_tx_mask){
+            	/*
+            	 * who is the neighbor that this slot is configured for?
+            	 */
+		link = findLink(slot);
+            	if(link != NULL){
+            		//what type of link is this
+            		if (link->linkType == RX){
+            			_isa_rx (link, slot);
+            		}
+            		else if (link->linkType == TX_NO_ADV){
+            			_isa_tx(link , slot);
+            		}
+            		//find the highest priority entry in the queue (if any)
+            		//if (transmitEntry = hightestPriorityEntry(neighbor) != NULL){
+            		//	_isa_tx(transmitEntry, link);
+            	//	}
+            	}
+
 
 		//printf("isa tx slot %d.\n\r",slot);
 	//	printf("TX %d,%d,%d\n\r",currentChannel,(channelIndex)&0x0F,slot);
 		//printf("tx\n\r");
-		_isa_tx (slot);
-		previous_tx_slot = slot; 
+	//	_isa_tx (slot);
+	//	previous_tx_slot = slot;
 		#ifdef HIGH_TIMER_DEBUG
 	    	    //printf("TX later, high speed timer value is %d.\n\r", _nrk_high_speed_timer_get());
 		#endif		
-	    } else if ((slot_mask & isa_tdma_rx_mask) && (isa_rx_data_ready == 0)){// if RX slot mask and rx not ready, send a packet
-	    #ifdef TX_RX_DEBUG
-		//printf("R\r\n");
-		//nrk_gpio_set(NRK_DEBUG_0);
-	    #endif
-		//printf("isa rx slot %d.\n\r",slot);
-	//	printf("RX %d,%d %d\n\r",currentChannel,(channelIndex)&0x0F, slot);
-		//printf("rx\n\r");
-		_isa_rx (slot);
-	    } 
-	    #ifdef TX_RX_DEBUG
-		//    nrk_gpio_clr(NRK_DEBUG_0);
-		    //nrk_gpio_clr(NRK_DEBUG_1);
-	    #endif
-	    // if RX slot mask and RX buffer free, try to receive a packet
-            /*else if ((slot_mask & rtl_tdma_rx_mask) && (rtl_rx_data_ready == 0)){ 
-		_rtl_rx (slot);
-	    }*/ 
+
+
 	} else	{
 
 	    ///do joining or sync request here
-	    DHDR = configDHDR(0);
+	//    DHDR = configDHDR(0);
 	    if(isa_node_mode != ISA_GATEWAY){//change
 		#ifdef JOIN_PROCESS
 		if(!_isa_join_ok){

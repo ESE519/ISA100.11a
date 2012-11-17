@@ -1073,19 +1073,19 @@
  1111               	/* File "../../../src/kernel/source/nrk_time.c": code  735 = 0x02df ( 517), prologues 110, epilogue
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_time.c
-     /tmp/cc4Wyw5C.s:2      *ABS*:0000003f __SREG__
-     /tmp/cc4Wyw5C.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cc4Wyw5C.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cc4Wyw5C.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cc4Wyw5C.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cc4Wyw5C.s:128    .text:00000000 nrk_time_sub
-     /tmp/cc4Wyw5C.s:315    .text:0000011e nrk_time_compact_nanos
-     /tmp/cc4Wyw5C.s:377    .text:00000162 nrk_time_add
-     /tmp/cc4Wyw5C.s:496    .text:0000021c nrk_time_set
-     /tmp/cc4Wyw5C.s:527    .text:0000023e _nrk_time_to_ticks
-     /tmp/cc4Wyw5C.s:697    .text:00000342 _nrk_ticks_to_time
-     /tmp/cc4Wyw5C.s:810    .text:000003fa _nrk_time_to_ticks_long
-     /tmp/cc4Wyw5C.s:986    .text:0000050a nrk_time_get
+     /tmp/ccmPUQIH.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccmPUQIH.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccmPUQIH.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccmPUQIH.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccmPUQIH.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccmPUQIH.s:128    .text:00000000 nrk_time_sub
+     /tmp/ccmPUQIH.s:315    .text:0000011e nrk_time_compact_nanos
+     /tmp/ccmPUQIH.s:377    .text:00000162 nrk_time_add
+     /tmp/ccmPUQIH.s:496    .text:0000021c nrk_time_set
+     /tmp/ccmPUQIH.s:527    .text:0000023e _nrk_time_to_ticks
+     /tmp/ccmPUQIH.s:697    .text:00000342 _nrk_ticks_to_time
+     /tmp/ccmPUQIH.s:810    .text:000003fa _nrk_time_to_ticks_long
+     /tmp/ccmPUQIH.s:986    .text:0000050a nrk_time_get
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr

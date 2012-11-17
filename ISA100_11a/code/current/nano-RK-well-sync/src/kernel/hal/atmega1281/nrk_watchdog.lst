@@ -199,15 +199,15 @@
  288               	/* File "../../../src/kernel/hal/atmega1281/nrk_watchdog.c": code   45 = 0x002d (  42), prologues  
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_watchdog.c
-     /tmp/cciP2DKS.s:2      *ABS*:0000003f __SREG__
-     /tmp/cciP2DKS.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cciP2DKS.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cciP2DKS.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cciP2DKS.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cciP2DKS.s:125    .text:00000000 nrk_watchdog_check
-     /tmp/cciP2DKS.s:159    .text:00000012 nrk_watchdog_reset
-     /tmp/cciP2DKS.s:182    .text:00000016 nrk_watchdog_disable
-     /tmp/cciP2DKS.s:230    .text:00000034 nrk_watchdog_enable
+     /tmp/ccBqqXda.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccBqqXda.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccBqqXda.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccBqqXda.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccBqqXda.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccBqqXda.s:125    .text:00000000 nrk_watchdog_check
+     /tmp/ccBqqXda.s:159    .text:00000012 nrk_watchdog_reset
+     /tmp/ccBqqXda.s:182    .text:00000016 nrk_watchdog_disable
+     /tmp/ccBqqXda.s:230    .text:00000034 nrk_watchdog_enable
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000001 error_task
                             *COM*:00000001 error_num

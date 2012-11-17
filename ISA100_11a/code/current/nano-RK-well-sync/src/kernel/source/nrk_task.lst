@@ -1637,28 +1637,28 @@
  1532               	/* File "../../../src/kernel/source/nrk_task.c": code  831 = 0x033f ( 689), prologues  66, epilogue
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_task.c
-     /tmp/ccZPF31t.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccZPF31t.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccZPF31t.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccZPF31t.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccZPF31t.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccZPF31t.s:128    .text:00000000 nrk_get_high_ready_task_ID
-     /tmp/ccZPF31t.s:152    .text:0000000e nrk_print_readyQ
-     /tmp/ccZPF31t.s:190    .text:00000024 nrk_add_to_readyQ
-     /tmp/ccZPF31t.s:402    .text:00000132 nrk_rem_from_readyQ
-     /tmp/ccZPF31t.s:530    .text:000001d6 nrk_get_pid
-     /tmp/ccZPF31t.s:554    .text:000001e4 _nrk_wait_for_scheduler
-     /tmp/ccZPF31t.s:584    .text:000001f8 nrk_wait
+     /tmp/ccakGdUE.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccakGdUE.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccakGdUE.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccakGdUE.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccakGdUE.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccakGdUE.s:128    .text:00000000 nrk_get_high_ready_task_ID
+     /tmp/ccakGdUE.s:152    .text:0000000e nrk_print_readyQ
+     /tmp/ccakGdUE.s:190    .text:00000024 nrk_add_to_readyQ
+     /tmp/ccakGdUE.s:402    .text:00000132 nrk_rem_from_readyQ
+     /tmp/ccakGdUE.s:530    .text:000001d6 nrk_get_pid
+     /tmp/ccakGdUE.s:554    .text:000001e4 _nrk_wait_for_scheduler
+     /tmp/ccakGdUE.s:584    .text:000001f8 nrk_wait
                             *COM*:00000001 _nrk_prev_timer_val
-     /tmp/ccZPF31t.s:716    .text:000002b2 nrk_wait_until
-     /tmp/ccZPF31t.s:833    .text:00000362 nrk_wait_until_nw
-     /tmp/ccZPF31t.s:909    .text:000003b0 nrk_set_next_wakeup
-     /tmp/ccZPF31t.s:1003   .text:0000042c nrk_wait_until_ticks
-     /tmp/ccZPF31t.s:1083   .text:00000482 nrk_wait_ticks
-     /tmp/ccZPF31t.s:1173   .text:000004f0 nrk_wait_until_next_n_periods
-     /tmp/ccZPF31t.s:1266   .text:00000556 nrk_wait_until_next_period
-     /tmp/ccZPF31t.s:1347   .text:000005ae nrk_terminate_task
-     /tmp/ccZPF31t.s:1385   .text:000005d2 nrk_activate_task
+     /tmp/ccakGdUE.s:716    .text:000002b2 nrk_wait_until
+     /tmp/ccakGdUE.s:833    .text:00000362 nrk_wait_until_nw
+     /tmp/ccakGdUE.s:909    .text:000003b0 nrk_set_next_wakeup
+     /tmp/ccakGdUE.s:1003   .text:0000042c nrk_wait_until_ticks
+     /tmp/ccakGdUE.s:1083   .text:00000482 nrk_wait_ticks
+     /tmp/ccakGdUE.s:1173   .text:000004f0 nrk_wait_until_next_n_periods
+     /tmp/ccakGdUE.s:1266   .text:00000556 nrk_wait_until_next_period
+     /tmp/ccakGdUE.s:1347   .text:000005ae nrk_terminate_task
+     /tmp/ccakGdUE.s:1385   .text:000005d2 nrk_activate_task
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr

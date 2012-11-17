@@ -10,16 +10,16 @@
 
 
 #define MY_CHANNEL 19 
-#define MY_ID 2 //change
+#define MY_ID 4 //change
 
 //#define MY_TX_SLOT_SYNC  2
 //#define s  17
 #define MY_RX_SLOT  2
-#define MY_TX_SLOT  3
-#define MY_TX_SLOT1  5
+#define MY_TX_SLOT  7
+#define MY_TX_SLOT1  8
 
 
-#define MY_CLK_SRC_ID  0
+#define MY_CLK_SRC_ID  3
 
 NRK_STK Stack1[NRK_APP_STACKSIZE];
 nrk_task_type TaskOne;
@@ -37,7 +37,16 @@ nrk_time_t timeend;
 nrk_time_t newtime;
 nrk_time_t timeout;
 
+//*********************Making a callback function***************************************
 
+void transmitCallback1(ISA_QUEUE *entry , bool status){
+uint8_t length;
+	 isaFreePacket(entry);
+	  sprintf( &tx_buf[PKT_DATA_START],"node" );
+	  length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
+	  	sendPacket(3, length, tx_buf, transmitCallback1);
+}
+//*******************************************************************************
 
 int main ()
 {
@@ -91,9 +100,15 @@ void Task1()
 
   isa_init (ISA_REPEATER, MY_ID, MY_CLK_SRC_ID);//change
   
-  isa_set_schedule(ISA_REPEATER, MY_CLK_SRC_ID);
+  dlmoInit(); 	//Initialize the Data Link Management Object
 
-  isa_set_channel(MY_CHANNEL);
+  //configureSlot(5,1, RX, false);
+  configureSlot(8,1, RX, false);
+  configureSlot(9, 3, TX_NO_ADV, true);
+  //configureSlot(8, 4, TX_NO_ADV, false);
+ // isa_set_schedule(ISA_REPEATER, MY_CLK_SRC_ID);
+
+ // isa_set_channel(MY_CHANNEL);
 
   isa_start();
   
@@ -116,11 +131,12 @@ void Task1()
   //i=0;
   while(1){
 
-	  //Spit out log info
-	  if (txCount % 1000 == 0){
-	printf ("TxCount: %d\r\nRXCount: %d\r\nPacketLoss:%d", txCount,rxCount, packetsLost);
-	  }
 
+//Spit out log info
+
+	  	  if (txCount % 1000 == 0){
+	  	printf ("TxCount: %d\r\nRXCount: %d\r\nPacketLoss:%d", txCount,rxCount, packetsLost);
+	  	  }
 
 //nrk_gpio_toggle(NRK_DEBUG_0);
        if( isa_rx_pkt_check()!=0 ) {
@@ -136,10 +152,10 @@ void Task1()
 	    //sprintf( &tx_buf[PKT_DATA_START],"Hello Mingzhe!");
 	    //length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
 	    //isa_tx_pkt(tx_buf,length,configDHDR(),MY_TX_SLOT);
-
+/*
 	    length=strlen(&rx_buf[PKT_DATA_START])+PKT_DATA_START+1; //change
-	    isa_tx_pkt(rx_buf,length,configDHDR(5),MY_TX_SLOT1);//change forward the message from recipient
-
+	    isa_tx_pkt(rx_buf,length,configDHDR(8),MY_TX_SLOT1);//change forward the message from recipient
+*/
 	    //printf(" Forward message is sent.\n\r");
  	    //printf("pkt length:%d",length);
 	    //printf("%d\r\n",cnt++);
@@ -149,31 +165,34 @@ void Task1()
 
 	}
 
-       if(isa_tx_pkt_check(MY_TX_SLOT)!=0){
+    //   if(isa_tx_pkt_check(MY_TX_SLOT)!=0){
        	  // printf("Pending TX\r\n");
-       	}
-       else{
+    //   	}
+   //    else{
 	/*sprintf( &tx_buf[PKT_DATA_START],local_rx_buf+PKT_DATA_START);
 	length=strlen(&rx_buf[PKT_DATA_START])+PKT_DATA_START+1; //change
 	//isa_tx_pkt(rx_buf,length,configDHDR(),my_tx_slot[0]);//change forward the message from recipient
 	isa_tx_pkt(rx_buf,length,configDHDR(),MY_TX_SLOT);
 	isa_wait_until_rx_or_tx ();*/
+    	   if (cnt ==0 ){
+
 
 	sprintf( &tx_buf[PKT_DATA_START],"2");
 	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
-	isa_tx_pkt(tx_buf,length,configDHDR(0),MY_TX_SLOT);
-
+	sendPacket(3, length, tx_buf, transmitCallback1);
+    	cnt++;
+    	   }
 
 	/*sprintf( &tx_buf2[PKT_DATA_START],"Hello from slot 2!");
 	length=strlen(&tx_buf2[PKT_DATA_START])+PKT_DATA_START+1;
 	isa_tx_pkt(tx_buf2,length,configDHDR(),2);
 	isa_wait_until_rx_or_tx ();*/
 
-       }
+    //   }
 
        isa_wait_until_rx_or_tx ();
-   //    	putchar('\n');
-    //   	putchar('\r');
+      // 	putchar('\n');
+      // 	putchar('\r');
   }
   
 

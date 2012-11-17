@@ -30,9 +30,10 @@ SRC = $(TARGET).c
 #SRC += $(ROOT_DIR)/src/net/rt_link/rtl_debug.c
 
 SRC += $(ROOT_DIR)/src/net/slip/slip.c
+SRC += $(ROOT_DIR)/src/net/isa/isa_error.c
+SRC += $(ROOT_DIR)/src/net/isa/dlmo.c
 SRC += $(ROOT_DIR)/src/net/isa/isa.c
-SRC += $(ROOT_DIR)/src/net/isa/isa_scheduler.c
-
+#SRC += $(ROOT_DIR)/src/net/isa/isa_scheduler.c
 SRC += $(ROOT_DIR)/src/drivers/platform/$(PLATFORM_TYPE)/source/ff_basic_sensor.c 
 
 # Add extra includes files. 

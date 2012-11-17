@@ -1,4 +1,4 @@
-isa.o isa.d : ../../../src/net/isa/isa.c \
+dlmo.o dlmo.d : ../../../src/net/isa/dlmo.c \
   ../../../src/platform/firefly2_2/include/include.h \
   ../../../src/platform/firefly2_2/include/hal.h \
   ../../../src/platform/firefly2_2/include/hal_firefly2_2.h \
@@ -15,7 +15,5 @@ isa.o isa.d : ../../../src/net/isa/isa.c \
   ../../../src/kernel/hal/include/nrk_cpu.h nrk_cfg.h \
   ../../../src/kernel/include/nrk_task.h \
   ../../../src/kernel/hal/include/nrk_timer.h \
-  ../../../src/kernel/include/nrk_error.h ../../../src/net/isa/isa.h \
-  ../../../src/net/isa/isa_scheduler.h ../../../src/net/isa/dlmo.h \
-  ../../../src/net/isa/platform/firefly2_2/isa_defs.h \
-  ../../../src/net/isa/isa_error.h ../../../src/net/isa/dmo.h
+  ../../../src/kernel/include/nrk_error.h \
+  ../../../src/net/isa/isa_error.h ../../../src/net/isa/dlmo.h

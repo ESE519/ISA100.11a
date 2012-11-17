@@ -18,8 +18,12 @@ Archive member included because of file (symbol)
                               /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o (exit)
 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
                               main.o (__do_clear_bss)
+/usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
+                              ../../../src/net/isa/dlmo.o (__ashldi3)
 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strchr_P.o)
                               /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o) (strchr_P)
+/usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+                              ../../../src/net/isa/dlmo.o (memcpy)
 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strcpy.o)
                               main.o (strcpy)
 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
@@ -51,8 +55,10 @@ isa_rx_pkt_signal   0x1               ../../../src/net/isa/isa.o
 tmp_curSec          0x1               ../../../src/net/isa/isa.o
 child_list          0x4               main.o
 _free_node          0x2               ../../../src/kernel/source/nrk.o
+dmo                 0x2               ../../../src/net/isa/isa.o
 app_timer0_callback
                     0x2               ../../../src/net/isa/isa.o
+dlmoLink            0xb4              ../../../src/net/isa/dlmo.o
 nrk_task_TCB        0x63              ../../../src/kernel/source/nrk.o
 next_next_wakeup    0x2               ../../../src/kernel/source/nrk.o
 ext_int1_callback   0x2               ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
@@ -60,6 +66,7 @@ isa_id              0x1               main.o
 radio_sem           0x2               ../../../src/radio/cc2420/source/basic_rf.o
 newtime             0x8               main.o
 global_cycle        0x2               ../../../src/net/isa/isa.o
+isa_slot            0x8               ../../../src/net/isa/dlmo.o
 ext_int0_callback   0x2               ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
 nrk_sem_list        0x6               ../../../src/kernel/source/nrk.o
 security_enable     0x1               ../../../src/radio/cc2420/source/basic_rf.o
@@ -72,7 +79,6 @@ AFTER_FIRST_SYNC    0x1               ../../../src/net/isa/isa.o
 error_task          0x1               main.o
 isa_param           0x9               main.o
 previous_tx_slot    0x1               ../../../src/net/isa/isa.o
-isa_tx_data_ready   0x4               main.o
 slot_start_time     0x2               ../../../src/net/isa/isa.o
 isa_tx_done_signal  0x1               ../../../src/net/isa/isa.o
 channelIndex        0x1               ../../../src/net/isa/isa.o
@@ -82,6 +88,7 @@ rfSettings          0x9               ../../../src/radio/cc2420/source/basic_rf.
 global_slot         0x2               ../../../src/net/isa/isa.o
 isa_task            0x23              main.o
 _nrk_time_trigger   0x1               ../../../src/net/isa/isa.o
+dlmoNeighbor        0x1a9             ../../../src/net/isa/dlmo.o
 ext_int2_callback   0x2               ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
 TaskOne             0x23              main.o
 __brkval            0x2               /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
@@ -96,13 +103,14 @@ uart_rx_buf_end     0x1               ../../../src/platform/firefly2_2/source/ul
 nrk_cur_task_prio   0x1               ../../../src/kernel/source/nrk.o
 _nrk_cpu_state      0x1               ../../../src/kernel/source/nrk.o
 resync_times        0x2               main.o
+isaQueue            0x528             ../../../src/net/isa/dlmo.o
 isa_clk_src_id      0x1               main.o
 is_open             0x1               ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
 _head_node          0x2               ../../../src/kernel/source/nrk.o
 _isa_join_ok        0x1               main.o
 nrk_system_time     0x8               ../../../src/kernel/source/nrk.o
 _nrk_signal_list    0x4               main.o
-isa_tdma_rx_mask    0x4               main.o
+isa_tdma_rx_mask    0x8               ../../../src/net/isa/dlmo.o
 _nrk_resource_cnt   0x1               ../../../src/kernel/source/nrk.o
 isa_node_mode       0x1               main.o
 slowIndex           0x1               ../../../src/net/isa/isa.o
@@ -118,11 +126,12 @@ DHDR                0x1               main.o
 Stack1              0x80              main.o
 timeout             0x8               main.o
 _isa_sync_ok        0x1               ../../../src/net/isa/isa.o
-isa_tdma_tx_mask    0x4               main.o
+isa_tdma_tx_mask    0x8               ../../../src/net/isa/dlmo.o
 rx_start_time       0x2               ../../../src/net/isa/isa.o
 _nrk_driver_count   0x1               ../../../src/kernel/source/nrk_driver.o
 nrk_kernel_stk_ptr  0x2               main.o
-isa_sched           0x19              main.o
+isaTxQueueSize      0x1               ../../../src/net/isa/dlmo.o
+isa_sched           0x19              ../../../src/net/isa/dlmo.o
 nrk_drivers         0x4               ../../../src/kernel/source/nrk_driver.o
 _isa_ready          0x1               main.o
 uart_rx_buf         0x10              ../../../src/platform/firefly2_2/source/ulib.o
@@ -140,7 +149,6 @@ currentChannel      0x1               ../../../src/net/isa/isa.o
 nrk_driver_init     0x1               ../../../src/kernel/source/nrk_driver.o
 tx_slot_from_join   0x4               main.o
 slottedPattern      0x10              ../../../src/net/isa/isa.o
-isa_tx_info         0x64              main.o
 timeend             0x8               main.o
 tx_ctr              0x4               ../../../src/radio/cc2420/source/basic_rf.o
 _nrk_prev_timer_val
@@ -172,7 +180,8 @@ Address of section .data set to 0x800200
 LOAD /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
 LOAD main.o
 LOAD ../../../src/net/isa/isa.o
-LOAD ../../../src/net/isa/isa_scheduler.o
+LOAD ../../../src/net/isa/isa_error.o
+LOAD ../../../src/net/isa/dlmo.o
 LOAD ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
 LOAD ../../../src/radio/cc2420/source/hal_rf_set_channel.o
 LOAD ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
@@ -293,7 +302,7 @@ LOAD /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000     0x6f24
+.text           0x00000000     0x73c6
  *(.vectors)
  .vectors       0x00000000       0xcc /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
                 0x00000000                __vectors
@@ -400,303 +409,318 @@ LOAD /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a
                 0x000003e2                __vector_18
                 0x000003e2                __vector_20
                 0x000003e2                __vector_42
- .text          0x000003e6      0x2c8 main.o
+ .text          0x000003e6      0x2e2 main.o
                 0x000004a0                Task1
                 0x000003e6                nrk_create_taskset
-                0x00000646                main
- .text          0x000006ae     0x1136 ../../../src/net/isa/isa.o
-                0x000009cc                _isa_init_sync
-                0x000007aa                isa_start
-                0x0000088c                isa_tx_pkt
-                0x0000087a                isa_rx_pkt_release
-                0x0000090e                isa_join_ready
-                0x0000080a                configAdvDAUX
-                0x000008e8                isa_tx_pkt_check
-                0x000015c4                isa_rx_pkt_get
-                0x00000922                isa_task_config
-                0x000007b2                configDHDR
-                0x000011e2                isa_set_channel
-                0x00000d72                _isa_tx
-                0x00001590                isa_wait_until_rx_pkt
-                0x000006f6                isa_set_channel_pattern
-                0x000015f0                _isa_join_process
-                0x00000b38                _isa_rx
-                0x0000086e                isa_rx_pkt_check
-                0x000006ae                config_child_list
-                0x00001432                isa_init
-                0x00001190                isa_wait_until_rx_or_tx
-                0x0000078a                isa_rx_pkt_set_buffer
-                0x000007f8                configDHR
-                0x000006ee                isa_get_channel
-                0x000011ec                isa_nw_task
-                0x00000776                isa_ready
- .text          0x000017e4      0x190 ../../../src/net/isa/isa_scheduler.o
-                0x0000190c                _isa_clear_sched_cache
-                0x0000191c                isa_get_slots_until_next_wakeup
-                0x000017e4                isa_set_schedule
-                0x000018f0                isa_get_schedule
- .text          0x00001974      0x382 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-                0x00001b04                dev_manager_ff_sensors
-                0x000019d6                read_voltage_status
-                0x00001974                init_adc
-                0x000019aa                get_adc_val
-                0x000019a0                delay
- .text          0x00001cf6       0x3e ../../../src/radio/cc2420/source/hal_rf_set_channel.o
-                0x00001cf6                halRfSetChannel
- .text          0x00001d34       0x18 ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
-                0x00001d34                halRfWaitForCrystalOscillator
- .text          0x00001d4c     0x1530 ../../../src/radio/cc2420/source/basic_rf.o
-                0x0000305a                rf_set_channel
-                0x0000268c                rf_rx_on
-                0x00001ecc                rf_auto_ack_enable
-                0x000026cc                rf_tx_power
-                0x00003006                rf_set_rx
-                0x00001e96                rf_addr_decode_disable
-                0x00002008                rf_data_mode
-                0x00001f56                rf_rx_check_fifop
-                0x0000271a                rf_tx_packet
-                0x00001f68                rf_rx_check_sfd
-                0x00001de2                rf_security_enable
-                0x00001f7c                rf_rx_packet
-                0x00001fb8                rf_carrier_off
-                0x00001f42                rf_busy
-                0x0000264c                rf_polling_rx_on
-                0x00002132                rf_polling_rx_packet
-                0x00001fe0                rf_carrier_on
-                0x00001e56                rf_get_sem
-                0x0000261c                rf_rx_off
-                0x00001f9a                rf_flush_rx_fifo
-                0x00003080                rf_init
-                0x00001e60                rf_addr_decode_enable
-                0x00002e2c                rf_security_set_key
-                0x00002a78                rf_tx_tdma_packet
-                0x00001d54                rf_security_set_ctr_counter
-                0x000020e0                rf_set_cca_thresh
-                0x00002db6                rf_addr_decode_set_my_mac
-                0x00001e2e                rf_security_disable
-                0x00001f08                rf_auto_ack_disable
-                0x00002072                rf_test_mode
-                0x00001d4c                rf_security_last_pkt_status
- .text          0x0000327c      0xa42 ../../../src/platform/firefly2_2/source/ulib.o
-                0x00003334                nrk_gpio_set
-                0x00003a0c                nrk_get_button
-                0x00003bfc                nrk_kprintf
-                0x000032c2                nrk_uart_data_ready
-                0x000037dc                nrk_gpio_direction
-                0x00003b76                getc0
-                0x00003aa0                nrk_led_set
-                0x0000327c                getc1
-                0x000035ca                nrk_gpio_toggle
-                0x0000343e                nrk_gpio_clr
-                0x00003af0                putc0
-                0x00003b90                nrk_setup_uart
-                0x00003ada                nrk_gpio_pullups
-                0x00003b48                setup_uart1
-                0x00003326                nrk_setup_ports
-                0x00003c22                __vector_36
-                0x00003b0a                putc1
-                0x00003a66                nrk_led_clr
-                0x00003556                nrk_gpio_get
-                0x000032fc                PORT_INIT
-                0x00003b1a                setup_uart0
-                0x00003a2c                nrk_led_toggle
-                0x00003be2                nrk_uart_rx_signal_get
- .text          0x00003cbe        0xe ../../../src/platform/firefly2_2/source/hal_wait.o
-                0x00003cbe                halWait
- .text          0x00003ccc      0x11c ../../../src/platform/firefly2_2/source/nrk_eeprom.o
-                0x00003d66                read_eeprom_load_img_pages
-                0x00003cf4                nrk_eeprom_read_byte
-                0x00003ce0                write_eeprom_current_image_checksum
-                0x00003dac                write_eeprom_load_img_pages
-                0x00003d00                read_eeprom_mac_address
-                0x00003da2                nrk_eeprom_write_byte
-                0x00003dc0                write_eeprom_aes_key
-                0x00003d52                read_eeprom_channel
-                0x00003d7a                read_eeprom_aes_key
-                0x00003ccc                read_eeprom_current_image_checksum
- .text          0x00003de8      0x44c ../../../src/kernel/source/nrk.o
-                0x00003df0                nrk_version
-                0x0000410c                nrk_init
-                0x00003dfc                nrk_TCB_init
-                0x00004230                nrk_halt
-                0x00003df6                _nrk_timer_tick
-                0x00003dec                nrk_int_enable
-                0x0000404c                nrk_start
-                0x00003de8                nrk_int_disable
- .text          0x00004234        0x0 ../../../src/kernel/source/nrk_stats.o
- .text          0x00004234      0x1b0 ../../../src/kernel/source/nrk_error.o
-                0x000043cc                nrk_error_add
-                0x000043be                nrk_kernel_error_add
-                0x0000424e                nrk_error_get
-                0x00004240                nrk_errno_get
-                0x00004234                _nrk_errno_set
-                0x0000426e                nrk_error_print
- .text          0x000043e4      0x1e8 ../../../src/kernel/source/nrk_stack_check.o
-                0x0000442e                dump_stack_info
-                0x000043e4                nrk_stack_check_pid
-                0x00004586                nrk_stack_check
- .text          0x000045cc      0x63c ../../../src/kernel/source/nrk_events.o
-                0x000049ce                nrk_signal_delete
-                0x000048ee                nrk_event_signal
-                0x00004846                nrk_sem_post
-                0x00004750                nrk_sem_create
-                0x00004b92                nrk_event_wait
-                0x0000480e                nrk_sem_query
-                0x000045cc                nrk_signal_create
-                0x000046de                nrk_signal_register
-                0x00004aea                nrk_sem_pend
-                0x000047c8                nrk_sem_delete
-                0x00004646                nrk_signal_get_registered_mask
-                0x000047a6                nrk_get_resource_index
-                0x00004658                nrk_signal_unregister
- .text          0x00004c08      0x67e ../../../src/kernel/source/nrk_task.o
-                0x00004dec                _nrk_wait_for_scheduler
-                0x00004dde                nrk_get_pid
-                0x0000515e                nrk_wait_until_next_period
-                0x0000508a                nrk_wait_ticks
-                0x00004eba                nrk_wait_until
-                0x00004fb8                nrk_set_next_wakeup
-                0x00004c2c                nrk_add_to_readyQ
-                0x00004f6a                nrk_wait_until_nw
-                0x00004c16                nrk_print_readyQ
-                0x000051da                nrk_activate_task
-                0x00005034                nrk_wait_until_ticks
-                0x00004e00                nrk_wait
-                0x000051b6                nrk_terminate_task
-                0x00004c08                nrk_get_high_ready_task_ID
-                0x000050f8                nrk_wait_until_next_n_periods
-                0x00004d3a                nrk_rem_from_readyQ
- .text          0x00005286      0x5c0 ../../../src/kernel/source/nrk_time.o
-                0x000054a2                nrk_time_set
-                0x00005790                nrk_time_get
-                0x000054c4                _nrk_time_to_ticks
-                0x00005680                _nrk_time_to_ticks_long
-                0x000053a4                nrk_time_compact_nanos
-                0x000053e8                nrk_time_add
-                0x00005286                nrk_time_sub
-                0x000055c8                _nrk_ticks_to_time
- .text          0x00005846       0x34 ../../../src/kernel/source/nrk_idle_task.o
-                0x00005846                nrk_idle_task
- .text          0x0000587a      0x3f0 ../../../src/kernel/source/nrk_scheduler.o
-                0x0000587a                _nrk_scheduler
- .text          0x00005c6a      0x232 ../../../src/kernel/source/nrk_driver.o
-                0x00005e12                nrk_write
-                0x00005ca4                nrk_open
-                0x00005d46                nrk_get_status
-                0x00005d8a                nrk_set_status
-                0x00005c6a                nrk_register_driver
-                0x00005dce                nrk_read
-                0x00005e56                nrk_close
- .text          0x00005e9c        0x0 ../../../src/kernel/source/nrk_reserve.o
- .text          0x00005e9c      0x398 ../../../src/kernel/hal/atmega1281/nrk_timer.o
-                0x00006132                nrk_high_speed_timer_wait
-                0x000060aa                __vector_32
-                0x00005f60                nrk_timer_int_reset
-                0x00005f2c                _nrk_os_timer_reset
-                0x00006028                _nrk_os_timer_get
-                0x00005f52                nrk_timer_int_stop
-                0x00005e9c                nrk_spin_wait_us
-                0x00006030                __vector_13
-                0x00005eb8                _nrk_high_speed_timer_reset
-                0x00006096                __vector_17
-                0x000061be                _nrk_setup_timer
-                0x00006106                __vector_default
-                0x00005f4a                _nrk_set_next_wakeup
-                0x00005f78                nrk_timer_int_read
-                0x00005eaa                _nrk_high_speed_timer_stop
-                0x00005eb0                _nrk_high_speed_timer_start
-                0x00005f8c                nrk_timer_int_start
-                0x00006030                __vector_15
-                0x00005fa2                nrk_timer_int_configure
-                0x00005f14                _nrk_os_timer_set
-                0x00005ec8                _nrk_high_speed_timer_get
-                0x00005efe                _nrk_os_timer_stop
-                0x00005f1a                _nrk_os_timer_start
-                0x00005f40                _nrk_get_next_wakeup
- .text          0x00006234      0x2f2 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
-                0x00006234                nrk_ext_int_enable
-                0x0000646e                __vector_1
-                0x0000634c                nrk_ext_int_configure
-                0x000064ca                __vector_9
-                0x000062c2                nrk_ext_int_disable
- .text          0x00006526       0x16 ../../../src/kernel/hal/atmega1281/nrk_status.o
-                0x0000653a                update_watchdog
-                0x00006526                _nrk_startup_ok
- .text          0x0000653c       0x54 ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
-                0x00006552                nrk_watchdog_disable
-                0x00006570                nrk_watchdog_enable
-                0x0000653c                nrk_watchdog_check
-                0x0000654e                nrk_watchdog_reset
- .text          0x00006590      0x130 ../../../src/kernel/hal/atmega1281/nrk_cpu.o
-                0x00006644                nrk_stack_pointer_init
-                0x00006682                nrk_task_set_stk
-                0x000065aa                nrk_idle
-                0x00006590                nrk_battery_save
-                0x000065c0                nrk_task_set_entry_function
-                0x00006678                nrk_target_start
-                0x00006666                nrk_stack_pointer_restore
-                0x000065c8                nrk_task_stk_init
-                0x00006592                nrk_sleep
- .text          0x000066c0       0x56 ../../../src/kernel/hal/atmega1281/atmel_hw_specific.o
-                0x000066c0                nrk_start_high_ready_task
- .text          0x00006716      0x260 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
-                0x00006716                vfprintf
- .text          0x00006976        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_mulsi3.o)
- .text          0x00006976        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodhi4.o)
- .text          0x00006976        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_divmodhi4.o)
- .text          0x00006976        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodsi4.o)
- .text          0x00006976        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_prologue.o)
- .text          0x00006976        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_epilogue.o)
- .text          0x00006976        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
- .text          0x00006976        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
- .text          0x00006976       0x16 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strchr_P.o)
-                0x00006976                strchr_P
- .text          0x0000698c        0xe /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strcpy.o)
-                0x0000698c                strcpy
- .text          0x0000699a       0x9c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
-                0x0000699a                fdevopen
- .text          0x00006a36       0x5a /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
-                0x00006a36                fputc
- .text          0x00006a90        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
- .text          0x00006a90       0x2e /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
-                0x00006a90                printf
- .text          0x00006abe       0xbc /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
-                0x00006abe                __ultoa_invert
- .text          0x00006b7a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
- .text          0x00006b7a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
- .text          0x00006b7a       0x38 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
-                0x00006b7a                calloc
- .text          0x00006bb2      0x1fc /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
-                0x00006bb2                malloc
-                0x00006d02                free
- .text          0x00006dae        0xe /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memset.o)
-                0x00006dae                memset
-                0x00006dbc                . = ALIGN (0x2)
+                0x00000624                main
+                0x0000068c                transmitCallback1
+ .text          0x000006c8      0xe86 ../../../src/net/isa/isa.o
+                0x00000940                _isa_init_sync
+                0x000007c4                isa_start
+                0x00000870                isa_rx_pkt_release
+                0x00000882                isa_join_ready
+                0x00000800                configAdvDAUX
+                0x00001522                isa_rx_pkt_get
+                0x00000896                isa_task_config
+                0x000007cc                configDHDR
+                0x000011f2                isa_set_channel
+                0x00000aa6                _isa_tx
+                0x000014ee                isa_wait_until_rx_pkt
+                0x00000710                isa_set_channel_pattern
+                0x00000f12                _isa_rx
+                0x00000864                isa_rx_pkt_check
+                0x000006c8                config_child_list
+                0x000013be                isa_init
+                0x000011a0                isa_wait_until_rx_or_tx
+                0x000007a4                isa_rx_pkt_set_buffer
+                0x000007ee                configDHR
+                0x00000708                isa_get_channel
+                0x000011fc                isa_nw_task
+                0x00000790                isa_ready
+ .text          0x0000154e       0x54 ../../../src/net/isa/isa_error.o
+                0x0000154e                setIsaError
+                0x0000155c                printIsaError
+                0x00001554                getIsaError
+ .text          0x000015a2      0x76c ../../../src/net/isa/dlmo.o
+                0x00001bac                dd_data_indication
+                0x000019f2                dd_data_request
+                0x00001928                enQueue
+                0x00001a2e                addNeighbor
+                0x00001b5a                findLink
+                0x00001608                isa_get_slots_until_next_wakeup
+                0x000015a2                dlmoInit
+                0x00001bf4                configureSlot
+                0x00001bb2                sendPacket
+                0x000017ec                getHighPriorityEntry
+                0x000018c4                isaFreePacket
+                0x000015c8                isTransmitLinkPresent
+                0x000018d8                addLink
+ .text          0x00001d0e      0x382 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+                0x00001e9e                dev_manager_ff_sensors
+                0x00001d70                read_voltage_status
+                0x00001d0e                init_adc
+                0x00001d44                get_adc_val
+                0x00001d3a                delay
+ .text          0x00002090       0x3e ../../../src/radio/cc2420/source/hal_rf_set_channel.o
+                0x00002090                halRfSetChannel
+ .text          0x000020ce       0x18 ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
+                0x000020ce                halRfWaitForCrystalOscillator
+ .text          0x000020e6     0x1530 ../../../src/radio/cc2420/source/basic_rf.o
+                0x000033f4                rf_set_channel
+                0x00002a26                rf_rx_on
+                0x00002266                rf_auto_ack_enable
+                0x00002a66                rf_tx_power
+                0x000033a0                rf_set_rx
+                0x00002230                rf_addr_decode_disable
+                0x000023a2                rf_data_mode
+                0x000022f0                rf_rx_check_fifop
+                0x00002ab4                rf_tx_packet
+                0x00002302                rf_rx_check_sfd
+                0x0000217c                rf_security_enable
+                0x00002316                rf_rx_packet
+                0x00002352                rf_carrier_off
+                0x000022dc                rf_busy
+                0x000029e6                rf_polling_rx_on
+                0x000024cc                rf_polling_rx_packet
+                0x0000237a                rf_carrier_on
+                0x000021f0                rf_get_sem
+                0x000029b6                rf_rx_off
+                0x00002334                rf_flush_rx_fifo
+                0x0000341a                rf_init
+                0x000021fa                rf_addr_decode_enable
+                0x000031c6                rf_security_set_key
+                0x00002e12                rf_tx_tdma_packet
+                0x000020ee                rf_security_set_ctr_counter
+                0x0000247a                rf_set_cca_thresh
+                0x00003150                rf_addr_decode_set_my_mac
+                0x000021c8                rf_security_disable
+                0x000022a2                rf_auto_ack_disable
+                0x0000240c                rf_test_mode
+                0x000020e6                rf_security_last_pkt_status
+ .text          0x00003616      0xa42 ../../../src/platform/firefly2_2/source/ulib.o
+                0x000036ce                nrk_gpio_set
+                0x00003da6                nrk_get_button
+                0x00003f96                nrk_kprintf
+                0x0000365c                nrk_uart_data_ready
+                0x00003b76                nrk_gpio_direction
+                0x00003f10                getc0
+                0x00003e3a                nrk_led_set
+                0x00003616                getc1
+                0x00003964                nrk_gpio_toggle
+                0x000037d8                nrk_gpio_clr
+                0x00003e8a                putc0
+                0x00003f2a                nrk_setup_uart
+                0x00003e74                nrk_gpio_pullups
+                0x00003ee2                setup_uart1
+                0x000036c0                nrk_setup_ports
+                0x00003fbc                __vector_36
+                0x00003ea4                putc1
+                0x00003e00                nrk_led_clr
+                0x000038f0                nrk_gpio_get
+                0x00003696                PORT_INIT
+                0x00003eb4                setup_uart0
+                0x00003dc6                nrk_led_toggle
+                0x00003f7c                nrk_uart_rx_signal_get
+ .text          0x00004058        0xe ../../../src/platform/firefly2_2/source/hal_wait.o
+                0x00004058                halWait
+ .text          0x00004066      0x11c ../../../src/platform/firefly2_2/source/nrk_eeprom.o
+                0x00004100                read_eeprom_load_img_pages
+                0x0000408e                nrk_eeprom_read_byte
+                0x0000407a                write_eeprom_current_image_checksum
+                0x00004146                write_eeprom_load_img_pages
+                0x0000409a                read_eeprom_mac_address
+                0x0000413c                nrk_eeprom_write_byte
+                0x0000415a                write_eeprom_aes_key
+                0x000040ec                read_eeprom_channel
+                0x00004114                read_eeprom_aes_key
+                0x00004066                read_eeprom_current_image_checksum
+ .text          0x00004182      0x44c ../../../src/kernel/source/nrk.o
+                0x0000418a                nrk_version
+                0x000044a6                nrk_init
+                0x00004196                nrk_TCB_init
+                0x000045ca                nrk_halt
+                0x00004190                _nrk_timer_tick
+                0x00004186                nrk_int_enable
+                0x000043e6                nrk_start
+                0x00004182                nrk_int_disable
+ .text          0x000045ce        0x0 ../../../src/kernel/source/nrk_stats.o
+ .text          0x000045ce      0x1b0 ../../../src/kernel/source/nrk_error.o
+                0x00004766                nrk_error_add
+                0x00004758                nrk_kernel_error_add
+                0x000045e8                nrk_error_get
+                0x000045da                nrk_errno_get
+                0x000045ce                _nrk_errno_set
+                0x00004608                nrk_error_print
+ .text          0x0000477e      0x1e8 ../../../src/kernel/source/nrk_stack_check.o
+                0x000047c8                dump_stack_info
+                0x0000477e                nrk_stack_check_pid
+                0x00004920                nrk_stack_check
+ .text          0x00004966      0x63c ../../../src/kernel/source/nrk_events.o
+                0x00004d68                nrk_signal_delete
+                0x00004c88                nrk_event_signal
+                0x00004be0                nrk_sem_post
+                0x00004aea                nrk_sem_create
+                0x00004f2c                nrk_event_wait
+                0x00004ba8                nrk_sem_query
+                0x00004966                nrk_signal_create
+                0x00004a78                nrk_signal_register
+                0x00004e84                nrk_sem_pend
+                0x00004b62                nrk_sem_delete
+                0x000049e0                nrk_signal_get_registered_mask
+                0x00004b40                nrk_get_resource_index
+                0x000049f2                nrk_signal_unregister
+ .text          0x00004fa2      0x67e ../../../src/kernel/source/nrk_task.o
+                0x00005186                _nrk_wait_for_scheduler
+                0x00005178                nrk_get_pid
+                0x000054f8                nrk_wait_until_next_period
+                0x00005424                nrk_wait_ticks
+                0x00005254                nrk_wait_until
+                0x00005352                nrk_set_next_wakeup
+                0x00004fc6                nrk_add_to_readyQ
+                0x00005304                nrk_wait_until_nw
+                0x00004fb0                nrk_print_readyQ
+                0x00005574                nrk_activate_task
+                0x000053ce                nrk_wait_until_ticks
+                0x0000519a                nrk_wait
+                0x00005550                nrk_terminate_task
+                0x00004fa2                nrk_get_high_ready_task_ID
+                0x00005492                nrk_wait_until_next_n_periods
+                0x000050d4                nrk_rem_from_readyQ
+ .text          0x00005620      0x5c0 ../../../src/kernel/source/nrk_time.o
+                0x0000583c                nrk_time_set
+                0x00005b2a                nrk_time_get
+                0x0000585e                _nrk_time_to_ticks
+                0x00005a1a                _nrk_time_to_ticks_long
+                0x0000573e                nrk_time_compact_nanos
+                0x00005782                nrk_time_add
+                0x00005620                nrk_time_sub
+                0x00005962                _nrk_ticks_to_time
+ .text          0x00005be0       0x34 ../../../src/kernel/source/nrk_idle_task.o
+                0x00005be0                nrk_idle_task
+ .text          0x00005c14      0x3f0 ../../../src/kernel/source/nrk_scheduler.o
+                0x00005c14                _nrk_scheduler
+ .text          0x00006004      0x232 ../../../src/kernel/source/nrk_driver.o
+                0x000061ac                nrk_write
+                0x0000603e                nrk_open
+                0x000060e0                nrk_get_status
+                0x00006124                nrk_set_status
+                0x00006004                nrk_register_driver
+                0x00006168                nrk_read
+                0x000061f0                nrk_close
+ .text          0x00006236        0x0 ../../../src/kernel/source/nrk_reserve.o
+ .text          0x00006236      0x398 ../../../src/kernel/hal/atmega1281/nrk_timer.o
+                0x000064cc                nrk_high_speed_timer_wait
+                0x00006444                __vector_32
+                0x000062fa                nrk_timer_int_reset
+                0x000062c6                _nrk_os_timer_reset
+                0x000063c2                _nrk_os_timer_get
+                0x000062ec                nrk_timer_int_stop
+                0x00006236                nrk_spin_wait_us
+                0x000063ca                __vector_13
+                0x00006252                _nrk_high_speed_timer_reset
+                0x00006430                __vector_17
+                0x00006558                _nrk_setup_timer
+                0x000064a0                __vector_default
+                0x000062e4                _nrk_set_next_wakeup
+                0x00006312                nrk_timer_int_read
+                0x00006244                _nrk_high_speed_timer_stop
+                0x0000624a                _nrk_high_speed_timer_start
+                0x00006326                nrk_timer_int_start
+                0x000063ca                __vector_15
+                0x0000633c                nrk_timer_int_configure
+                0x000062ae                _nrk_os_timer_set
+                0x00006262                _nrk_high_speed_timer_get
+                0x00006298                _nrk_os_timer_stop
+                0x000062b4                _nrk_os_timer_start
+                0x000062da                _nrk_get_next_wakeup
+ .text          0x000065ce      0x2f2 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
+                0x000065ce                nrk_ext_int_enable
+                0x00006808                __vector_1
+                0x000066e6                nrk_ext_int_configure
+                0x00006864                __vector_9
+                0x0000665c                nrk_ext_int_disable
+ .text          0x000068c0       0x16 ../../../src/kernel/hal/atmega1281/nrk_status.o
+                0x000068d4                update_watchdog
+                0x000068c0                _nrk_startup_ok
+ .text          0x000068d6       0x54 ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
+                0x000068ec                nrk_watchdog_disable
+                0x0000690a                nrk_watchdog_enable
+                0x000068d6                nrk_watchdog_check
+                0x000068e8                nrk_watchdog_reset
+ .text          0x0000692a      0x130 ../../../src/kernel/hal/atmega1281/nrk_cpu.o
+                0x000069de                nrk_stack_pointer_init
+                0x00006a1c                nrk_task_set_stk
+                0x00006944                nrk_idle
+                0x0000692a                nrk_battery_save
+                0x0000695a                nrk_task_set_entry_function
+                0x00006a12                nrk_target_start
+                0x00006a00                nrk_stack_pointer_restore
+                0x00006962                nrk_task_stk_init
+                0x0000692c                nrk_sleep
+ .text          0x00006a5a       0x56 ../../../src/kernel/hal/atmega1281/atmel_hw_specific.o
+                0x00006a5a                nrk_start_high_ready_task
+ .text          0x00006ab0      0x260 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
+                0x00006ab0                vfprintf
+ .text          0x00006d10        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_mulsi3.o)
+ .text          0x00006d10        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodhi4.o)
+ .text          0x00006d10        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_divmodhi4.o)
+ .text          0x00006d10        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodsi4.o)
+ .text          0x00006d10        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_prologue.o)
+ .text          0x00006d10        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_epilogue.o)
+ .text          0x00006d10        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
+ .text          0x00006d10        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
+ .text          0x00006d10       0xf6 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
+                0x00006d10                __ashldi3
+ .text          0x00006e06       0x16 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strchr_P.o)
+                0x00006e06                strchr_P
+ .text          0x00006e1c       0x12 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+                0x00006e1c                memcpy
+ .text          0x00006e2e        0xe /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strcpy.o)
+                0x00006e2e                strcpy
+ .text          0x00006e3c       0x9c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
+                0x00006e3c                fdevopen
+ .text          0x00006ed8       0x5a /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+                0x00006ed8                fputc
+ .text          0x00006f32        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
+ .text          0x00006f32       0x2e /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
+                0x00006f32                printf
+ .text          0x00006f60       0xbc /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+                0x00006f60                __ultoa_invert
+ .text          0x0000701c        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
+ .text          0x0000701c        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
+ .text          0x0000701c       0x38 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
+                0x0000701c                calloc
+ .text          0x00007054      0x1fc /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
+                0x00007054                malloc
+                0x000071a4                free
+ .text          0x00007250        0xe /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memset.o)
+                0x00007250                memset
+                0x0000725e                . = ALIGN (0x2)
  *(.text.*)
- .text.libgcc   0x00006dbc       0x3e /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_mulsi3.o)
-                0x00006dbc                __mulsi3
- .text.libgcc   0x00006dfa       0x28 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodhi4.o)
-                0x00006dfa                __udivmodhi4
- .text.libgcc   0x00006e22       0x26 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_divmodhi4.o)
-                0x00006e22                __divmodhi4
-                0x00006e22                _div
- .text.libgcc   0x00006e48       0x44 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodsi4.o)
-                0x00006e48                __udivmodsi4
- .text.libgcc   0x00006e8c       0x38 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_prologue.o)
-                0x00006e8c                __prologue_saves__
- .text.libgcc   0x00006ec4       0x36 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_epilogue.o)
-                0x00006ec4                __epilogue_restores__
- .text.libgcc   0x00006efa        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
- .text.libgcc   0x00006efa        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
- .text.eeprom   0x00006efa       0x10 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
-                0x00006efa                __eeprom_read_byte_1F2021
- .text.eeprom   0x00006f0a       0x18 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
-                0x00006f0a                __eeprom_write_byte_1F2021
-                0x00006f22                . = ALIGN (0x2)
+ .text.libgcc   0x0000725e       0x3e /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_mulsi3.o)
+                0x0000725e                __mulsi3
+ .text.libgcc   0x0000729c       0x28 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodhi4.o)
+                0x0000729c                __udivmodhi4
+ .text.libgcc   0x000072c4       0x26 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_divmodhi4.o)
+                0x000072c4                __divmodhi4
+                0x000072c4                _div
+ .text.libgcc   0x000072ea       0x44 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodsi4.o)
+                0x000072ea                __udivmodsi4
+ .text.libgcc   0x0000732e       0x38 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_prologue.o)
+                0x0000732e                __prologue_saves__
+ .text.libgcc   0x00007366       0x36 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_epilogue.o)
+                0x00007366                __epilogue_restores__
+ .text.libgcc   0x0000739c        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
+ .text.libgcc   0x0000739c        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
+ .text.eeprom   0x0000739c       0x10 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
+                0x0000739c                __eeprom_read_byte_1F2021
+ .text.eeprom   0x000073ac       0x18 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
+                0x000073ac                __eeprom_write_byte_1F2021
+                0x000073c4                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00006f22        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
-                0x00006f22                exit
-                0x00006f22                _exit
+ .fini9         0x000073c4        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
+                0x000073c4                exit
+                0x000073c4                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -715,385 +739,401 @@ LOAD /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00006f22        0x2 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
+ .fini0         0x000073c4        0x2 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
  *(.fini0)
-                0x00006f24                _etext = .
+                0x000073c6                _etext = .
 
-.data           0x00800200       0xec load address 0x00006f24
+.data           0x00800200      0x270 load address 0x000073c6
                 0x00800200                PROVIDE (__data_start, .)
  *(.data)
  .data          0x00800200        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
- .data          0x00800200       0x46 main.o
- .data          0x00800246       0x2d ../../../src/net/isa/isa.o
-                0x00800271                EXPIRATION
- .data          0x00800273        0x0 ../../../src/net/isa/isa_scheduler.o
- .data          0x00800273        0x0 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
- .data          0x00800273        0x0 ../../../src/radio/cc2420/source/hal_rf_set_channel.o
- .data          0x00800273        0x0 ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
- .data          0x00800273        0x0 ../../../src/radio/cc2420/source/basic_rf.o
- .data          0x00800273       0x21 ../../../src/platform/firefly2_2/source/ulib.o
-                0x00800286                NRK_LED_0
-                0x0080028b                NRK_FIFOP
-                0x00800283                NRK_SFD
-                0x0080027f                NRK_DEBUG_3
-                0x00800287                NRK_LED_1
-                0x00800291                NRK_ADC_INPUT_5
-                0x0080028d                NRK_ADC_INPUT_1
-                0x00800285                NRK_UART0_TXD
-                0x00800288                NRK_LED_2
-                0x00800275                NRK_BUTTON
-                0x0080028c                NRK_ADC_INPUT_0
-                0x00800274                NRK_DEBUG_1
-                0x0080028a                NRK_GPIO34
-                0x00800282                NRK_CCA
-                0x00800292                NRK_ADC_INPUT_6
-                0x00800273                NRK_DEBUG_0
-                0x0080028f                NRK_ADC_INPUT_3
-                0x0080027a                NRK_GPIO26
-                0x00800279                NRK_MISO
-                0x0080027b                NRK_MMC_11
-                0x00800278                NRK_MOSI
-                0x00800290                NRK_ADC_INPUT_4
-                0x00800281                NRK_UART1_TXD
-                0x00800284                NRK_UART0_RXD
-                0x00800293                NRK_ADC_INPUT_7
-                0x0080027e                NRK_DEBUG_2
-                0x0080027d                NRK_MMC_9
-                0x00800289                NRK_LED_3
-                0x00800276                NRK_SPI_SS
-                0x0080027c                NRK_MMC_10
-                0x00800280                NRK_UART1_RXD
-                0x0080028e                NRK_ADC_INPUT_2
-                0x00800277                NRK_SCK
- .data          0x00800294        0x0 ../../../src/platform/firefly2_2/source/hal_wait.o
- .data          0x00800294        0x0 ../../../src/platform/firefly2_2/source/nrk_eeprom.o
- .data          0x00800294        0x0 ../../../src/kernel/source/nrk.o
- .data          0x00800294        0x0 ../../../src/kernel/source/nrk_stats.o
- .data          0x00800294        0x3 ../../../src/kernel/source/nrk_error.o
- .data          0x00800297       0x4e ../../../src/kernel/source/nrk_stack_check.o
- .data          0x008002e5        0x0 ../../../src/kernel/source/nrk_events.o
- .data          0x008002e5        0x0 ../../../src/kernel/source/nrk_task.o
- .data          0x008002e5        0x0 ../../../src/kernel/source/nrk_time.o
- .data          0x008002e5        0x0 ../../../src/kernel/source/nrk_idle_task.o
- .data          0x008002e5        0x0 ../../../src/kernel/source/nrk_scheduler.o
- .data          0x008002e5        0x0 ../../../src/kernel/source/nrk_driver.o
- .data          0x008002e5        0x0 ../../../src/kernel/source/nrk_reserve.o
- .data          0x008002e5        0x0 ../../../src/kernel/hal/atmega1281/nrk_timer.o
- .data          0x008002e5        0x0 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
- .data          0x008002e5        0x0 ../../../src/kernel/hal/atmega1281/nrk_status.o
- .data          0x008002e5        0x0 ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
- .data          0x008002e5        0x0 ../../../src/kernel/hal/atmega1281/nrk_cpu.o
- .data          0x008002e5        0x0 ../../../src/kernel/hal/atmega1281/atmel_hw_specific.o
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_mulsi3.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodhi4.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_divmodhi4.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodsi4.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_prologue.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_epilogue.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strchr_P.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strcpy.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
- .data          0x008002e5        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
- .data          0x008002e5        0x6 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
-                0x008002e7                __malloc_heap_start
-                0x008002e9                __malloc_heap_end
-                0x008002e5                __malloc_margin
- .data          0x008002eb        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memset.o)
+ .data          0x00800200       0x4b main.o
+ .data          0x0080024b       0x95 ../../../src/net/isa/isa.o
+                0x008002de                EXPIRATION
+ .data          0x008002e0       0xa7 ../../../src/net/isa/isa_error.o
+ .data          0x00800387       0x71 ../../../src/net/isa/dlmo.o
+ .data          0x008003f8        0x0 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+ .data          0x008003f8        0x0 ../../../src/radio/cc2420/source/hal_rf_set_channel.o
+ .data          0x008003f8        0x0 ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
+ .data          0x008003f8        0x0 ../../../src/radio/cc2420/source/basic_rf.o
+ .data          0x008003f8       0x21 ../../../src/platform/firefly2_2/source/ulib.o
+                0x0080040b                NRK_LED_0
+                0x00800410                NRK_FIFOP
+                0x00800408                NRK_SFD
+                0x00800404                NRK_DEBUG_3
+                0x0080040c                NRK_LED_1
+                0x00800416                NRK_ADC_INPUT_5
+                0x00800412                NRK_ADC_INPUT_1
+                0x0080040a                NRK_UART0_TXD
+                0x0080040d                NRK_LED_2
+                0x008003fa                NRK_BUTTON
+                0x00800411                NRK_ADC_INPUT_0
+                0x008003f9                NRK_DEBUG_1
+                0x0080040f                NRK_GPIO34
+                0x00800407                NRK_CCA
+                0x00800417                NRK_ADC_INPUT_6
+                0x008003f8                NRK_DEBUG_0
+                0x00800414                NRK_ADC_INPUT_3
+                0x008003ff                NRK_GPIO26
+                0x008003fe                NRK_MISO
+                0x00800400                NRK_MMC_11
+                0x008003fd                NRK_MOSI
+                0x00800415                NRK_ADC_INPUT_4
+                0x00800406                NRK_UART1_TXD
+                0x00800409                NRK_UART0_RXD
+                0x00800418                NRK_ADC_INPUT_7
+                0x00800403                NRK_DEBUG_2
+                0x00800402                NRK_MMC_9
+                0x0080040e                NRK_LED_3
+                0x008003fb                NRK_SPI_SS
+                0x00800401                NRK_MMC_10
+                0x00800405                NRK_UART1_RXD
+                0x00800413                NRK_ADC_INPUT_2
+                0x008003fc                NRK_SCK
+ .data          0x00800419        0x0 ../../../src/platform/firefly2_2/source/hal_wait.o
+ .data          0x00800419        0x0 ../../../src/platform/firefly2_2/source/nrk_eeprom.o
+ .data          0x00800419        0x0 ../../../src/kernel/source/nrk.o
+ .data          0x00800419        0x0 ../../../src/kernel/source/nrk_stats.o
+ .data          0x00800419        0x3 ../../../src/kernel/source/nrk_error.o
+ .data          0x0080041c       0x4e ../../../src/kernel/source/nrk_stack_check.o
+ .data          0x0080046a        0x0 ../../../src/kernel/source/nrk_events.o
+ .data          0x0080046a        0x0 ../../../src/kernel/source/nrk_task.o
+ .data          0x0080046a        0x0 ../../../src/kernel/source/nrk_time.o
+ .data          0x0080046a        0x0 ../../../src/kernel/source/nrk_idle_task.o
+ .data          0x0080046a        0x0 ../../../src/kernel/source/nrk_scheduler.o
+ .data          0x0080046a        0x0 ../../../src/kernel/source/nrk_driver.o
+ .data          0x0080046a        0x0 ../../../src/kernel/source/nrk_reserve.o
+ .data          0x0080046a        0x0 ../../../src/kernel/hal/atmega1281/nrk_timer.o
+ .data          0x0080046a        0x0 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
+ .data          0x0080046a        0x0 ../../../src/kernel/hal/atmega1281/nrk_status.o
+ .data          0x0080046a        0x0 ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
+ .data          0x0080046a        0x0 ../../../src/kernel/hal/atmega1281/nrk_cpu.o
+ .data          0x0080046a        0x0 ../../../src/kernel/hal/atmega1281/atmel_hw_specific.o
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_mulsi3.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodhi4.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_divmodhi4.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodsi4.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_prologue.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_epilogue.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strchr_P.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strcpy.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
+ .data          0x0080046a        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
+ .data          0x0080046a        0x6 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
+                0x0080046c                __malloc_heap_start
+                0x0080046e                __malloc_heap_end
+                0x0080046a                __malloc_margin
+ .data          0x00800470        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memset.o)
  *(.data*)
  *(.rodata)
  *(.rodata*)
  *(.gnu.linkonce.d*)
-                0x008002ec                . = ALIGN (0x2)
- *fill*         0x008002eb        0x1 00
-                0x008002ec                _edata = .
-                0x008002ec                PROVIDE (__data_end, .)
+                0x00800470                . = ALIGN (0x2)
+                0x00800470                _edata = .
+                0x00800470                PROVIDE (__data_end, .)
 
-.bss            0x008002ec      0x4d6 load address 0x00007010
-                0x008002ec                PROVIDE (__bss_start, .)
+.bss            0x00800470      0xc07 load address 0x00007636
+                0x00800470                PROVIDE (__bss_start, .)
  *(.bss)
- .bss           0x008002ec        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
- .bss           0x008002ec        0x0 main.o
- .bss           0x008002ec        0xa ../../../src/net/isa/isa.o
-                0x008002f4                packetsLost
-                0x008002ee                DHDRcount
-                0x008002f2                rxCount
-                0x008002ec                tmp_count
-                0x008002f0                txCount
- .bss           0x008002f6        0x0 ../../../src/net/isa/isa_scheduler.o
- .bss           0x008002f6        0x0 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
- .bss           0x008002f6        0x0 ../../../src/radio/cc2420/source/hal_rf_set_channel.o
- .bss           0x008002f6        0x0 ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
- .bss           0x008002f6        0x0 ../../../src/radio/cc2420/source/basic_rf.o
- .bss           0x008002f6        0x0 ../../../src/platform/firefly2_2/source/ulib.o
- .bss           0x008002f6        0x0 ../../../src/platform/firefly2_2/source/hal_wait.o
- .bss           0x008002f6        0x0 ../../../src/platform/firefly2_2/source/nrk_eeprom.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_stats.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_error.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_stack_check.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_events.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_task.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_time.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_idle_task.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_scheduler.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_driver.o
- .bss           0x008002f6        0x0 ../../../src/kernel/source/nrk_reserve.o
- .bss           0x008002f6        0x0 ../../../src/kernel/hal/atmega1281/nrk_timer.o
- .bss           0x008002f6        0x0 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
- .bss           0x008002f6        0x0 ../../../src/kernel/hal/atmega1281/nrk_status.o
- .bss           0x008002f6        0x0 ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
- .bss           0x008002f6        0x0 ../../../src/kernel/hal/atmega1281/nrk_cpu.o
- .bss           0x008002f6        0x0 ../../../src/kernel/hal/atmega1281/atmel_hw_specific.o
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_mulsi3.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodhi4.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_divmodhi4.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodsi4.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_prologue.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_epilogue.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strchr_P.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strcpy.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
- .bss           0x008002f6        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memset.o)
+ .bss           0x00800470        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
+ .bss           0x00800470        0x0 main.o
+ .bss           0x00800470        0xa ../../../src/net/isa/isa.o
+                0x00800478                packetsLost
+                0x00800472                DHDRcount
+                0x00800476                rxCount
+                0x00800470                tmp_count
+                0x00800474                txCount
+ .bss           0x0080047a        0x1 ../../../src/net/isa/isa_error.o
+ .bss           0x0080047b        0x0 ../../../src/net/isa/dlmo.o
+ .bss           0x0080047b        0x0 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+ .bss           0x0080047b        0x0 ../../../src/radio/cc2420/source/hal_rf_set_channel.o
+ .bss           0x0080047b        0x0 ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
+ .bss           0x0080047b        0x0 ../../../src/radio/cc2420/source/basic_rf.o
+ .bss           0x0080047b        0x0 ../../../src/platform/firefly2_2/source/ulib.o
+ .bss           0x0080047b        0x0 ../../../src/platform/firefly2_2/source/hal_wait.o
+ .bss           0x0080047b        0x0 ../../../src/platform/firefly2_2/source/nrk_eeprom.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_stats.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_error.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_stack_check.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_events.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_task.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_time.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_idle_task.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_scheduler.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_driver.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/source/nrk_reserve.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/hal/atmega1281/nrk_timer.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/hal/atmega1281/nrk_status.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/hal/atmega1281/nrk_cpu.o
+ .bss           0x0080047b        0x0 ../../../src/kernel/hal/atmega1281/atmel_hw_specific.o
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_mulsi3.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodhi4.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_divmodhi4.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodsi4.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_prologue.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_epilogue.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strchr_P.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strcpy.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
+ .bss           0x0080047b        0x0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memset.o)
  *(.bss*)
  *(COMMON)
- COMMON         0x008002f6      0x399 main.o
-                0x008002f6                child_list
-                0x008002fa                isa_id
-                0x008002fb                newtime
-                0x00800303                isa_rfRxInfo
-                0x0080030c                isa_rfTxInfo
-                0x00800313                error_task
-                0x00800314                isa_param
-                0x0080031d                isa_tx_data_ready
-                0x00800321                isa_ack_tx
-                0x00800328                isa_task
-                0x0080034b                TaskOne
-                0x0080036e                isa_task_stack
-                0x008003ee                resync_times
-                0x008003f0                isa_clk_src_id
-                0x008003f1                _isa_join_ok
-                0x008003f2                _nrk_signal_list
-                0x008003f6                isa_tdma_rx_mask
-                0x008003fa                isa_node_mode
-                0x008003fb                rx_buf
-                0x0080046f                DHDR
-                0x00800470                Stack1
-                0x008004f0                timeout
-                0x008004f8                isa_tdma_tx_mask
-                0x008004fc                nrk_kernel_stk_ptr
-                0x008004fe                isa_sched
-                0x00800517                _isa_ready
-                0x00800518                tx_buf
-                0x0080058c                isa_ack_buf
-                0x00800590                tx_slot_from_join
-                0x00800594                isa_tx_info
-                0x008005f8                timeend
-                0x00800600                error_num
-                0x00800601                isa_rx_data_ready
-                0x00800605                last_slot
-                0x00800607                timestart
-                0x0080060f                nrk_idle_task_stk
- COMMON         0x0080068f       0x56 ../../../src/net/isa/isa.o
-                0x0080068f                isa_rx_pkt_signal
-                0x00800690                tmp_curSec
-                0x00800691                app_timer0_callback
-                0x00800693                global_cycle
-                0x00800695                offsetY
-                0x00800697                offsetX
-                0x00800699                AFTER_FIRST_SYNC
-                0x0080069a                previous_tx_slot
-                0x0080069b                slot_start_time
-                0x0080069d                isa_tx_done_signal
-                0x0080069e                channelIndex
-                0x0080069f                global_slot
-                0x008006a1                _nrk_time_trigger
-                0x008006a2                tmp_offsetSec
-                0x008006a3                last_sync_slot
-                0x008006a5                slowIndex
-                0x008006a6                tmp_offsetNanoSec
-                0x008006a8                tx_start_time
-                0x008006aa                current_global_slot
-                0x008006ac                _isa_sync_ok
-                0x008006ad                rx_start_time
-                0x008006af                DAUX
-                0x008006cc                slowPattern
-                0x008006cf                app_timer0_prescale
-                0x008006d0                currentChannel
-                0x008006d1                slottedPattern
-                0x008006e1                _nrk_prev_timer_val
-                0x008006e2                DHR
-                0x008006e3                slot_expired
- COMMON         0x008006e5        0x2 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-                0x008006e5                is_open
-                0x008006e6                channel
- COMMON         0x008006e7       0x1b ../../../src/radio/cc2420/source/basic_rf.o
-                0x008006e7                rx_ctr
-                0x008006eb                radio_sem
-                0x008006ed                security_enable
-                0x008006ee                mdmctrl0
-                0x008006f0                rfSettings
-                0x008006f9                tmp_blah
-                0x008006fb                auto_ack_enable
-                0x008006fc                last_pkt_encrypted
-                0x008006fd                tx_ctr
-                0x00800701                rx_ready
- COMMON         0x00800702       0x13 ../../../src/platform/firefly2_2/source/ulib.o
-                0x00800702                uart_rx_buf_end
-                0x00800703                uart_rx_buf
-                0x00800713                uart_rx_signal
-                0x00800714                uart_rx_buf_start
- COMMON         0x00800715       0x95 ../../../src/kernel/source/nrk.o
-                0x00800715                _free_node
-                0x00800717                nrk_task_TCB
-                0x0080077a                next_next_wakeup
-                0x0080077c                nrk_sem_list
-                0x00800782                nrk_task_init_cnt
-                0x00800783                nrk_wakeup_signal
-                0x00800784                nrk_high_ready_TCB
-                0x00800786                nrk_cur_task_prio
-                0x00800787                _nrk_cpu_state
-                0x00800788                _head_node
-                0x0080078a                nrk_system_time
-                0x00800792                _nrk_resource_cnt
-                0x00800793                nrk_cur_task_TCB
-                0x00800795                nrk_high_ready_prio
-                0x00800796                _nrk_readyQ
- COMMON         0x008007aa        0x6 ../../../src/kernel/source/nrk_driver.o
-                0x008007aa                _nrk_driver_count
-                0x008007ab                nrk_drivers
-                0x008007af                nrk_driver_init
- COMMON         0x008007b0        0x8 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
-                0x008007b0                ext_int1_callback
-                0x008007b2                ext_int0_callback
-                0x008007b4                ext_int2_callback
-                0x008007b6                pc_int0_callback
- COMMON         0x008007b8        0x6 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
-                0x008007b8                __iob
- COMMON         0x008007be        0x4 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
-                0x008007be                __brkval
-                0x008007c0                __flp
-                0x008007c2                PROVIDE (__bss_end, .)
-                0x00006f24                __data_load_start = LOADADDR (.data)
-                0x00007010                __data_load_end = (__data_load_start + SIZEOF (.data))
+ COMMON         0x0080047b      0x310 main.o
+                0x0080047b                child_list
+                0x0080047f                isa_id
+                0x00800480                newtime
+                0x00800488                isa_rfRxInfo
+                0x00800491                isa_rfTxInfo
+                0x00800498                error_task
+                0x00800499                isa_param
+                0x008004a2                isa_ack_tx
+                0x008004a9                isa_task
+                0x008004cc                TaskOne
+                0x008004ef                isa_task_stack
+                0x0080056f                resync_times
+                0x00800571                isa_clk_src_id
+                0x00800572                _isa_join_ok
+                0x00800573                _nrk_signal_list
+                0x00800577                isa_node_mode
+                0x00800578                rx_buf
+                0x008005ec                DHDR
+                0x008005ed                Stack1
+                0x0080066d                timeout
+                0x00800675                nrk_kernel_stk_ptr
+                0x00800677                _isa_ready
+                0x00800678                tx_buf
+                0x008006ec                isa_ack_buf
+                0x008006f0                tx_slot_from_join
+                0x008006f4                timeend
+                0x008006fc                error_num
+                0x008006fd                isa_rx_data_ready
+                0x00800701                last_slot
+                0x00800703                timestart
+                0x0080070b                nrk_idle_task_stk
+ COMMON         0x0080078b       0x58 ../../../src/net/isa/isa.o
+                0x0080078b                isa_rx_pkt_signal
+                0x0080078c                tmp_curSec
+                0x0080078d                dmo
+                0x0080078f                app_timer0_callback
+                0x00800791                global_cycle
+                0x00800793                offsetY
+                0x00800795                offsetX
+                0x00800797                AFTER_FIRST_SYNC
+                0x00800798                previous_tx_slot
+                0x00800799                slot_start_time
+                0x0080079b                isa_tx_done_signal
+                0x0080079c                channelIndex
+                0x0080079d                global_slot
+                0x0080079f                _nrk_time_trigger
+                0x008007a0                tmp_offsetSec
+                0x008007a1                last_sync_slot
+                0x008007a3                slowIndex
+                0x008007a4                tmp_offsetNanoSec
+                0x008007a6                tx_start_time
+                0x008007a8                current_global_slot
+                0x008007aa                _isa_sync_ok
+                0x008007ab                rx_start_time
+                0x008007ad                DAUX
+                0x008007ca                slowPattern
+                0x008007cd                app_timer0_prescale
+                0x008007ce                currentChannel
+                0x008007cf                slottedPattern
+                0x008007df                _nrk_prev_timer_val
+                0x008007e0                DHR
+                0x008007e1                slot_expired
+ COMMON         0x008007e3      0x7b7 ../../../src/net/isa/dlmo.o
+                0x008007e3                dlmoLink
+                0x00800897                isa_slot
+                0x0080089f                dlmoNeighbor
+                0x00800a48                isaQueue
+                0x00800f70                isa_tdma_rx_mask
+                0x00800f78                isa_tdma_tx_mask
+                0x00800f80                isaTxQueueSize
+                0x00800f81                isa_sched
+ COMMON         0x00800f9a        0x2 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+                0x00800f9a                is_open
+                0x00800f9b                channel
+ COMMON         0x00800f9c       0x1b ../../../src/radio/cc2420/source/basic_rf.o
+                0x00800f9c                rx_ctr
+                0x00800fa0                radio_sem
+                0x00800fa2                security_enable
+                0x00800fa3                mdmctrl0
+                0x00800fa5                rfSettings
+                0x00800fae                tmp_blah
+                0x00800fb0                auto_ack_enable
+                0x00800fb1                last_pkt_encrypted
+                0x00800fb2                tx_ctr
+                0x00800fb6                rx_ready
+ COMMON         0x00800fb7       0x13 ../../../src/platform/firefly2_2/source/ulib.o
+                0x00800fb7                uart_rx_buf_end
+                0x00800fb8                uart_rx_buf
+                0x00800fc8                uart_rx_signal
+                0x00800fc9                uart_rx_buf_start
+ COMMON         0x00800fca       0x95 ../../../src/kernel/source/nrk.o
+                0x00800fca                _free_node
+                0x00800fcc                nrk_task_TCB
+                0x0080102f                next_next_wakeup
+                0x00801031                nrk_sem_list
+                0x00801037                nrk_task_init_cnt
+                0x00801038                nrk_wakeup_signal
+                0x00801039                nrk_high_ready_TCB
+                0x0080103b                nrk_cur_task_prio
+                0x0080103c                _nrk_cpu_state
+                0x0080103d                _head_node
+                0x0080103f                nrk_system_time
+                0x00801047                _nrk_resource_cnt
+                0x00801048                nrk_cur_task_TCB
+                0x0080104a                nrk_high_ready_prio
+                0x0080104b                _nrk_readyQ
+ COMMON         0x0080105f        0x6 ../../../src/kernel/source/nrk_driver.o
+                0x0080105f                _nrk_driver_count
+                0x00801060                nrk_drivers
+                0x00801064                nrk_driver_init
+ COMMON         0x00801065        0x8 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
+                0x00801065                ext_int1_callback
+                0x00801067                ext_int0_callback
+                0x00801069                ext_int2_callback
+                0x0080106b                pc_int0_callback
+ COMMON         0x0080106d        0x6 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
+                0x0080106d                __iob
+ COMMON         0x00801073        0x4 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
+                0x00801073                __brkval
+                0x00801075                __flp
+                0x00801077                PROVIDE (__bss_end, .)
+                0x000073c6                __data_load_start = LOADADDR (.data)
+                0x00007636                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x008007c2        0x0
-                0x008007c2                PROVIDE (__noinit_start, .)
+.noinit         0x00801077        0x0
+                0x00801077                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x008007c2                PROVIDE (__noinit_end, .)
-                0x008007c2                _end = .
-                0x008007c2                PROVIDE (__heap_start, .)
+                0x00801077                PROVIDE (__noinit_end, .)
+                0x00801077                _end = .
+                0x00801077                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0
  *(.eeprom*)
                 0x00810000                __eeprom_end = .
 
-.stab           0x00000000    0x107f4
+.stab           0x00000000    0x114c0
  *(.stab)
  .stab          0x00000000      0x414 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
- .stab          0x00000414      0xb34 main.o
-                                0xb40 (size before relaxing)
- .stab          0x00000f48     0x20f4 ../../../src/net/isa/isa.o
-                               0x24a8 (size before relaxing)
- .stab          0x0000303c      0x600 ../../../src/net/isa/isa_scheduler.o
-                                0xa08 (size before relaxing)
- .stab          0x0000363c      0x894 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+ .stab          0x00000414      0xbd0 main.o
+                                0xbdc (size before relaxing)
+ .stab          0x00000fe4     0x1e60 ../../../src/net/isa/isa.o
+                               0x2274 (size before relaxing)
+ .stab          0x00002e44      0x2e8 ../../../src/net/isa/isa_error.o
+                                0x63c (size before relaxing)
+ .stab          0x0000312c      0xdec ../../../src/net/isa/dlmo.o
+                               0x12c0 (size before relaxing)
+ .stab          0x00003f18      0x894 ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
                                 0xc90 (size before relaxing)
- .stab          0x00003ed0      0x21c ../../../src/radio/cc2420/source/hal_rf_set_channel.o
+ .stab          0x000047ac      0x21c ../../../src/radio/cc2420/source/hal_rf_set_channel.o
                                 0x534 (size before relaxing)
- .stab          0x000040ec      0x21c ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
+ .stab          0x000049c8      0x21c ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
                                 0x534 (size before relaxing)
- .stab          0x00004308     0x1cbc ../../../src/radio/cc2420/source/basic_rf.o
+ .stab          0x00004be4     0x1cbc ../../../src/radio/cc2420/source/basic_rf.o
                                0x2088 (size before relaxing)
- .stab          0x00005fc4     0x114c ../../../src/platform/firefly2_2/source/ulib.o
+ .stab          0x000068a0     0x114c ../../../src/platform/firefly2_2/source/ulib.o
                                0x14b8 (size before relaxing)
- .stab          0x00007110      0x204 ../../../src/platform/firefly2_2/source/hal_wait.o
+ .stab          0x000079ec      0x204 ../../../src/platform/firefly2_2/source/hal_wait.o
                                 0x51c (size before relaxing)
- .stab          0x00007314      0xb28 ../../../src/platform/firefly2_2/source/nrk_eeprom.o
+ .stab          0x00007bf0      0xb28 ../../../src/platform/firefly2_2/source/nrk_eeprom.o
                                 0xe4c (size before relaxing)
- .stab          0x00007e3c      0x8d0 ../../../src/kernel/source/nrk.o
+ .stab          0x00008718      0x8d0 ../../../src/kernel/source/nrk.o
                                 0xcb4 (size before relaxing)
- .stab          0x0000870c      0x27c ../../../src/kernel/source/nrk_stats.o
+ .stab          0x00008fe8      0x27c ../../../src/kernel/source/nrk_stats.o
                                 0x66c (size before relaxing)
- .stab          0x00008988      0x768 ../../../src/kernel/source/nrk_error.o
+ .stab          0x00009264      0x768 ../../../src/kernel/source/nrk_error.o
                                 0xb70 (size before relaxing)
- .stab          0x000090f0      0x42c ../../../src/kernel/source/nrk_stack_check.o
+ .stab          0x000099cc      0x42c ../../../src/kernel/source/nrk_stack_check.o
                                 0x81c (size before relaxing)
- .stab          0x0000951c      0xd50 ../../../src/kernel/source/nrk_events.o
+ .stab          0x00009df8      0xd50 ../../../src/kernel/source/nrk_events.o
                                0x111c (size before relaxing)
- .stab          0x0000a26c      0xf60 ../../../src/kernel/source/nrk_task.o
+ .stab          0x0000ab48      0xf60 ../../../src/kernel/source/nrk_task.o
                                0x132c (size before relaxing)
- .stab          0x0000b1cc      0x6cc ../../../src/kernel/source/nrk_time.o
+ .stab          0x0000baa8      0x6cc ../../../src/kernel/source/nrk_time.o
                                 0xa80 (size before relaxing)
- .stab          0x0000b898      0x2c4 ../../../src/kernel/source/nrk_idle_task.o
+ .stab          0x0000c174      0x2c4 ../../../src/kernel/source/nrk_idle_task.o
                                 0x6cc (size before relaxing)
- .stab          0x0000bb5c      0x6c0 ../../../src/kernel/source/nrk_scheduler.o
+ .stab          0x0000c438      0x6c0 ../../../src/kernel/source/nrk_scheduler.o
                                 0xa8c (size before relaxing)
- .stab          0x0000c21c      0x69c ../../../src/kernel/source/nrk_driver.o
+ .stab          0x0000caf8      0x69c ../../../src/kernel/source/nrk_driver.o
                                 0xa8c (size before relaxing)
- .stab          0x0000c8b8       0xe4 ../../../src/kernel/source/nrk_reserve.o
+ .stab          0x0000d194       0xe4 ../../../src/kernel/source/nrk_reserve.o
                                  0xf0 (size before relaxing)
- .stab          0x0000c99c      0xca8 ../../../src/kernel/hal/atmega1281/nrk_timer.o
+ .stab          0x0000d278      0xca8 ../../../src/kernel/hal/atmega1281/nrk_timer.o
                                 0xff0 (size before relaxing)
- .stab          0x0000d644      0x618 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
+ .stab          0x0000df20      0x618 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
                                 0x948 (size before relaxing)
- .stab          0x0000dc5c      0x21c ../../../src/kernel/hal/atmega1281/nrk_status.o
+ .stab          0x0000e538      0x21c ../../../src/kernel/hal/atmega1281/nrk_status.o
                                 0x534 (size before relaxing)
- .stab          0x0000de78      0x384 ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
+ .stab          0x0000e754      0x384 ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
                                 0x738 (size before relaxing)
- .stab          0x0000e1fc      0x6f0 ../../../src/kernel/hal/atmega1281/nrk_cpu.o
+ .stab          0x0000ead8      0x6f0 ../../../src/kernel/hal/atmega1281/nrk_cpu.o
                                 0xabc (size before relaxing)
- .stab          0x0000e8ec      0x204 ../../../src/kernel/hal/atmega1281/atmel_hw_specific.o
+ .stab          0x0000f1c8      0x204 ../../../src/kernel/hal/atmega1281/atmel_hw_specific.o
                                 0x210 (size before relaxing)
- .stab          0x0000eaf0      0x7e0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
+ .stab          0x0000f3cc      0x7e0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
                                 0x840 (size before relaxing)
- .stab          0x0000f2d0       0x9c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strchr_P.o)
+ .stab          0x0000fbac      0x36c /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
+                                0x378 (size before relaxing)
+ .stab          0x0000ff18       0x9c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strchr_P.o)
                                  0xa8 (size before relaxing)
- .stab          0x0000f36c       0x6c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strcpy.o)
+ .stab          0x0000ffb4       0x84 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+                                 0x90 (size before relaxing)
+ .stab          0x00010038       0x6c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(strcpy.o)
                                  0x78 (size before relaxing)
- .stab          0x0000f3d8      0x27c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
+ .stab          0x000100a4      0x27c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
                                 0x4a4 (size before relaxing)
- .stab          0x0000f654      0x1d4 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
+ .stab          0x00010320      0x1d4 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
                                 0x3b4 (size before relaxing)
- .stab          0x0000f828      0x12c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
+ .stab          0x000104f4      0x12c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
                                 0x30c (size before relaxing)
- .stab          0x0000f954      0x1b0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
+ .stab          0x00010620      0x1b0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
                                 0x390 (size before relaxing)
- .stab          0x0000fb04      0x480 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+ .stab          0x000107d0      0x480 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
                                 0x48c (size before relaxing)
- .stab          0x0000ff84       0x78 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
+ .stab          0x00010c50       0x78 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
                                  0x84 (size before relaxing)
- .stab          0x0000fffc       0xa8 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
+ .stab          0x00010cc8       0xa8 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_wb.1F2021.o)
                                  0xb4 (size before relaxing)
- .stab          0x000100a4      0x1bc /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
+ .stab          0x00010d70      0x1bc /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
                                 0x1f8 (size before relaxing)
- .stab          0x00010260      0x528 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
+ .stab          0x00010f2c      0x528 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
                                 0x708 (size before relaxing)
- .stab          0x00010788       0x6c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memset.o)
+ .stab          0x00011454       0x6c /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memset.o)
                                  0x78 (size before relaxing)
 
-.stabstr        0x00000000     0x6c49
+.stabstr        0x00000000     0xa0e0
  *(.stabstr)
- .stabstr       0x00000000     0x6c49 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
+ .stabstr       0x00000000     0xa0e0 /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
 
 .stab.excl
  *(.stab.excl)
@@ -1157,8 +1197,7 @@ Cross Reference Table
 Symbol                                            File
 AFTER_FIRST_SYNC                                  ../../../src/net/isa/isa.o
 DAUX                                              ../../../src/net/isa/isa.o
-DHDR                                              ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+DHDR                                              ../../../src/net/isa/isa.o
                                                   main.o
 DHDRcount                                         ../../../src/net/isa/isa.o
 DHR                                               ../../../src/net/isa/isa.o
@@ -1203,6 +1242,8 @@ PORT_INIT                                         ../../../src/platform/firefly2
 Stack1                                            main.o
 Task1                                             main.o
 TaskOne                                           main.o
+__ashldi3                                         /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
+                                                  ../../../src/net/isa/dlmo.o
 __bad_interrupt                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
 __brkval                                          /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
 __bss_end                                         /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_clear_bss.o)
@@ -1220,6 +1261,7 @@ __do_clear_bss                                    /usr/local/lib/gcc/avr/4.2.2/a
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
+                                                  /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
                                                   ../../../src/kernel/hal/atmega1281/nrk_cpu.o
                                                   ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
@@ -1244,7 +1286,8 @@ __do_clear_bss                                    /usr/local/lib/gcc/avr/4.2.2/a
                                                   ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
                                                   ../../../src/radio/cc2420/source/hal_rf_set_channel.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-                                                  ../../../src/net/isa/isa_scheduler.o
+                                                  ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa_error.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
 __do_copy_data                                    /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
@@ -1254,6 +1297,7 @@ __do_copy_data                                    /usr/local/lib/gcc/avr/4.2.2/.
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(iob.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
+                                                  /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
                                                   ../../../src/kernel/hal/atmega1281/nrk_cpu.o
                                                   ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
@@ -1278,7 +1322,8 @@ __do_copy_data                                    /usr/local/lib/gcc/avr/4.2.2/.
                                                   ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
                                                   ../../../src/radio/cc2420/source/hal_rf_set_channel.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-                                                  ../../../src/net/isa/isa_scheduler.o
+                                                  ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa_error.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
 __eeprom_read_byte_1F2021                         /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(ee_rb.1F2021.o)
@@ -1288,6 +1333,7 @@ __eeprom_write_byte_1F2021                        /usr/local/lib/gcc/avr/4.2.2/.
 __epilogue_restores__                             /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_epilogue.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
+                                                  /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
 __flp                                             /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
 __heap_end                                        /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
@@ -1308,13 +1354,14 @@ __mulsi3                                          /usr/local/lib/gcc/avr/4.2.2/a
                                                   ../../../src/kernel/source/nrk_time.o
 __prologue_saves__                                /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_prologue.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
+                                                  /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_ashldi3.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
 __stack                                           /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/crtm1281.o
                                                   main.o
 __udivmodhi4                                      /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodhi4.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_divmodhi4.o)
                                                   ../../../src/kernel/source/nrk_scheduler.o
-                                                  ../../../src/net/isa/isa_scheduler.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
 __udivmodsi4                                      /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_udivmodsi4.o)
@@ -1396,14 +1443,10 @@ _head_node                                        ../../../src/kernel/hal/atmega
                                                   ../../../src/kernel/source/nrk_events.o
                                                   ../../../src/kernel/source/nrk_stats.o
                                                   ../../../src/kernel/source/nrk.o
-_isa_clear_sched_cache                            ../../../src/net/isa/isa_scheduler.o
 _isa_init_sync                                    ../../../src/net/isa/isa.o
-_isa_join_ok                                      ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+_isa_join_ok                                      ../../../src/net/isa/isa.o
                                                   main.o
-_isa_join_process                                 ../../../src/net/isa/isa.o
-_isa_ready                                        ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+_isa_ready                                        ../../../src/net/isa/isa.o
                                                   main.o
 _isa_rx                                           ../../../src/net/isa/isa.o
 _isa_sync_ok                                      ../../../src/net/isa/isa.o
@@ -1456,6 +1499,7 @@ _nrk_prev_timer_val                               ../../../src/kernel/hal/atmega
                                                   ../../../src/kernel/source/nrk_error.o
                                                   ../../../src/radio/cc2420/source/basic_rf.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
 _nrk_readyQ                                       ../../../src/kernel/hal/atmega1281/nrk_cpu.o
                                                   ../../../src/kernel/source/nrk_scheduler.o
@@ -1497,7 +1541,8 @@ _nrk_signal_list                                  ../../../src/kernel/hal/atmega
                                                   ../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.o
                                                   ../../../src/radio/cc2420/source/hal_rf_set_channel.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-                                                  ../../../src/net/isa/isa_scheduler.o
+                                                  ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa_error.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
 _nrk_startup_ok                                   ../../../src/kernel/hal/atmega1281/nrk_status.o
@@ -1518,10 +1563,13 @@ _nrk_time_trigger                                 ../../../src/kernel/hal/atmega
                                                   ../../../src/kernel/source/nrk_error.o
                                                   ../../../src/radio/cc2420/source/basic_rf.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
 _nrk_timer_tick                                   ../../../src/kernel/source/nrk.o
                                                   ../../../src/kernel/hal/atmega1281/nrk_cpu.o
 _nrk_wait_for_scheduler                           ../../../src/kernel/source/nrk_task.o
+addLink                                           ../../../src/net/isa/dlmo.o
+addNeighbor                                       ../../../src/net/isa/dlmo.o
 app_timer0_callback                               ../../../src/kernel/hal/atmega1281/nrk_cpu.o
                                                   ../../../src/kernel/hal/atmega1281/nrk_timer.o
                                                   ../../../src/kernel/source/nrk_driver.o
@@ -1533,6 +1581,7 @@ app_timer0_callback                               ../../../src/kernel/hal/atmega
                                                   ../../../src/kernel/source/nrk_error.o
                                                   ../../../src/radio/cc2420/source/basic_rf.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
 app_timer0_prescale                               ../../../src/kernel/hal/atmega1281/nrk_cpu.o
                                                   ../../../src/kernel/hal/atmega1281/nrk_timer.o
@@ -1545,25 +1594,37 @@ app_timer0_prescale                               ../../../src/kernel/hal/atmega
                                                   ../../../src/kernel/source/nrk_error.o
                                                   ../../../src/radio/cc2420/source/basic_rf.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
 auto_ack_enable                                   ../../../src/radio/cc2420/source/basic_rf.o
 calloc                                            /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
 channel                                           ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
 channelIndex                                      ../../../src/net/isa/isa.o
-child_list                                        ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+child_list                                        ../../../src/net/isa/isa.o
                                                   main.o
 configAdvDAUX                                     ../../../src/net/isa/isa.o
 configDHDR                                        ../../../src/net/isa/isa.o
-                                                  main.o
 configDHR                                         ../../../src/net/isa/isa.o
 config_child_list                                 ../../../src/net/isa/isa.o
+configureSlot                                     ../../../src/net/isa/dlmo.o
+                                                  main.o
 currentChannel                                    ../../../src/net/isa/isa.o
 current_global_slot                               ../../../src/net/isa/isa.o
+dd_data_indication                                ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa.o
+dd_data_request                                   ../../../src/net/isa/dlmo.o
 delay                                             ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
 dev_manager_ff_sensors                            ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+dlmoInit                                          ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa.o
+                                                  main.o
+dlmoLink                                          ../../../src/net/isa/dlmo.o
+dlmoNeighbor                                      ../../../src/net/isa/dlmo.o
+dmo                                               ../../../src/net/isa/isa.o
 dump_stack_info                                   ../../../src/kernel/source/nrk_stack_check.o
+enQueue                                           ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa.o
 error_num                                         ../../../src/kernel/hal/atmega1281/nrk_cpu.o
                                                   ../../../src/kernel/hal/atmega1281/nrk_watchdog.o
                                                   ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
@@ -1581,7 +1642,7 @@ error_num                                         ../../../src/kernel/hal/atmega
                                                   ../../../src/platform/firefly2_2/source/ulib.o
                                                   ../../../src/radio/cc2420/source/basic_rf.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-                                                  ../../../src/net/isa/isa_scheduler.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
 error_task                                        ../../../src/kernel/hal/atmega1281/nrk_cpu.o
@@ -1601,7 +1662,7 @@ error_task                                        ../../../src/kernel/hal/atmega
                                                   ../../../src/platform/firefly2_2/source/ulib.o
                                                   ../../../src/radio/cc2420/source/basic_rf.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-                                                  ../../../src/net/isa/isa_scheduler.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
 exit                                              /usr/local/lib/gcc/avr/4.2.2/avr5/libgcc.a(_exit.o)
@@ -1612,12 +1673,17 @@ ext_int1_callback                                 ../../../src/kernel/hal/atmega
 ext_int2_callback                                 ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
 fdevopen                                          /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fdevopen.o)
                                                   ../../../src/platform/firefly2_2/source/ulib.o
+findLink                                          ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa.o
 fputc                                             /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(fputc.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libprintf_min.a(vfprintf_min.o)
                                                   ../../../src/kernel/source/nrk_error.o
                                                   ../../../src/platform/firefly2_2/source/ulib.o
                                                   ../../../src/net/isa/isa.o
 free                                              /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
+getHighPriorityEntry                              ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa.o
+getIsaError                                       ../../../src/net/isa/isa_error.o
 get_adc_val                                       ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
 getc0                                             ../../../src/platform/firefly2_2/source/ulib.o
 getc1                                             ../../../src/platform/firefly2_2/source/ulib.o
@@ -1630,95 +1696,72 @@ halRfWaitForCrystalOscillator                     ../../../src/radio/cc2420/sour
 halWait                                           ../../../src/platform/firefly2_2/source/hal_wait.o
                                                   ../../../src/radio/cc2420/source/basic_rf.o
 init_adc                                          ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
+isTransmitLinkPresent                             ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa.o
 is_open                                           ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-isa_ack_buf                                       ../../../src/net/isa/isa_scheduler.o
+isaFreePacket                                     ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
-isa_ack_tx                                        ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isaQueue                                          ../../../src/net/isa/dlmo.o
+isaTxQueueSize                                    ../../../src/net/isa/dlmo.o
+isa_ack_buf                                       ../../../src/net/isa/isa.o
                                                   main.o
-isa_clk_src_id                                    ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isa_ack_tx                                        ../../../src/net/isa/isa.o
+                                                  main.o
+isa_clk_src_id                                    ../../../src/net/isa/isa.o
                                                   main.o
 isa_get_channel                                   ../../../src/net/isa/isa.o
-isa_get_schedule                                  ../../../src/net/isa/isa_scheduler.o
-isa_get_slots_until_next_wakeup                   ../../../src/net/isa/isa_scheduler.o
+isa_get_slots_until_next_wakeup                   ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
-isa_id                                            ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isa_id                                            ../../../src/net/isa/isa.o
                                                   main.o
 isa_init                                          ../../../src/net/isa/isa.o
                                                   main.o
 isa_join_ready                                    ../../../src/net/isa/isa.o
-isa_node_mode                                     ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isa_node_mode                                     ../../../src/net/isa/isa.o
                                                   main.o
 isa_nw_task                                       ../../../src/net/isa/isa.o
-isa_param                                         ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isa_param                                         ../../../src/net/isa/isa.o
                                                   main.o
 isa_ready                                         ../../../src/net/isa/isa.o
                                                   main.o
-isa_rfRxInfo                                      ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isa_rfRxInfo                                      ../../../src/net/isa/isa.o
                                                   main.o
-isa_rfTxInfo                                      ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isa_rfTxInfo                                      ../../../src/net/isa/isa.o
                                                   main.o
-isa_rx_data_ready                                 ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isa_rx_data_ready                                 ../../../src/net/isa/isa.o
                                                   main.o
 isa_rx_pkt_check                                  ../../../src/net/isa/isa.o
                                                   main.o
 isa_rx_pkt_get                                    ../../../src/net/isa/isa.o
                                                   main.o
 isa_rx_pkt_release                                ../../../src/net/isa/isa.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   main.o
 isa_rx_pkt_set_buffer                             ../../../src/net/isa/isa.o
                                                   main.o
 isa_rx_pkt_signal                                 ../../../src/net/isa/isa.o
-isa_sched                                         ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
-                                                  main.o
+isa_sched                                         ../../../src/net/isa/dlmo.o
 isa_set_channel                                   ../../../src/net/isa/isa.o
-                                                  main.o
 isa_set_channel_pattern                           ../../../src/net/isa/isa.o
                                                   main.o
-isa_set_schedule                                  ../../../src/net/isa/isa_scheduler.o
-                                                  main.o
+isa_slot                                          ../../../src/net/isa/dlmo.o
 isa_start                                         ../../../src/net/isa/isa.o
                                                   main.o
-isa_task                                          ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isa_task                                          ../../../src/net/isa/isa.o
                                                   main.o
 isa_task_config                                   ../../../src/net/isa/isa.o
                                                   main.o
-isa_task_stack                                    ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+isa_task_stack                                    ../../../src/net/isa/isa.o
                                                   main.o
-isa_tdma_rx_mask                                  ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
-                                                  main.o
-isa_tdma_tx_mask                                  ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
-                                                  main.o
-isa_tx_data_ready                                 ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
-                                                  main.o
+isa_tdma_rx_mask                                  ../../../src/net/isa/dlmo.o
+isa_tdma_tx_mask                                  ../../../src/net/isa/dlmo.o
 isa_tx_done_signal                                ../../../src/net/isa/isa.o
-isa_tx_info                                       ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
-                                                  main.o
-isa_tx_pkt                                        ../../../src/net/isa/isa.o
-                                                  main.o
-isa_tx_pkt_check                                  ../../../src/net/isa/isa.o
-                                                  main.o
 isa_wait_until_rx_or_tx                           ../../../src/net/isa/isa.o
                                                   main.o
 isa_wait_until_rx_pkt                             ../../../src/net/isa/isa.o
 last_pkt_encrypted                                ../../../src/radio/cc2420/source/basic_rf.o
-last_slot                                         ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+last_slot                                         ../../../src/net/isa/isa.o
                                                   main.o
 last_sync_slot                                    ../../../src/net/isa/isa.o
 main                                              main.o
@@ -1726,6 +1769,8 @@ main                                              main.o
 malloc                                            /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(malloc.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
 mdmctrl0                                          ../../../src/radio/cc2420/source/basic_rf.o
+memcpy                                            /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memcpy.o)
+                                                  ../../../src/net/isa/dlmo.o
 memset                                            /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(memset.o)
                                                   /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(calloc.o)
 newtime                                           main.o
@@ -1834,7 +1879,7 @@ nrk_idle_task_stk                                 ../../../src/kernel/hal/atmega
                                                   ../../../src/kernel/source/nrk.o
                                                   ../../../src/radio/cc2420/source/basic_rf.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-                                                  ../../../src/net/isa/isa_scheduler.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
 nrk_init                                          ../../../src/kernel/source/nrk.o
@@ -1873,7 +1918,7 @@ nrk_kernel_stk_ptr                                ../../../src/kernel/hal/atmega
                                                   ../../../src/kernel/source/nrk.o
                                                   ../../../src/radio/cc2420/source/basic_rf.o
                                                   ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-                                                  ../../../src/net/isa/isa_scheduler.o
+                                                  ../../../src/net/isa/dlmo.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
 nrk_kprintf                                       ../../../src/platform/firefly2_2/source/ulib.o
@@ -1975,6 +2020,7 @@ nrk_time_add                                      ../../../src/kernel/source/nrk
 nrk_time_compact_nanos                            ../../../src/kernel/source/nrk_time.o
 nrk_time_get                                      ../../../src/kernel/source/nrk_time.o
                                                   ../../../src/kernel/source/nrk_task.o
+                                                  ../../../src/net/isa/dlmo.o
 nrk_time_set                                      ../../../src/kernel/source/nrk_time.o
                                                   main.o
 nrk_time_sub                                      ../../../src/kernel/source/nrk_time.o
@@ -2015,9 +2061,13 @@ packetsLost                                       ../../../src/net/isa/isa.o
                                                   main.o
 pc_int0_callback                                  ../../../src/kernel/hal/atmega1281/nrk_ext_int.o
 previous_tx_slot                                  ../../../src/net/isa/isa.o
+printIsaError                                     ../../../src/net/isa/isa_error.o
+                                                  ../../../src/net/isa/dlmo.o
 printf                                            /usr/local/lib/gcc/avr/4.2.2/../../../../avr/lib/avr5/libc.a(printf.o)
                                                   ../../../src/kernel/source/nrk_stack_check.o
                                                   ../../../src/kernel/source/nrk_error.o
+                                                  ../../../src/net/isa/dlmo.o
+                                                  ../../../src/net/isa/isa_error.o
                                                   ../../../src/net/isa/isa.o
                                                   main.o
 putc0                                             ../../../src/platform/firefly2_2/source/ulib.o
@@ -2029,8 +2079,7 @@ read_eeprom_current_image_checksum                ../../../src/platform/firefly2
 read_eeprom_load_img_pages                        ../../../src/platform/firefly2_2/source/nrk_eeprom.o
 read_eeprom_mac_address                           ../../../src/platform/firefly2_2/source/nrk_eeprom.o
 read_voltage_status                               ../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.o
-resync_times                                      ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+resync_times                                      ../../../src/net/isa/isa.o
                                                   main.o
 rfSettings                                        ../../../src/radio/cc2420/source/basic_rf.o
 rf_addr_decode_disable                            ../../../src/radio/cc2420/source/basic_rf.o
@@ -2080,6 +2129,10 @@ rx_ctr                                            ../../../src/radio/cc2420/sour
 rx_ready                                          ../../../src/radio/cc2420/source/basic_rf.o
 rx_start_time                                     ../../../src/net/isa/isa.o
 security_enable                                   ../../../src/radio/cc2420/source/basic_rf.o
+sendPacket                                        ../../../src/net/isa/dlmo.o
+                                                  main.o
+setIsaError                                       ../../../src/net/isa/isa_error.o
+                                                  ../../../src/net/isa/dlmo.o
 setup_uart0                                       ../../../src/platform/firefly2_2/source/ulib.o
 setup_uart1                                       ../../../src/platform/firefly2_2/source/ulib.o
 slot_expired                                      ../../../src/net/isa/isa.o
@@ -2099,12 +2152,12 @@ tmp_count                                         ../../../src/net/isa/isa.o
 tmp_curSec                                        ../../../src/net/isa/isa.o
 tmp_offsetNanoSec                                 ../../../src/net/isa/isa.o
 tmp_offsetSec                                     ../../../src/net/isa/isa.o
+transmitCallback1                                 main.o
 txCount                                           ../../../src/net/isa/isa.o
                                                   main.o
 tx_buf                                            main.o
 tx_ctr                                            ../../../src/radio/cc2420/source/basic_rf.o
-tx_slot_from_join                                 ../../../src/net/isa/isa_scheduler.o
-                                                  ../../../src/net/isa/isa.o
+tx_slot_from_join                                 ../../../src/net/isa/isa.o
                                                   main.o
 tx_start_time                                     ../../../src/net/isa/isa.o
 uart_rx_buf                                       ../../../src/platform/firefly2_2/source/ulib.o

@@ -110,7 +110,7 @@
  143 001a 8093 0000 		sts uart_rx_buf_start,r24
   79:../../../src/platform/firefly2_2/source/ulib.c ****    if(uart_rx_buf_start==MAX_RX_UART_BUF) uart_rx_buf_start=0;
  145               	.LM4:
- 146 001e 8038      		cpi r24,lo8(-128)
+ 146 001e 8031      		cpi r24,lo8(16)
  147 0020 01F4      		brne .L4
  148 0022 1092 0000 		sts uart_rx_buf_start,__zero_reg__
  149               	.L4:
@@ -2263,7 +2263,7 @@
  2140 09f6 8F5F      		subi r24,lo8(-(1))
  2141 09f8 8093 0000 		sts uart_rx_buf_end,r24
  2143               	.LM168:
- 2144 09fc 8038      		cpi r24,lo8(-128)
+ 2144 09fc 8031      		cpi r24,lo8(16)
  2145 09fe 01F4      		brne .L202
  2146 0a00 1092 0000 		sts uart_rx_buf_end,__zero_reg__
  2147               	.L202:
@@ -2405,78 +2405,78 @@
  2357               		.comm error_num,1,1
  2358               		.comm uart_rx_buf_start,1,1
  2359               		.comm uart_rx_buf_end,1,1
- 2360               		.comm uart_rx_buf,128,1
+ 2360               		.comm uart_rx_buf,16,1
  2361               		.comm uart_rx_signal,1,1
  2402               		.text
  2404               	.Letext0:
  2405               	/* File "../../../src/platform/firefly2_2/source/ulib.c": code 1358 = 0x054e (1309), prologues  19,
 DEFINED SYMBOLS
                             *ABS*:00000000 ulib.c
-     /tmp/ccVLrqX0.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccVLrqX0.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccVLrqX0.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccVLrqX0.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccVLrqX0.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccVLrqX0.s:119    .text:00000000 getc1
+     /tmp/cctSnrO5.s:2      *ABS*:0000003f __SREG__
+     /tmp/cctSnrO5.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cctSnrO5.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cctSnrO5.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cctSnrO5.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cctSnrO5.s:119    .text:00000000 getc1
                             *COM*:00000001 uart_rx_buf_start
                             *COM*:00000001 uart_rx_buf_end
-                            *COM*:00000080 uart_rx_buf
-     /tmp/ccVLrqX0.s:186    .text:00000046 nrk_uart_data_ready
-     /tmp/ccVLrqX0.s:241    .text:00000080 PORT_INIT
-     /tmp/ccVLrqX0.s:299    .text:000000aa nrk_setup_ports
-     /tmp/ccVLrqX0.s:327    .text:000000b8 nrk_gpio_set
-     /tmp/ccVLrqX0.s:506    .text:000001c2 nrk_gpio_clr
-     /tmp/ccVLrqX0.s:692    .text:000002da nrk_gpio_get
-     /tmp/ccVLrqX0.s:796    .text:0000034e nrk_gpio_toggle
-     /tmp/ccVLrqX0.s:1139   .text:00000560 nrk_gpio_direction
-     /tmp/ccVLrqX0.s:1496   .text:00000790 nrk_get_button
-     /tmp/ccVLrqX0.s:1540   .text:000007b0 nrk_led_toggle
-     /tmp/ccVLrqX0.s:1603   .text:000007ea nrk_led_clr
-     /tmp/ccVLrqX0.s:1666   .text:00000824 nrk_led_set
-     /tmp/ccVLrqX0.s:1729   .text:0000085e nrk_gpio_pullups
-     /tmp/ccVLrqX0.s:1768   .text:00000874 putc0
-     /tmp/ccVLrqX0.s:1798   .text:0000088e putc1
-     /tmp/ccVLrqX0.s:1825   .text:0000089e setup_uart0
-     /tmp/ccVLrqX0.s:1867   .text:000008cc setup_uart1
-     /tmp/ccVLrqX0.s:1908   .text:000008fa getc0
-     /tmp/ccVLrqX0.s:1945   .text:00000914 nrk_setup_uart
+                            *COM*:00000010 uart_rx_buf
+     /tmp/cctSnrO5.s:186    .text:00000046 nrk_uart_data_ready
+     /tmp/cctSnrO5.s:241    .text:00000080 PORT_INIT
+     /tmp/cctSnrO5.s:299    .text:000000aa nrk_setup_ports
+     /tmp/cctSnrO5.s:327    .text:000000b8 nrk_gpio_set
+     /tmp/cctSnrO5.s:506    .text:000001c2 nrk_gpio_clr
+     /tmp/cctSnrO5.s:692    .text:000002da nrk_gpio_get
+     /tmp/cctSnrO5.s:796    .text:0000034e nrk_gpio_toggle
+     /tmp/cctSnrO5.s:1139   .text:00000560 nrk_gpio_direction
+     /tmp/cctSnrO5.s:1496   .text:00000790 nrk_get_button
+     /tmp/cctSnrO5.s:1540   .text:000007b0 nrk_led_toggle
+     /tmp/cctSnrO5.s:1603   .text:000007ea nrk_led_clr
+     /tmp/cctSnrO5.s:1666   .text:00000824 nrk_led_set
+     /tmp/cctSnrO5.s:1729   .text:0000085e nrk_gpio_pullups
+     /tmp/cctSnrO5.s:1768   .text:00000874 putc0
+     /tmp/cctSnrO5.s:1798   .text:0000088e putc1
+     /tmp/cctSnrO5.s:1825   .text:0000089e setup_uart0
+     /tmp/cctSnrO5.s:1867   .text:000008cc setup_uart1
+     /tmp/cctSnrO5.s:1908   .text:000008fa getc0
+     /tmp/cctSnrO5.s:1945   .text:00000914 nrk_setup_uart
                             *COM*:00000001 uart_rx_signal
-     /tmp/ccVLrqX0.s:2008   .text:00000966 nrk_uart_rx_signal_get
-     /tmp/ccVLrqX0.s:2043   .text:00000980 nrk_kprintf
-     /tmp/ccVLrqX0.s:2091   .text:000009a6 __vector_36
-     /tmp/ccVLrqX0.s:2193   .data:00000000 NRK_DEBUG_0
-     /tmp/ccVLrqX0.s:2198   .data:00000001 NRK_DEBUG_1
-     /tmp/ccVLrqX0.s:2203   .data:00000002 NRK_BUTTON
-     /tmp/ccVLrqX0.s:2208   .data:00000003 NRK_SPI_SS
-     /tmp/ccVLrqX0.s:2213   .data:00000004 NRK_SCK
-     /tmp/ccVLrqX0.s:2218   .data:00000005 NRK_MOSI
-     /tmp/ccVLrqX0.s:2223   .data:00000006 NRK_MISO
-     /tmp/ccVLrqX0.s:2228   .data:00000007 NRK_GPIO26
-     /tmp/ccVLrqX0.s:2233   .data:00000008 NRK_MMC_11
-     /tmp/ccVLrqX0.s:2238   .data:00000009 NRK_MMC_10
-     /tmp/ccVLrqX0.s:2243   .data:0000000a NRK_MMC_9
-     /tmp/ccVLrqX0.s:2248   .data:0000000b NRK_DEBUG_2
-     /tmp/ccVLrqX0.s:2253   .data:0000000c NRK_DEBUG_3
-     /tmp/ccVLrqX0.s:2258   .data:0000000d NRK_UART1_RXD
-     /tmp/ccVLrqX0.s:2263   .data:0000000e NRK_UART1_TXD
-     /tmp/ccVLrqX0.s:2268   .data:0000000f NRK_CCA
-     /tmp/ccVLrqX0.s:2273   .data:00000010 NRK_SFD
-     /tmp/ccVLrqX0.s:2278   .data:00000011 NRK_UART0_RXD
-     /tmp/ccVLrqX0.s:2283   .data:00000012 NRK_UART0_TXD
-     /tmp/ccVLrqX0.s:2288   .data:00000013 NRK_LED_0
-     /tmp/ccVLrqX0.s:2293   .data:00000014 NRK_LED_1
-     /tmp/ccVLrqX0.s:2298   .data:00000015 NRK_LED_2
-     /tmp/ccVLrqX0.s:2303   .data:00000016 NRK_LED_3
-     /tmp/ccVLrqX0.s:2308   .data:00000017 NRK_GPIO34
-     /tmp/ccVLrqX0.s:2313   .data:00000018 NRK_FIFOP
-     /tmp/ccVLrqX0.s:2318   .data:00000019 NRK_ADC_INPUT_0
-     /tmp/ccVLrqX0.s:2323   .data:0000001a NRK_ADC_INPUT_1
-     /tmp/ccVLrqX0.s:2328   .data:0000001b NRK_ADC_INPUT_2
-     /tmp/ccVLrqX0.s:2333   .data:0000001c NRK_ADC_INPUT_3
-     /tmp/ccVLrqX0.s:2338   .data:0000001d NRK_ADC_INPUT_4
-     /tmp/ccVLrqX0.s:2343   .data:0000001e NRK_ADC_INPUT_5
-     /tmp/ccVLrqX0.s:2348   .data:0000001f NRK_ADC_INPUT_6
-     /tmp/ccVLrqX0.s:2353   .data:00000020 NRK_ADC_INPUT_7
+     /tmp/cctSnrO5.s:2008   .text:00000966 nrk_uart_rx_signal_get
+     /tmp/cctSnrO5.s:2043   .text:00000980 nrk_kprintf
+     /tmp/cctSnrO5.s:2091   .text:000009a6 __vector_36
+     /tmp/cctSnrO5.s:2193   .data:00000000 NRK_DEBUG_0
+     /tmp/cctSnrO5.s:2198   .data:00000001 NRK_DEBUG_1
+     /tmp/cctSnrO5.s:2203   .data:00000002 NRK_BUTTON
+     /tmp/cctSnrO5.s:2208   .data:00000003 NRK_SPI_SS
+     /tmp/cctSnrO5.s:2213   .data:00000004 NRK_SCK
+     /tmp/cctSnrO5.s:2218   .data:00000005 NRK_MOSI
+     /tmp/cctSnrO5.s:2223   .data:00000006 NRK_MISO
+     /tmp/cctSnrO5.s:2228   .data:00000007 NRK_GPIO26
+     /tmp/cctSnrO5.s:2233   .data:00000008 NRK_MMC_11
+     /tmp/cctSnrO5.s:2238   .data:00000009 NRK_MMC_10
+     /tmp/cctSnrO5.s:2243   .data:0000000a NRK_MMC_9
+     /tmp/cctSnrO5.s:2248   .data:0000000b NRK_DEBUG_2
+     /tmp/cctSnrO5.s:2253   .data:0000000c NRK_DEBUG_3
+     /tmp/cctSnrO5.s:2258   .data:0000000d NRK_UART1_RXD
+     /tmp/cctSnrO5.s:2263   .data:0000000e NRK_UART1_TXD
+     /tmp/cctSnrO5.s:2268   .data:0000000f NRK_CCA
+     /tmp/cctSnrO5.s:2273   .data:00000010 NRK_SFD
+     /tmp/cctSnrO5.s:2278   .data:00000011 NRK_UART0_RXD
+     /tmp/cctSnrO5.s:2283   .data:00000012 NRK_UART0_TXD
+     /tmp/cctSnrO5.s:2288   .data:00000013 NRK_LED_0
+     /tmp/cctSnrO5.s:2293   .data:00000014 NRK_LED_1
+     /tmp/cctSnrO5.s:2298   .data:00000015 NRK_LED_2
+     /tmp/cctSnrO5.s:2303   .data:00000016 NRK_LED_3
+     /tmp/cctSnrO5.s:2308   .data:00000017 NRK_GPIO34
+     /tmp/cctSnrO5.s:2313   .data:00000018 NRK_FIFOP
+     /tmp/cctSnrO5.s:2318   .data:00000019 NRK_ADC_INPUT_0
+     /tmp/cctSnrO5.s:2323   .data:0000001a NRK_ADC_INPUT_1
+     /tmp/cctSnrO5.s:2328   .data:0000001b NRK_ADC_INPUT_2
+     /tmp/cctSnrO5.s:2333   .data:0000001c NRK_ADC_INPUT_3
+     /tmp/cctSnrO5.s:2338   .data:0000001d NRK_ADC_INPUT_4
+     /tmp/cctSnrO5.s:2343   .data:0000001e NRK_ADC_INPUT_5
+     /tmp/cctSnrO5.s:2348   .data:0000001f NRK_ADC_INPUT_6
+     /tmp/cctSnrO5.s:2353   .data:00000020 NRK_ADC_INPUT_7
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000001 error_task
                             *COM*:00000001 error_num

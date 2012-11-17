@@ -1,0 +1,1742 @@
+   1               		.file	"dlmo.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 153               	.global	dlmoInit
+ 155               	dlmoInit:
+ 156               		.stabd	46,0,0
+   1:../../../src/net/isa/dlmo.c **** /******************************************************************************
+   2:../../../src/net/isa/dlmo.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/net/isa/dlmo.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/net/isa/dlmo.c **** *  All rights reserved.
+   5:../../../src/net/isa/dlmo.c **** *
+   6:../../../src/net/isa/dlmo.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/net/isa/dlmo.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/net/isa/dlmo.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/net/isa/dlmo.c **** *
+  10:../../../src/net/isa/dlmo.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/net/isa/dlmo.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/net/isa/dlmo.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/net/isa/dlmo.c **** *
+  14:../../../src/net/isa/dlmo.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/net/isa/dlmo.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/net/isa/dlmo.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/net/isa/dlmo.c **** *  GNU General Public License for more details.
+  18:../../../src/net/isa/dlmo.c **** *
+  19:../../../src/net/isa/dlmo.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/net/isa/dlmo.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/net/isa/dlmo.c **** *
+  22:../../../src/net/isa/dlmo.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/net/isa/dlmo.c **** *  Azriel Samson
+  24:../../../src/net/isa/dlmo.c **** *  Vignesh Anantha Subramanium
+  25:../../../src/net/isa/dlmo.c **** *******************************************************************************/
+  26:../../../src/net/isa/dlmo.c **** 
+  27:../../../src/net/isa/dlmo.c **** //#include <rtl_debug.h>
+  28:../../../src/net/isa/dlmo.c **** #include <include.h>
+  29:../../../src/net/isa/dlmo.c **** #include <ulib.h>
+  30:../../../src/net/isa/dlmo.c **** #include <avr/sleep.h>
+  31:../../../src/net/isa/dlmo.c **** #include <avr/wdt.h>
+  32:../../../src/net/isa/dlmo.c **** #include <avr/eeprom.h>
+  33:../../../src/net/isa/dlmo.c **** #include <stdio.h>
+  34:../../../src/net/isa/dlmo.c **** #include <avr/interrupt.h>
+  35:../../../src/net/isa/dlmo.c **** #include <nrk.h>
+  36:../../../src/net/isa/dlmo.c **** #include <nrk_events.h>
+  37:../../../src/net/isa/dlmo.c **** #include <nrk_timer.h>
+  38:../../../src/net/isa/dlmo.c **** #include <nrk_error.h>
+  39:../../../src/net/isa/dlmo.c **** //#include <rtl_defs.h>
+  40:../../../src/net/isa/dlmo.c **** #include <stdlib.h>
+  41:../../../src/net/isa/dlmo.c **** #include <isa_error.h>
+  42:../../../src/net/isa/dlmo.c **** #include <dlmo.h>
+  43:../../../src/net/isa/dlmo.c **** 
+  44:../../../src/net/isa/dlmo.c **** //********************** Global variables*************************************
+  45:../../../src/net/isa/dlmo.c **** DLMO_LINK dlmoLink[DLMO_LINK_MAX_COUNT];
+  46:../../../src/net/isa/dlmo.c **** DLMO_NEIGHBOR dlmoNeighbor[DLMO_NEIGHBOR_MAX_COUNT];
+  47:../../../src/net/isa/dlmo.c **** ISA_QUEUE isaQueue[TRANSMIT_QUEUE_MAX_SIZE] ;
+  48:../../../src/net/isa/dlmo.c **** //ISA_QUEUE *isaQueuePointer[TRANSMIT_QUEUE_MAX_SIZE]
+  49:../../../src/net/isa/dlmo.c **** uint8_t isa_sched[ISA_SLOTS_PER_FRAME];
+  50:../../../src/net/isa/dlmo.c **** uint64_t isa_tdma_rx_mask;	//should not need this
+  51:../../../src/net/isa/dlmo.c **** uint64_t isa_tdma_tx_mask;	// should not need this
+  52:../../../src/net/isa/dlmo.c **** uint64_t isa_slot;	//Set to 1 if slot is in use
+  53:../../../src/net/isa/dlmo.c **** uint8_t isaTxQueueSize; //holds the number of elements present in the Queue
+  54:../../../src/net/isa/dlmo.c **** 
+  55:../../../src/net/isa/dlmo.c **** //********************Local function definitions***********************************
+  56:../../../src/net/isa/dlmo.c **** void configureSlot(uint8_t slotNumber, uint16_t neighborId, LinkType linkType, bool clockSource);
+  57:../../../src/net/isa/dlmo.c **** void dlmoInit();
+  58:../../../src/net/isa/dlmo.c **** int8_t addLink (uint8_t slotNumber, DLMO_NEIGHBOR* neighborIndex,LinkType linkType);
+  59:../../../src/net/isa/dlmo.c **** DLMO_NEIGHBOR* addNeighbor(uint16_t index,uint64_t EUI64, uint8_t groupCode1, uint8_t groupCode2, b
+  60:../../../src/net/isa/dlmo.c **** int8_t dd_data_request(uint16_t srcAddr, uint16_t destAddr, uint8_t priority, bool discardEligible,
+  61:../../../src/net/isa/dlmo.c **** void dd_data_indication(uint16_t srcAddr,uint16_t destAddr,uint8_t priority,bool discardEligibile, 
+  62:../../../src/net/isa/dlmo.c **** void sendPacket(uint16_t destAddr, uint8_t length, uint8_t *payload, void (*slot_callback)(ISA_QUEU
+  63:../../../src/net/isa/dlmo.c **** int8_t enQueue(uint16_t neighbor, uint8_t priority, uint8_t length, uint8_t *payload,  void (*slot_
+  64:../../../src/net/isa/dlmo.c **** void isaFreePacket(ISA_QUEUE *entry);
+  65:../../../src/net/isa/dlmo.c **** 
+  66:../../../src/net/isa/dlmo.c **** void dlmoInit()
+  67:../../../src/net/isa/dlmo.c **** {
+ 158               	.LM0:
+ 159               	.LFBB1:
+ 160               	/* prologue: frame size=0 */
+ 161               	/* prologue end (size=0) */
+ 162 0000 E0E0      		ldi r30,lo8(dlmoLink)
+ 163 0002 F0E0      		ldi r31,hi8(dlmoLink)
+ 164               	.L2:
+  68:../../../src/net/isa/dlmo.c **** 	uint8_t i;
+  69:../../../src/net/isa/dlmo.c **** 	//for LINK
+  70:../../../src/net/isa/dlmo.c **** 	for (i=0; i<DLMO_LINK_MAX_COUNT; i++)
+  71:../../../src/net/isa/dlmo.c **** 
+  72:../../../src/net/isa/dlmo.c **** 		{
+  73:../../../src/net/isa/dlmo.c **** 			(dlmoLink[i].isPresent = false);
+ 166               	.LM1:
+ 167 0004 1082      		st Z,__zero_reg__
+ 168 0006 7296      		adiw r30,18
+ 170               	.LM2:
+ 171 0008 80E0      		ldi r24,hi8(dlmoLink+180)
+ 172 000a E030      		cpi r30,lo8(dlmoLink+180)
+ 173 000c F807      		cpc r31,r24
+ 174 000e 01F4      		brne .L2
+ 175 0010 E0E0      		ldi r30,lo8(dlmoNeighbor)
+ 176 0012 F0E0      		ldi r31,hi8(dlmoNeighbor)
+ 177               	.L4:
+  74:../../../src/net/isa/dlmo.c **** 		}
+  75:../../../src/net/isa/dlmo.c **** 
+  76:../../../src/net/isa/dlmo.c **** //for NEIGHBOR
+  77:../../../src/net/isa/dlmo.c **** 	for(i=0; i<DLMO_NEIGHBOR_MAX_COUNT; i++)
+  78:../../../src/net/isa/dlmo.c **** 	{
+  79:../../../src/net/isa/dlmo.c **** 		dlmoNeighbor[i].isPresent = false;
+ 179               	.LM3:
+ 180 0014 1082      		st Z,__zero_reg__
+ 181 0016 7196      		adiw r30,17
+ 183               	.LM4:
+ 184 0018 80E0      		ldi r24,hi8(dlmoNeighbor+425)
+ 185 001a E030      		cpi r30,lo8(dlmoNeighbor+425)
+ 186 001c F807      		cpc r31,r24
+ 187 001e 01F4      		brne .L4
+  80:../../../src/net/isa/dlmo.c **** 	}
+  81:../../../src/net/isa/dlmo.c **** 
+  82:../../../src/net/isa/dlmo.c **** 		//Initialization for Transmit Queue
+  83:../../../src/net/isa/dlmo.c **** 	isaTxQueueSize = 0; //Explicitly initialize this to 0
+ 189               	.LM5:
+ 190 0020 1092 0000 		sts isaTxQueueSize,__zero_reg__
+ 191               	/* epilogue: frame size=0 */
+ 192 0024 0895      		ret
+ 193               	/* epilogue end (size=1) */
+ 194               	/* function dlmoInit size 19 (18) */
+ 196               	.Lscope1:
+ 198               		.stabd	78,0,0
+ 201               	.global	isTransmitLinkPresent
+ 203               	isTransmitLinkPresent:
+ 204               		.stabd	46,0,0
+  84:../../../src/net/isa/dlmo.c **** /*
+  85:../../../src/net/isa/dlmo.c **** 	for(i=0; i<TRANSMIT_QUEUE_MAX_SIZE; i++)
+  86:../../../src/net/isa/dlmo.c **** 	{
+  87:../../../src/net/isa/dlmo.c **** 		isaQueuePointer[i] = &isaQueue[i];
+  88:../../../src/net/isa/dlmo.c **** 	}
+  89:../../../src/net/isa/dlmo.c **** 
+  90:../../../src/net/isa/dlmo.c **** */
+  91:../../../src/net/isa/dlmo.c **** }
+  92:../../../src/net/isa/dlmo.c **** 
+  93:../../../src/net/isa/dlmo.c **** 
+  94:../../../src/net/isa/dlmo.c **** int8_t addLink(uint8_t slotNumber, DLMO_NEIGHBOR* neighborIndex,LinkType linkType)
+  95:../../../src/net/isa/dlmo.c **** {
+  96:../../../src/net/isa/dlmo.c **** 
+  97:../../../src/net/isa/dlmo.c **** 	uint8_t index;
+  98:../../../src/net/isa/dlmo.c **** 	//find if there exists a free link
+  99:../../../src/net/isa/dlmo.c **** 	for (index = 0; index < DLMO_LINK_MAX_COUNT; index++)
+ 100:../../../src/net/isa/dlmo.c **** 		{
+ 101:../../../src/net/isa/dlmo.c **** 			if (dlmoLink[index].isPresent == false) break;
+ 102:../../../src/net/isa/dlmo.c **** 		}
+ 103:../../../src/net/isa/dlmo.c **** 
+ 104:../../../src/net/isa/dlmo.c **** 	if (index == DLMO_LINK_MAX_COUNT)
+ 105:../../../src/net/isa/dlmo.c **** 		{
+ 106:../../../src/net/isa/dlmo.c **** 			 setIsaError(LINK_CAPACITY_ERROR);
+ 107:../../../src/net/isa/dlmo.c **** 			 return -1;
+ 108:../../../src/net/isa/dlmo.c **** 		}
+ 109:../../../src/net/isa/dlmo.c **** 
+ 110:../../../src/net/isa/dlmo.c **** 	//we have found a free index
+ 111:../../../src/net/isa/dlmo.c **** 	 dlmoLink[index].isPresent = true;
+ 112:../../../src/net/isa/dlmo.c **** 	 dlmoLink[index].neighbor = neighborIndex;
+ 113:../../../src/net/isa/dlmo.c **** 	 dlmoLink[index].linkType = linkType;
+ 114:../../../src/net/isa/dlmo.c **** 	 dlmoLink[index].chOffset = slotNumber;
+ 115:../../../src/net/isa/dlmo.c **** 	 // channel offset implementation will change as the protocol develops
+ 116:../../../src/net/isa/dlmo.c **** 	return 0;
+ 117:../../../src/net/isa/dlmo.c **** }
+ 118:../../../src/net/isa/dlmo.c **** 
+ 119:../../../src/net/isa/dlmo.c **** DLMO_LINK * findLink(uint8_t slot){
+ 120:../../../src/net/isa/dlmo.c **** 
+ 121:../../../src/net/isa/dlmo.c **** 	uint8_t index;
+ 122:../../../src/net/isa/dlmo.c **** 
+ 123:../../../src/net/isa/dlmo.c **** 	for (index = 0; index < DLMO_LINK_MAX_COUNT; index++)
+ 124:../../../src/net/isa/dlmo.c **** 			{
+ 125:../../../src/net/isa/dlmo.c **** 				if (dlmoLink[index].isPresent == true && dlmoLink[index].chOffset == slot ) {
+ 126:../../../src/net/isa/dlmo.c **** 					return &dlmoLink[index];
+ 127:../../../src/net/isa/dlmo.c **** 				}
+ 128:../../../src/net/isa/dlmo.c **** 			}
+ 129:../../../src/net/isa/dlmo.c **** 	printf ("This slot is not configured yet: %d\n\r" , slot);
+ 130:../../../src/net/isa/dlmo.c **** 	return NULL;
+ 131:../../../src/net/isa/dlmo.c **** }
+ 132:../../../src/net/isa/dlmo.c **** 
+ 133:../../../src/net/isa/dlmo.c **** bool isTransmitLinkPresent (uint16_t neighborAddr){
+ 206               	.LM6:
+ 207               	.LFBB2:
+ 208               	/* prologue: frame size=0 */
+ 209 0026 CF93      		push r28
+ 210 0028 DF93      		push r29
+ 211               	/* prologue end (size=2) */
+ 212 002a 9C01      		movw r18,r24
+ 213 002c A0E0      		ldi r26,lo8(dlmoLink)
+ 214 002e B0E0      		ldi r27,hi8(dlmoLink)
+ 215               	.L12:
+ 134:../../../src/net/isa/dlmo.c **** 	uint8_t index;
+ 135:../../../src/net/isa/dlmo.c **** 	for (index = 0; index < DLMO_LINK_MAX_COUNT; index++)
+ 136:../../../src/net/isa/dlmo.c **** 			{
+ 137:../../../src/net/isa/dlmo.c **** 				if (dlmoLink[index].isPresent == true && dlmoLink[index].linkType == TX_NO_ADV && dlmoLink[inde
+ 217               	.LM7:
+ 218 0030 8C91      		ld r24,X
+ 219 0032 8823      		tst r24
+ 220 0034 01F0      		breq .L13
+ 221 0036 ED01      		movw r28,r26
+ 222 0038 8C81      		ldd r24,Y+4
+ 223 003a 8130      		cpi r24,lo8(1)
+ 224 003c 01F4      		brne .L13
+ 225 003e E885      		ldd r30,Y+8
+ 226 0040 F985      		ldd r31,Y+9
+ 227 0042 8181      		ldd r24,Z+1
+ 228 0044 9281      		ldd r25,Z+2
+ 229 0046 8217      		cp r24,r18
+ 230 0048 9307      		cpc r25,r19
+ 231 004a 01F4      		brne .L13
+ 232 004c 81E0      		ldi r24,lo8(1)
+ 233 004e 90E0      		ldi r25,hi8(1)
+ 234 0050 00C0      		rjmp .L17
+ 235               	.L13:
+ 236 0052 5296      		adiw r26,18
+ 238               	.LM8:
+ 239 0054 E0E0      		ldi r30,hi8(dlmoLink+180)
+ 240 0056 A030      		cpi r26,lo8(dlmoLink+180)
+ 241 0058 BE07      		cpc r27,r30
+ 242 005a 01F4      		brne .L12
+ 243 005c 80E0      		ldi r24,lo8(0)
+ 244 005e 90E0      		ldi r25,hi8(0)
+ 245               	.L17:
+ 246               	/* epilogue: frame size=0 */
+ 247 0060 DF91      		pop r29
+ 248 0062 CF91      		pop r28
+ 249 0064 0895      		ret
+ 250               	/* epilogue end (size=3) */
+ 251               	/* function isTransmitLinkPresent size 32 (27) */
+ 253               	.Lscope2:
+ 255               		.stabd	78,0,0
+ 258               	.global	isa_get_slots_until_next_wakeup
+ 260               	isa_get_slots_until_next_wakeup:
+ 261               		.stabd	46,0,0
+ 138:../../../src/net/isa/dlmo.c **** 					return true;
+ 139:../../../src/net/isa/dlmo.c **** 				}
+ 140:../../../src/net/isa/dlmo.c **** 			}
+ 141:../../../src/net/isa/dlmo.c **** 	return false;
+ 142:../../../src/net/isa/dlmo.c **** }
+ 143:../../../src/net/isa/dlmo.c **** 
+ 144:../../../src/net/isa/dlmo.c **** DLMO_NEIGHBOR* addNeighbor(uint16_t index,uint64_t EUI64, uint8_t groupCode1, uint8_t groupCode2,bo
+ 145:../../../src/net/isa/dlmo.c **** {
+ 146:../../../src/net/isa/dlmo.c **** 	uint8_t i,free_index=0;
+ 147:../../../src/net/isa/dlmo.c **** 	bool free_index_present = false;
+ 148:../../../src/net/isa/dlmo.c **** 	for(int i=0;i<DLMO_NEIGHBOR_MAX_COUNT;i++)
+ 149:../../../src/net/isa/dlmo.c **** 	{
+ 150:../../../src/net/isa/dlmo.c **** 		if(index == dlmoNeighbor[i].index)
+ 151:../../../src/net/isa/dlmo.c **** 		{
+ 152:../../../src/net/isa/dlmo.c **** 			printf("Neighbor Exists in Table at %d\n",index);
+ 153:../../../src/net/isa/dlmo.c **** 			return &dlmoNeighbor[free_index];
+ 154:../../../src/net/isa/dlmo.c **** 		}
+ 155:../../../src/net/isa/dlmo.c **** 		if(dlmoNeighbor[i].isPresent == false)
+ 156:../../../src/net/isa/dlmo.c **** 		{
+ 157:../../../src/net/isa/dlmo.c **** 					free_index_present = true;
+ 158:../../../src/net/isa/dlmo.c **** 					free_index = i;
+ 159:../../../src/net/isa/dlmo.c **** 		}
+ 160:../../../src/net/isa/dlmo.c **** 	}
+ 161:../../../src/net/isa/dlmo.c **** 	if(free_index_present == false)
+ 162:../../../src/net/isa/dlmo.c **** 	{
+ 163:../../../src/net/isa/dlmo.c **** 			setIsaError(NEIGHBOR_CAPACITY_ERROR);
+ 164:../../../src/net/isa/dlmo.c **** 			return NULL;
+ 165:../../../src/net/isa/dlmo.c **** 	}
+ 166:../../../src/net/isa/dlmo.c **** 	else
+ 167:../../../src/net/isa/dlmo.c **** 	{
+ 168:../../../src/net/isa/dlmo.c **** 		dlmoNeighbor[free_index].index = index;
+ 169:../../../src/net/isa/dlmo.c **** 		dlmoNeighbor[free_index].isPresent = true;
+ 170:../../../src/net/isa/dlmo.c **** 		dlmoNeighbor[free_index].EUI64 = EUI64;
+ 171:../../../src/net/isa/dlmo.c **** 		dlmoNeighbor[free_index].groupCode1 = groupCode1;
+ 172:../../../src/net/isa/dlmo.c **** 		dlmoNeighbor[free_index].groupCode2 = groupCode2;
+ 173:../../../src/net/isa/dlmo.c **** 	    if(clockSource == true) dlmoNeighbor[free_index].typeInfo = ISASET(dlmoNeighbor[free_index].ty
+ 174:../../../src/net/isa/dlmo.c **** 		dlmoNeighbor[free_index].linkBacklogIndex = linkBacklogIndex;
+ 175:../../../src/net/isa/dlmo.c **** 		dlmoNeighbor[free_index].linkBacklogDur = linkBacklogDur;
+ 176:../../../src/net/isa/dlmo.c **** 		dlmoNeighbor[free_index].linkBacklogActivate = linkBacklogActivate;
+ 177:../../../src/net/isa/dlmo.c **** 		return &dlmoNeighbor[free_index];
+ 178:../../../src/net/isa/dlmo.c **** 	}
+ 179:../../../src/net/isa/dlmo.c **** }
+ 180:../../../src/net/isa/dlmo.c **** 
+ 181:../../../src/net/isa/dlmo.c **** 
+ 182:../../../src/net/isa/dlmo.c **** 
+ 183:../../../src/net/isa/dlmo.c **** void configureSlot(uint8_t slotNumber, uint16_t neighborId, LinkType linkType, bool clockSource)
+ 184:../../../src/net/isa/dlmo.c **** {
+ 185:../../../src/net/isa/dlmo.c **** 	DLMO_NEIGHBOR* neighborIndex; 		//store the neighbor index to pass to addLink()
+ 186:../../../src/net/isa/dlmo.c **** 	if (slotNumber >=  ISA_MAX_SLOTS) {
+ 187:../../../src/net/isa/dlmo.c **** 		printf ("Slot number not in range");
+ 188:../../../src/net/isa/dlmo.c **** 		return;
+ 189:../../../src/net/isa/dlmo.c **** 	}
+ 190:../../../src/net/isa/dlmo.c **** 	if (linkType != RX){
+ 191:../../../src/net/isa/dlmo.c **** 	//Call the function to add a neighbor
+ 192:../../../src/net/isa/dlmo.c **** 	neighborIndex = addNeighbor(neighborId,0, 0, 0, clockSource,0,0, 0);
+ 193:../../../src/net/isa/dlmo.c **** 	if (neighborIndex == NULL)//
+ 194:../../../src/net/isa/dlmo.c ****     {
+ 195:../../../src/net/isa/dlmo.c **** 		printIsaError();
+ 196:../../../src/net/isa/dlmo.c **** 		return;
+ 197:../../../src/net/isa/dlmo.c **** 	}
+ 198:../../../src/net/isa/dlmo.c **** 	}
+ 199:../../../src/net/isa/dlmo.c **** 	if (addLink(slotNumber, neighborIndex, linkType) == -1)
+ 200:../../../src/net/isa/dlmo.c **** 	{
+ 201:../../../src/net/isa/dlmo.c **** 		printIsaError();
+ 202:../../../src/net/isa/dlmo.c **** 		return;
+ 203:../../../src/net/isa/dlmo.c **** 	}
+ 204:../../../src/net/isa/dlmo.c **** //record that the slot is in use- used to calculate next wakeup
+ 205:../../../src/net/isa/dlmo.c **** 	isa_slot |= ((uint64_t) 1) << slotNumber;
+ 206:../../../src/net/isa/dlmo.c **** 
+ 207:../../../src/net/isa/dlmo.c **** }
+ 208:../../../src/net/isa/dlmo.c **** 
+ 209:../../../src/net/isa/dlmo.c **** 
+ 210:../../../src/net/isa/dlmo.c **** /**
+ 211:../../../src/net/isa/dlmo.c ****  * isa_get_slots_until_next_wakeup()
+ 212:../../../src/net/isa/dlmo.c ****  *
+ 213:../../../src/net/isa/dlmo.c ****  * This function returns the absolute number of slots between the current_slot
+ 214:../../../src/net/isa/dlmo.c ****  * and the next RX/TX related wakeup.
+ 215:../../../src/net/isa/dlmo.c ****  *
+ 216:../../../src/net/isa/dlmo.c ****  * Argument: current_slot is the current slot
+ 217:../../../src/net/isa/dlmo.c ****  * Return: uint16_t number of slots until the next wakeup
+ 218:../../../src/net/isa/dlmo.c ****  */
+ 219:../../../src/net/isa/dlmo.c **** uint16_t isa_get_slots_until_next_wakeup (uint16_t current_global_slot)
+ 220:../../../src/net/isa/dlmo.c **** {
+ 263               	.LM9:
+ 264               	.LFBB3:
+ 265               	/* prologue: frame size=14 */
+ 266 0066 2F92      		push r2
+ 267 0068 3F92      		push r3
+ 268 006a 4F92      		push r4
+ 269 006c 5F92      		push r5
+ 270 006e 6F92      		push r6
+ 271 0070 7F92      		push r7
+ 272 0072 8F92      		push r8
+ 273 0074 9F92      		push r9
+ 274 0076 AF92      		push r10
+ 275 0078 BF92      		push r11
+ 276 007a CF92      		push r12
+ 277 007c DF92      		push r13
+ 278 007e EF92      		push r14
+ 279 0080 FF92      		push r15
+ 280 0082 0F93      		push r16
+ 281 0084 1F93      		push r17
+ 282 0086 CF93      		push r28
+ 283 0088 DF93      		push r29
+ 284 008a CDB7      		in r28,__SP_L__
+ 285 008c DEB7      		in r29,__SP_H__
+ 286 008e 2E97      		sbiw r28,14
+ 287 0090 0FB6      		in __tmp_reg__,__SREG__
+ 288 0092 F894      		cli
+ 289 0094 DEBF      		out __SP_H__,r29
+ 290 0096 0FBE      		out __SREG__,__tmp_reg__
+ 291 0098 CDBF      		out __SP_L__,r28
+ 292               	/* prologue end (size=26) */
+ 221:../../../src/net/isa/dlmo.c ****     uint16_t min_slot;
+ 222:../../../src/net/isa/dlmo.c ****     uint8_t test_slot;
+ 223:../../../src/net/isa/dlmo.c ****     uint8_t wrapped_slot;
+ 224:../../../src/net/isa/dlmo.c ****     uint8_t current_local_slot;
+ 225:../../../src/net/isa/dlmo.c ****     uint64_t testVariable = 0;
+ 226:../../../src/net/isa/dlmo.c **** 
+ 227:../../../src/net/isa/dlmo.c ****     current_local_slot = current_global_slot%25;
+ 294               	.LM10:
+ 295 009a 69E1      		ldi r22,lo8(25)
+ 296 009c 70E0      		ldi r23,hi8(25)
+ 297 009e 0E94 0000 		call __udivmodhi4
+ 298 00a2 8983      		std Y+1,r24
+ 228:../../../src/net/isa/dlmo.c ****     testVariable |= ((uint64_t) 1) << (current_local_slot+1);
+ 300               	.LM11:
+ 301 00a4 282F      		mov r18,r24
+ 302 00a6 3327      		clr r19
+ 303 00a8 3C87      		std Y+12,r19
+ 304 00aa 2B87      		std Y+11,r18
+ 305 00ac 8901      		movw r16,r18
+ 306 00ae 0F5F      		subi r16,lo8(-(1))
+ 307 00b0 1F4F      		sbci r17,hi8(-(1))
+ 308 00b2 21E0      		ldi r18,lo8(1)
+ 309 00b4 30E0      		ldi r19,lo8(0)
+ 310 00b6 40E0      		ldi r20,lo8(0)
+ 311 00b8 50E0      		ldi r21,lo8(0)
+ 312 00ba 60E0      		ldi r22,lo8(0)
+ 313 00bc 70E0      		ldi r23,lo8(0)
+ 314 00be 80E0      		ldi r24,lo8(0)
+ 315 00c0 90E0      		ldi r25,lo8(0)
+ 316 00c2 0E94 0000 		call __ashldi3
+ 317 00c6 222E      		mov r2,r18
+ 318 00c8 332E      		mov r3,r19
+ 319 00ca 442E      		mov r4,r20
+ 320 00cc 552E      		mov r5,r21
+ 321 00ce 662E      		mov r6,r22
+ 322 00d0 772E      		mov r7,r23
+ 323 00d2 882E      		mov r8,r24
+ 324 00d4 992E      		mov r9,r25
+ 229:../../../src/net/isa/dlmo.c **** 
+ 230:../../../src/net/isa/dlmo.c ****     for (test_slot = current_local_slot+1; test_slot < ISA_SLOTS_PER_FRAME; test_slot++) {
+ 326               	.LM12:
+ 327 00d6 3981      		ldd r19,Y+1
+ 328 00d8 3F5F      		subi r19,lo8(-(1))
+ 329 00da 3A83      		std Y+2,r19
+ 231:../../../src/net/isa/dlmo.c **** 
+ 232:../../../src/net/isa/dlmo.c ****             if(isa_slot & testVariable) { 	//slot is  scheduled
+ 331               	.LM13:
+ 332 00dc 8091 0000 		lds r24,isa_slot
+ 333 00e0 8B83      		std Y+3,r24
+ 334 00e2 9091 0000 		lds r25,isa_slot+1
+ 335 00e6 9C83      		std Y+4,r25
+ 336 00e8 E091 0000 		lds r30,isa_slot+2
+ 337 00ec ED83      		std Y+5,r30
+ 338 00ee F091 0000 		lds r31,isa_slot+3
+ 339 00f2 FE83      		std Y+6,r31
+ 340 00f4 2091 0000 		lds r18,isa_slot+4
+ 341 00f8 2F83      		std Y+7,r18
+ 342 00fa 3091 0000 		lds r19,isa_slot+5
+ 343 00fe 3887      		std Y+8,r19
+ 344 0100 8091 0000 		lds r24,isa_slot+6
+ 345 0104 8987      		std Y+9,r24
+ 346 0106 9091 0000 		lds r25,isa_slot+7
+ 347 010a 9A87      		std Y+10,r25
+ 348 010c 00C0      		rjmp .L23
+ 349               	.L24:
+ 351               	.LM14:
+ 352 010e 2B81      		ldd r18,Y+3
+ 353 0110 2221      		and r18,r2
+ 354 0112 3C81      		ldd r19,Y+4
+ 355 0114 3321      		and r19,r3
+ 356 0116 4D81      		ldd r20,Y+5
+ 357 0118 4421      		and r20,r4
+ 358 011a 5E81      		ldd r21,Y+6
+ 359 011c 5521      		and r21,r5
+ 360 011e 6F81      		ldd r22,Y+7
+ 361 0120 6621      		and r22,r6
+ 362 0122 7885      		ldd r23,Y+8
+ 363 0124 7721      		and r23,r7
+ 364 0126 8985      		ldd r24,Y+9
+ 365 0128 8821      		and r24,r8
+ 366 012a 9A85      		ldd r25,Y+10
+ 367 012c 9921      		and r25,r9
+ 368 012e E22F      		mov r30,r18
+ 369 0130 E32B      		or r30,r19
+ 370 0132 E42B      		or r30,r20
+ 371 0134 E52B      		or r30,r21
+ 372 0136 E62B      		or r30,r22
+ 373 0138 E72B      		or r30,r23
+ 374 013a E82B      		or r30,r24
+ 375 013c E92B      		or r30,r25
+ 376 013e 01F0      		breq .L25
+ 233:../../../src/net/isa/dlmo.c ****             	min_slot = test_slot-current_local_slot;
+ 378               	.LM15:
+ 379 0140 EA81      		ldd r30,Y+2
+ 380 0142 8E2F      		mov r24,r30
+ 381 0144 9927      		clr r25
+ 382 0146 2B85      		ldd r18,Y+11
+ 383 0148 3C85      		ldd r19,Y+12
+ 384 014a 821B      		sub r24,r18
+ 385 014c 930B      		sbc r25,r19
+ 386 014e 00C0      		rjmp .L22
+ 387               	.L25:
+ 234:../../../src/net/isa/dlmo.c ****             	    	return min_slot;
+ 235:../../../src/net/isa/dlmo.c **** 
+ 236:../../../src/net/isa/dlmo.c ****             }
+ 237:../../../src/net/isa/dlmo.c ****                 testVariable = testVariable << 1;
+ 389               	.LM16:
+ 390 0150 01E0      		ldi r16,lo8(1)
+ 391 0152 222D      		mov r18,r2
+ 392 0154 332D      		mov r19,r3
+ 393 0156 442D      		mov r20,r4
+ 394 0158 552D      		mov r21,r5
+ 395 015a 662D      		mov r22,r6
+ 396 015c 772D      		mov r23,r7
+ 397 015e 882D      		mov r24,r8
+ 398 0160 992D      		mov r25,r9
+ 399 0162 0E94 0000 		call __ashldi3
+ 400 0166 222E      		mov r2,r18
+ 401 0168 332E      		mov r3,r19
+ 402 016a 442E      		mov r4,r20
+ 403 016c 552E      		mov r5,r21
+ 404 016e 662E      		mov r6,r22
+ 405 0170 772E      		mov r7,r23
+ 406 0172 882E      		mov r8,r24
+ 407 0174 992E      		mov r9,r25
+ 409               	.LM17:
+ 410 0176 3A81      		ldd r19,Y+2
+ 411 0178 3F5F      		subi r19,lo8(-(1))
+ 412 017a 3A83      		std Y+2,r19
+ 413               	.L23:
+ 414 017c 8A81      		ldd r24,Y+2
+ 415 017e 8931      		cpi r24,lo8(25)
+ 416 0180 00F0      		brlo .L24
+ 417 0182 2224      		clr r2
+ 418 0184 2394      		inc r2
+ 419 0186 3324      		clr r3
+ 420 0188 4424      		clr r4
+ 421 018a 5524      		clr r5
+ 422 018c 6624      		clr r6
+ 423 018e 7724      		clr r7
+ 424 0190 8824      		clr r8
+ 425 0192 9924      		clr r9
+ 426 0194 1E86      		std Y+14,__zero_reg__
+ 427 0196 1D86      		std Y+13,__zero_reg__
+ 428               	.L29:
+ 429 0198 AD85      		ldd r26,Y+13
+ 238:../../../src/net/isa/dlmo.c **** 
+ 239:../../../src/net/isa/dlmo.c ****         }
+ 240:../../../src/net/isa/dlmo.c **** 
+ 241:../../../src/net/isa/dlmo.c ****     // scheduled slot wrapped back
+ 242:../../../src/net/isa/dlmo.c **** 
+ 243:../../../src/net/isa/dlmo.c ****     testVariable = 1;
+ 244:../../../src/net/isa/dlmo.c ****     for (test_slot = 0; test_slot<=current_local_slot;test_slot++){
+ 245:../../../src/net/isa/dlmo.c **** 	if(isa_slot & testVariable){ //slot is scheduled
+ 431               	.LM18:
+ 432 019a 2B81      		ldd r18,Y+3
+ 433 019c 2221      		and r18,r2
+ 434 019e 3C81      		ldd r19,Y+4
+ 435 01a0 3321      		and r19,r3
+ 436 01a2 4D81      		ldd r20,Y+5
+ 437 01a4 4421      		and r20,r4
+ 438 01a6 5E81      		ldd r21,Y+6
+ 439 01a8 5521      		and r21,r5
+ 440 01aa 6F81      		ldd r22,Y+7
+ 441 01ac 6621      		and r22,r6
+ 442 01ae 7885      		ldd r23,Y+8
+ 443 01b0 7721      		and r23,r7
+ 444 01b2 8985      		ldd r24,Y+9
+ 445 01b4 8821      		and r24,r8
+ 446 01b6 9A85      		ldd r25,Y+10
+ 447 01b8 9921      		and r25,r9
+ 448 01ba E22F      		mov r30,r18
+ 449 01bc E32B      		or r30,r19
+ 450 01be E42B      		or r30,r20
+ 451 01c0 E52B      		or r30,r21
+ 452 01c2 E62B      		or r30,r22
+ 453 01c4 E72B      		or r30,r23
+ 454 01c6 E82B      		or r30,r24
+ 455 01c8 E92B      		or r30,r25
+ 456 01ca 01F0      		breq .L30
+ 246:../../../src/net/isa/dlmo.c **** 		min_slot = (ISA_SLOTS_PER_FRAME - current_local_slot + test_slot);
+ 458               	.LM19:
+ 459 01cc 89E1      		ldi r24,lo8(25)
+ 460 01ce 90E0      		ldi r25,hi8(25)
+ 461 01d0 EB85      		ldd r30,Y+11
+ 462 01d2 FC85      		ldd r31,Y+12
+ 463 01d4 8E1B      		sub r24,r30
+ 464 01d6 9F0B      		sbc r25,r31
+ 465 01d8 8A0F      		add r24,r26
+ 466 01da 911D      		adc r25,__zero_reg__
+ 467 01dc 00C0      		rjmp .L22
+ 468               	.L30:
+ 247:../../../src/net/isa/dlmo.c **** 			return min_slot;
+ 470               	.LM20:
+ 471 01de 2D85      		ldd r18,Y+13
+ 472 01e0 3E85      		ldd r19,Y+14
+ 473 01e2 2F5F      		subi r18,lo8(-(1))
+ 474 01e4 3F4F      		sbci r19,hi8(-(1))
+ 475 01e6 3E87      		std Y+14,r19
+ 476 01e8 2D87      		std Y+13,r18
+ 478               	.LM21:
+ 479 01ea 3981      		ldd r19,Y+1
+ 480 01ec 3217      		cp r19,r18
+ 481 01ee 00F0      		brlo .L32
+ 248:../../../src/net/isa/dlmo.c **** 
+ 249:../../../src/net/isa/dlmo.c **** 	}
+ 250:../../../src/net/isa/dlmo.c ****     testVariable = testVariable << 1;
+ 483               	.LM22:
+ 484 01f0 01E0      		ldi r16,lo8(1)
+ 485 01f2 222D      		mov r18,r2
+ 486 01f4 332D      		mov r19,r3
+ 487 01f6 442D      		mov r20,r4
+ 488 01f8 552D      		mov r21,r5
+ 489 01fa 662D      		mov r22,r6
+ 490 01fc 772D      		mov r23,r7
+ 491 01fe 882D      		mov r24,r8
+ 492 0200 992D      		mov r25,r9
+ 493 0202 0E94 0000 		call __ashldi3
+ 494 0206 222E      		mov r2,r18
+ 495 0208 332E      		mov r3,r19
+ 496 020a 442E      		mov r4,r20
+ 497 020c 552E      		mov r5,r21
+ 498 020e 662E      		mov r6,r22
+ 499 0210 772E      		mov r7,r23
+ 500 0212 882E      		mov r8,r24
+ 501 0214 992E      		mov r9,r25
+ 502 0216 00C0      		rjmp .L29
+ 503               	.L32:
+ 504               	.L22:
+ 505               	/* epilogue: frame size=14 */
+ 506 0218 2E96      		adiw r28,14
+ 507 021a 0FB6      		in __tmp_reg__,__SREG__
+ 508 021c F894      		cli
+ 509 021e DEBF      		out __SP_H__,r29
+ 510 0220 0FBE      		out __SREG__,__tmp_reg__
+ 511 0222 CDBF      		out __SP_L__,r28
+ 512 0224 DF91      		pop r29
+ 513 0226 CF91      		pop r28
+ 514 0228 1F91      		pop r17
+ 515 022a 0F91      		pop r16
+ 516 022c FF90      		pop r15
+ 517 022e EF90      		pop r14
+ 518 0230 DF90      		pop r13
+ 519 0232 CF90      		pop r12
+ 520 0234 BF90      		pop r11
+ 521 0236 AF90      		pop r10
+ 522 0238 9F90      		pop r9
+ 523 023a 8F90      		pop r8
+ 524 023c 7F90      		pop r7
+ 525 023e 6F90      		pop r6
+ 526 0240 5F90      		pop r5
+ 527 0242 4F90      		pop r4
+ 528 0244 3F90      		pop r3
+ 529 0246 2F90      		pop r2
+ 530 0248 0895      		ret
+ 531               	/* epilogue end (size=25) */
+ 532               	/* function isa_get_slots_until_next_wakeup size 244 (193) */
+ 540               	.Lscope3:
+ 542               		.stabd	78,0,0
+ 545               	.global	getHighPriorityEntry
+ 547               	getHighPriorityEntry:
+ 548               		.stabd	46,0,0
+ 251:../../../src/net/isa/dlmo.c **** 	    }
+ 252:../../../src/net/isa/dlmo.c **** }
+ 253:../../../src/net/isa/dlmo.c **** 
+ 254:../../../src/net/isa/dlmo.c **** 
+ 255:../../../src/net/isa/dlmo.c **** // *** Data link layer service access points ****
+ 256:../../../src/net/isa/dlmo.c **** /********dd_data_request : Service access point used to send data ******************
+ 257:../../../src/net/isa/dlmo.c ****  * SrcAddr (NL source address)
+ 258:../../../src/net/isa/dlmo.c ****  * DestAddr (NL destination address)
+ 259:../../../src/net/isa/dlmo.c ****  * Priority (priority of the payload)
+ 260:../../../src/net/isa/dlmo.c ****  * DE (discard eligible)
+ 261:../../../src/net/isa/dlmo.c ****  * ECN (explicit congestion notification)
+ 262:../../../src/net/isa/dlmo.c ****  * LH (last hop, NL)
+ 263:../../../src/net/isa/dlmo.c ****  * ContractID (ContractID of the payload)
+ 264:../../../src/net/isa/dlmo.c ****  * DSDULength (payload length)
+ 265:../../../src/net/isa/dlmo.c ****  * DSDU (number of octets as per DSDULength)
+ 266:../../../src/net/isa/dlmo.c ****  * DSDUHandle (uniquely identifies each invocation of this primitive)
+ 267:../../../src/net/isa/dlmo.c ****  *
+ 268:../../../src/net/isa/dlmo.c ****  */
+ 269:../../../src/net/isa/dlmo.c **** 
+ 270:../../../src/net/isa/dlmo.c **** 
+ 271:../../../src/net/isa/dlmo.c ****  int8_t dd_data_request(uint16_t srcAddr, uint16_t destAddr, uint8_t priority, bool discardEligible
+ 272:../../../src/net/isa/dlmo.c ****  {
+ 273:../../../src/net/isa/dlmo.c **** 	 //Future - Lookup DestAddr and add into the Queue with for a particular next hop
+ 274:../../../src/net/isa/dlmo.c **** 
+ 275:../../../src/net/isa/dlmo.c **** //Configure the headers within the payload (whichever applicable)
+ 276:../../../src/net/isa/dlmo.c **** 	 payload[DEST_INDEX] = destAddr;
+ 277:../../../src/net/isa/dlmo.c **** return  enQueue (destAddr, priority, length, payload, slot_callback);
+ 278:../../../src/net/isa/dlmo.c **** 
+ 279:../../../src/net/isa/dlmo.c **** 
+ 280:../../../src/net/isa/dlmo.c **** }
+ 281:../../../src/net/isa/dlmo.c **** 
+ 282:../../../src/net/isa/dlmo.c **** //Wrapper for dd_data_request
+ 283:../../../src/net/isa/dlmo.c **** 
+ 284:../../../src/net/isa/dlmo.c ****  void sendPacket(uint16_t destAddr, uint8_t length, uint8_t *payload, void (*slot_callback)(ISA_QUE
+ 285:../../../src/net/isa/dlmo.c **** 	 if (dd_data_request(0, destAddr, 0, 0, 0, 0, 0,  length, payload,   slot_callback) == -1){
+ 286:../../../src/net/isa/dlmo.c **** 		 printIsaError();
+ 287:../../../src/net/isa/dlmo.c **** 	 }
+ 288:../../../src/net/isa/dlmo.c ****  }
+ 289:../../../src/net/isa/dlmo.c **** 
+ 290:../../../src/net/isa/dlmo.c ****  //*******************dd_data_indication: Service access point used to indicate received data******
+ 291:../../../src/net/isa/dlmo.c ****  void dd_data_indication(uint16_t srcAddr,uint16_t destAddr,uint8_t priority,bool discardEligibile,
+ 292:../../../src/net/isa/dlmo.c ****  {
+ 293:../../../src/net/isa/dlmo.c **** 
+ 294:../../../src/net/isa/dlmo.c **** 	// printf("packet is for me");
+ 295:../../../src/net/isa/dlmo.c **** 	  isa_rx_pkt_release();
+ 296:../../../src/net/isa/dlmo.c ****  }
+ 297:../../../src/net/isa/dlmo.c ****  /*
+ 298:../../../src/net/isa/dlmo.c ****   * Add to queue. Find a free place and insert with current time
+ 299:../../../src/net/isa/dlmo.c ****   */
+ 300:../../../src/net/isa/dlmo.c **** 
+ 301:../../../src/net/isa/dlmo.c ****  int8_t enQueue(uint16_t neighbor, uint8_t priority, uint8_t length, uint8_t *payload,  void (*slot
+ 302:../../../src/net/isa/dlmo.c ****  {
+ 303:../../../src/net/isa/dlmo.c **** 	 uint8_t i;
+ 304:../../../src/net/isa/dlmo.c **** 	/*
+ 305:../../../src/net/isa/dlmo.c **** 	 bool passedLowerPriority = false;
+ 306:../../../src/net/isa/dlmo.c **** 	 bool fixRequired = false;
+ 307:../../../src/net/isa/dlmo.c **** 	 bool insertionDone = false;
+ 308:../../../src/net/isa/dlmo.c **** 	 uint8_t lowerPriorityIndex;
+ 309:../../../src/net/isa/dlmo.c **** 	 uint8_t usedIndex;
+ 310:../../../src/net/isa/dlmo.c **** 	 ISA_QUEUE * temp;
+ 311:../../../src/net/isa/dlmo.c **** */
+ 312:../../../src/net/isa/dlmo.c **** 
+ 313:../../../src/net/isa/dlmo.c **** 	 	 if (isaTxQueueSize > TRANSMIT_QUEUE_MAX_SIZE){
+ 314:../../../src/net/isa/dlmo.c **** 	 		 setIsaError(TRANSMIT_QUEUE_CAPACITY_ERROR);
+ 315:../../../src/net/isa/dlmo.c **** 	 		 return -1;
+ 316:../../../src/net/isa/dlmo.c **** 	 	 }
+ 317:../../../src/net/isa/dlmo.c **** 
+ 318:../../../src/net/isa/dlmo.c **** 	 	 //check if length of payload is within bounds
+ 319:../../../src/net/isa/dlmo.c **** 	 	 if (length >= RF_MAX_PAYLOAD_SIZE) {
+ 320:../../../src/net/isa/dlmo.c **** 	 		 setIsaError(MAX_PAYLOAD_ERROR);
+ 321:../../../src/net/isa/dlmo.c **** 	 		 return -1;
+ 322:../../../src/net/isa/dlmo.c **** 	 	 }
+ 323:../../../src/net/isa/dlmo.c **** 
+ 324:../../../src/net/isa/dlmo.c **** 	 	 //if we are here, we should have place to add into the Queue
+ 325:../../../src/net/isa/dlmo.c **** 	 	 //find the first free index and insert
+ 326:../../../src/net/isa/dlmo.c **** 	 for (i = 0; i < TRANSMIT_QUEUE_MAX_SIZE; i++){
+ 327:../../../src/net/isa/dlmo.c **** 
+ 328:../../../src/net/isa/dlmo.c **** 		 if (isaQueue[i].usedSlot == false){
+ 329:../../../src/net/isa/dlmo.c **** 			 isaQueue[i].length = length;
+ 330:../../../src/net/isa/dlmo.c **** 			 isaQueue[i].priority = priority;
+ 331:../../../src/net/isa/dlmo.c **** 			 isaQueue[i].transmitPending = true;
+ 332:../../../src/net/isa/dlmo.c **** 			 isaQueue[i].usedSlot = true;
+ 333:../../../src/net/isa/dlmo.c **** 			 isaQueue[i].neighbor = neighbor;
+ 334:../../../src/net/isa/dlmo.c **** 			 isaQueue[i].slot_callback =  slot_callback;
+ 335:../../../src/net/isa/dlmo.c **** 			 memcpy(isaQueue[i].tx_buf, payload, length );//copy the payload
+ 336:../../../src/net/isa/dlmo.c **** 			 nrk_time_get(&isaQueue[i].time);	//copy the time when I was inserted into Queue
+ 337:../../../src/net/isa/dlmo.c **** 			 isaTxQueueSize++;
+ 338:../../../src/net/isa/dlmo.c **** 			 break;
+ 339:../../../src/net/isa/dlmo.c **** 		 }
+ 340:../../../src/net/isa/dlmo.c **** 
+ 341:../../../src/net/isa/dlmo.c **** 	 }
+ 342:../../../src/net/isa/dlmo.c **** 	 if ( i == TRANSMIT_QUEUE_MAX_SIZE){
+ 343:../../../src/net/isa/dlmo.c **** 		 printf(" Critical error 2");
+ 344:../../../src/net/isa/dlmo.c **** 		 return -1;
+ 345:../../../src/net/isa/dlmo.c **** 	 }
+ 346:../../../src/net/isa/dlmo.c **** 	 return 1;
+ 347:../../../src/net/isa/dlmo.c **** 
+ 348:../../../src/net/isa/dlmo.c **** 		 //this if evaluates the event in which I have not copied into a slot and find an entry of lower 
+ 349:../../../src/net/isa/dlmo.c **** /*
+ 350:../../../src/net/isa/dlmo.c **** 		 if (isaQueuePointer[i]->usedSlot == true && isaQueuePointer[i]->transmitPending = false  && inse
+ 351:../../../src/net/isa/dlmo.c **** 			 passedLowerPriority = true;
+ 352:../../../src/net/isa/dlmo.c **** 			 lowerPriorityIndex = i;
+ 353:../../../src/net/isa/dlmo.c **** 			 continue;
+ 354:../../../src/net/isa/dlmo.c **** 		 }
+ 355:../../../src/net/isa/dlmo.c **** 		 //if passedLowerPriority == true , then find a slot to insert and insert-> swap pointers for low
+ 356:../../../src/net/isa/dlmo.c **** 		 //fix for every index till free index
+ 357:../../../src/net/isa/dlmo.c **** 
+ 358:../../../src/net/isa/dlmo.c **** 		 if (insertionDone == false && isaQueuePointer[i]->usedSlot == false){
+ 359:../../../src/net/isa/dlmo.c **** 			 //find a free slot to insert
+ 360:../../../src/net/isa/dlmo.c **** 			 usedIndex = i;
+ 361:../../../src/net/isa/dlmo.c **** 			 isaQueuePointer[i]->length = length;
+ 362:../../../src/net/isa/dlmo.c **** 			 isaQueuePointer[i]->priority = priority;
+ 363:../../../src/net/isa/dlmo.c **** 			 isaQueuePointer[i]->transmitPending = true;
+ 364:../../../src/net/isa/dlmo.c **** 			 isaQueuePointer[i]->usedSlot = true;
+ 365:../../../src/net/isa/dlmo.c **** 			 isaQueuePointer[i]->neighbor = neighbor;
+ 366:../../../src/net/isa/dlmo.c **** 			 memcpy(isaQueuePointer[i]->tx_buf, payload, length );//copy the payload
+ 367:../../../src/net/isa/dlmo.c **** 			 isaTxQueueSize++;
+ 368:../../../src/net/isa/dlmo.c **** 			 insertionDone = true;
+ 369:../../../src/net/isa/dlmo.c **** 			 if (passedLowerPriority == true) break; //IF this is the case, I fix after this loop
+ 370:../../../src/net/isa/dlmo.c **** 			 continue;
+ 371:../../../src/net/isa/dlmo.c **** 		 }
+ 372:../../../src/net/isa/dlmo.c **** 
+ 373:../../../src/net/isa/dlmo.c **** 		 if (insertionDone == true && isaQueuePointer[i]->usedSlot == true  && isaQueuePointer[i]->transm
+ 374:../../../src/net/isa/dlmo.c **** 			 //we come here only if fix required
+ 375:../../../src/net/isa/dlmo.c **** 			 temp = isaQueuePointer[i];
+ 376:../../../src/net/isa/dlmo.c **** 			 isaQueuePointer[i] = isaQueuePointer[usedIndex];
+ 377:../../../src/net/isa/dlmo.c **** 			 isaQueuePointer[usedIndex] = temp;
+ 378:../../../src/net/isa/dlmo.c **** 			 usedIndex = i;
+ 379:../../../src/net/isa/dlmo.c **** 				 }
+ 380:../../../src/net/isa/dlmo.c **** 
+ 381:../../../src/net/isa/dlmo.c **** 
+ 382:../../../src/net/isa/dlmo.c **** 	 //we can return now if we did not come here through the condition where I inserted after a higher
+ 383:../../../src/net/isa/dlmo.c **** 	 if (passedLowerPriority == false) return 1;
+ 384:../../../src/net/isa/dlmo.c **** 	 //I am here if I inserted after lower priority. Now I need to take care of fixing that
+ 385:../../../src/net/isa/dlmo.c **** // I iterate from usedIndex to lowerPriority Index in the backward direction and fix
+ 386:../../../src/net/isa/dlmo.c **** 	 for (i = usedIndex -1 ; i >= lowerPriorityIndex ; i--)
+ 387:../../../src/net/isa/dlmo.c **** 		 if (isaQueuePointer[i]->usedSlot == true  && isaQueuePointer[i]->transmitPending = false && isaQ
+ 388:../../../src/net/isa/dlmo.c **** 			 temp = isaQueuePointer[i];
+ 389:../../../src/net/isa/dlmo.c **** 			 isaQueuePointer[i] = isaQueuePointer[usedIndex];
+ 390:../../../src/net/isa/dlmo.c **** 			 isaQueuePointer[usedIndex] = temp;
+ 391:../../../src/net/isa/dlmo.c **** 			 usedIndex = i;
+ 392:../../../src/net/isa/dlmo.c **** 		 }
+ 393:../../../src/net/isa/dlmo.c **** 	 return 1;
+ 394:../../../src/net/isa/dlmo.c ****  */
+ 395:../../../src/net/isa/dlmo.c ****  }
+ 396:../../../src/net/isa/dlmo.c **** 
+ 397:../../../src/net/isa/dlmo.c **** 
+ 398:../../../src/net/isa/dlmo.c ****  ISA_QUEUE * getHighPriorityEntry(uint16_t neighbor){
+ 550               	.LM23:
+ 551               	.LFBB4:
+ 552               	/* prologue: frame size=0 */
+ 553 024a AF92      		push r10
+ 554 024c BF92      		push r11
+ 555 024e CF92      		push r12
+ 556 0250 DF92      		push r13
+ 557 0252 EF92      		push r14
+ 558 0254 FF92      		push r15
+ 559 0256 0F93      		push r16
+ 560 0258 1F93      		push r17
+ 561 025a CF93      		push r28
+ 562 025c DF93      		push r29
+ 563               	/* prologue end (size=10) */
+ 564 025e 5C01      		movw r10,r24
+ 565 0260 E0E0      		ldi r30,lo8(isaQueue+117)
+ 566 0262 F0E0      		ldi r31,hi8(isaQueue+117)
+ 567 0264 80E0      		ldi r24,lo8(isaQueue)
+ 568 0266 C82E      		mov r12,r24
+ 569 0268 80E0      		ldi r24,hi8(isaQueue)
+ 570 026a D82E      		mov r13,r24
+ 571 026c 70E0      		ldi r23,lo8(0)
+ 572 026e 60E0      		ldi r22,lo8(0)
+ 573               	.L36:
+ 399:../../../src/net/isa/dlmo.c **** 
+ 400:../../../src/net/isa/dlmo.c **** 	 nrk_time_t time;
+ 401:../../../src/net/isa/dlmo.c **** 	 uint8_t priority = 0;
+ 402:../../../src/net/isa/dlmo.c **** 	 ISA_QUEUE* tempIndex;
+ 403:../../../src/net/isa/dlmo.c **** 	 bool found = false;
+ 404:../../../src/net/isa/dlmo.c **** 	 uint8_t i;
+ 405:../../../src/net/isa/dlmo.c **** 	 for (i = 0; i < TRANSMIT_QUEUE_MAX_SIZE; i++){
+ 406:../../../src/net/isa/dlmo.c **** 		 if (isaQueue[i].usedSlot == true && isaQueue[i].transmitPending == true && isaQueue[i].neighbor 
+ 575               	.LM24:
+ 576 0270 8181      		ldd r24,Z+1
+ 577 0272 8823      		tst r24
+ 578 0274 01F0      		breq .L37
+ 579 0276 8081      		ld r24,Z
+ 580 0278 8823      		tst r24
+ 581 027a 01F0      		breq .L37
+ 582 027c 8581      		ldd r24,Z+5
+ 583 027e 9681      		ldd r25,Z+6
+ 584 0280 8A15      		cp r24,r10
+ 585 0282 9B05      		cpc r25,r11
+ 586 0284 01F4      		brne .L37
+ 407:../../../src/net/isa/dlmo.c **** 
+ 408:../../../src/net/isa/dlmo.c **** 			 if (found == false){
+ 588               	.LM25:
+ 589 0286 6623      		tst r22
+ 590 0288 01F4      		brne .L41
+ 409:../../../src/net/isa/dlmo.c **** 				 found = true;
+ 410:../../../src/net/isa/dlmo.c **** 				 priority = isaQueue[i].priority;
+ 592               	.LM26:
+ 593 028a 7481      		ldd r23,Z+4
+ 594 028c E601      		movw r28,r12
+ 411:../../../src/net/isa/dlmo.c **** 				 tempIndex = &isaQueue[i];
+ 412:../../../src/net/isa/dlmo.c **** 				 time.nano_secs = isaQueue[i].time.nano_secs;
+ 596               	.LM27:
+ 597 028e E384      		ldd r14,Z+11
+ 598 0290 F484      		ldd r15,Z+12
+ 599 0292 0585      		ldd r16,Z+13
+ 600 0294 1685      		ldd r17,Z+14
+ 413:../../../src/net/isa/dlmo.c **** 				 time.secs = isaQueue[i].time.secs;
+ 602               	.LM28:
+ 603 0296 2781      		ldd r18,Z+7
+ 604 0298 3085      		ldd r19,Z+8
+ 605 029a 4185      		ldd r20,Z+9
+ 606 029c 5285      		ldd r21,Z+10
+ 607               	.L41:
+ 414:../../../src/net/isa/dlmo.c **** 			 }
+ 415:../../../src/net/isa/dlmo.c **** 			 //			if the priority is greater					or	(	priority is the same    		and ( seconds is less					or
+ 416:../../../src/net/isa/dlmo.c **** 		 if (found == true && ( priority < isaQueue[i].priority  || ( (priority == isaQueue[i].priority) 
+ 609               	.LM29:
+ 610 029e 6481      		ldd r22,Z+4
+ 611 02a0 7617      		cp r23,r22
+ 612 02a2 00F0      		brlo .L43
+ 613 02a4 7617      		cp r23,r22
+ 614 02a6 01F4      		brne .L45
+ 615 02a8 8781      		ldd r24,Z+7
+ 616 02aa 9085      		ldd r25,Z+8
+ 617 02ac A185      		ldd r26,Z+9
+ 618 02ae B285      		ldd r27,Z+10
+ 619 02b0 8217      		cp r24,r18
+ 620 02b2 9307      		cpc r25,r19
+ 621 02b4 A407      		cpc r26,r20
+ 622 02b6 B507      		cpc r27,r21
+ 623 02b8 00F0      		brlo .L43
+ 624 02ba 2817      		cp r18,r24
+ 625 02bc 3907      		cpc r19,r25
+ 626 02be 4A07      		cpc r20,r26
+ 627 02c0 5B07      		cpc r21,r27
+ 628 02c2 01F4      		brne .L45
+ 629 02c4 8385      		ldd r24,Z+11
+ 630 02c6 9485      		ldd r25,Z+12
+ 631 02c8 A585      		ldd r26,Z+13
+ 632 02ca B685      		ldd r27,Z+14
+ 633 02cc 8E15      		cp r24,r14
+ 634 02ce 9F05      		cpc r25,r15
+ 635 02d0 A007      		cpc r26,r16
+ 636 02d2 B107      		cpc r27,r17
+ 637 02d4 00F4      		brsh .L45
+ 638               	.L43:
+ 639 02d6 E601      		movw r28,r12
+ 417:../../../src/net/isa/dlmo.c **** 			 priority = isaQueue[i].priority;
+ 418:../../../src/net/isa/dlmo.c **** 			 tempIndex = &isaQueue[i];
+ 419:../../../src/net/isa/dlmo.c **** 			 time.nano_secs = isaQueue[i].time.nano_secs;
+ 641               	.LM30:
+ 642 02d8 E384      		ldd r14,Z+11
+ 643 02da F484      		ldd r15,Z+12
+ 644 02dc 0585      		ldd r16,Z+13
+ 645 02de 1685      		ldd r17,Z+14
+ 420:../../../src/net/isa/dlmo.c **** 			 time.secs = isaQueue[i].time.secs;
+ 647               	.LM31:
+ 648 02e0 2781      		ldd r18,Z+7
+ 649 02e2 3085      		ldd r19,Z+8
+ 650 02e4 4185      		ldd r20,Z+9
+ 651 02e6 5285      		ldd r21,Z+10
+ 652 02e8 762F      		mov r23,r22
+ 653               	.L45:
+ 654 02ea 61E0      		ldi r22,lo8(1)
+ 655               	.L37:
+ 656 02ec 84E8      		ldi r24,lo8(132)
+ 657 02ee 90E0      		ldi r25,hi8(132)
+ 658 02f0 C80E      		add r12,r24
+ 659 02f2 D91E      		adc r13,r25
+ 660 02f4 EC57      		subi r30,lo8(-(132))
+ 661 02f6 FF4F      		sbci r31,hi8(-(132))
+ 663               	.LM32:
+ 664 02f8 90E0      		ldi r25,hi8(isaQueue+1437)
+ 665 02fa E030      		cpi r30,lo8(isaQueue+1437)
+ 666 02fc F907      		cpc r31,r25
+ 667 02fe 01F0      		breq .+2
+ 668 0300 00C0      		rjmp .L36
+ 421:../../../src/net/isa/dlmo.c **** 		 }
+ 422:../../../src/net/isa/dlmo.c **** 	 }
+ 423:../../../src/net/isa/dlmo.c **** 
+ 424:../../../src/net/isa/dlmo.c ****  }
+ 425:../../../src/net/isa/dlmo.c **** 	 if (found == false) {
+ 670               	.LM33:
+ 671 0302 6623      		tst r22
+ 672 0304 01F4      		brne .L50
+ 673 0306 C0E0      		ldi r28,lo8(0)
+ 674 0308 D0E0      		ldi r29,hi8(0)
+ 675               	.L50:
+ 426:../../../src/net/isa/dlmo.c **** 		 return NULL;
+ 427:../../../src/net/isa/dlmo.c **** 	 }
+ 428:../../../src/net/isa/dlmo.c **** 	 return tempIndex;
+ 429:../../../src/net/isa/dlmo.c ****  }
+ 677               	.LM34:
+ 678 030a CE01      		movw r24,r28
+ 679               	/* epilogue: frame size=0 */
+ 680 030c DF91      		pop r29
+ 681 030e CF91      		pop r28
+ 682 0310 1F91      		pop r17
+ 683 0312 0F91      		pop r16
+ 684 0314 FF90      		pop r15
+ 685 0316 EF90      		pop r14
+ 686 0318 DF90      		pop r13
+ 687 031a CF90      		pop r12
+ 688 031c BF90      		pop r11
+ 689 031e AF90      		pop r10
+ 690 0320 0895      		ret
+ 691               	/* epilogue end (size=11) */
+ 692               	/* function getHighPriorityEntry size 108 (87) */
+ 699               	.Lscope4:
+ 701               		.stabd	78,0,0
+ 704               	.global	isaFreePacket
+ 706               	isaFreePacket:
+ 707               		.stabd	46,0,0
+ 430:../../../src/net/isa/dlmo.c **** 
+ 431:../../../src/net/isa/dlmo.c ****  //************************************************************************************************
+ 432:../../../src/net/isa/dlmo.c ****  isaFreePacket(ISA_QUEUE *entry){
+ 709               	.LM35:
+ 710               	.LFBB5:
+ 711               	/* prologue: frame size=0 */
+ 712               	/* prologue end (size=0) */
+ 433:../../../src/net/isa/dlmo.c **** 	 entry->usedSlot = false;
+ 714               	.LM36:
+ 715 0322 FC01      		movw r30,r24
+ 716 0324 EA58      		subi r30,lo8(-(118))
+ 717 0326 FF4F      		sbci r31,hi8(-(118))
+ 718 0328 1082      		st Z,__zero_reg__
+ 434:../../../src/net/isa/dlmo.c **** 	 isaTxQueueSize--;
+ 720               	.LM37:
+ 721 032a 8091 0000 		lds r24,isaTxQueueSize
+ 722 032e 8150      		subi r24,lo8(-(-1))
+ 723 0330 8093 0000 		sts isaTxQueueSize,r24
+ 724               	/* epilogue: frame size=0 */
+ 725 0334 0895      		ret
+ 726               	/* epilogue end (size=1) */
+ 727               	/* function isaFreePacket size 10 (9) */
+ 729               	.Lscope5:
+ 731               		.stabd	78,0,0
+ 736               	.global	addLink
+ 738               	addLink:
+ 739               		.stabd	46,0,0
+ 741               	.LM38:
+ 742               	.LFBB6:
+ 743               	/* prologue: frame size=0 */
+ 744               	/* prologue end (size=0) */
+ 745 0336 282F      		mov r18,r24
+ 746 0338 E0E0      		ldi r30,lo8(dlmoLink)
+ 747 033a F0E0      		ldi r31,hi8(dlmoLink)
+ 748 033c 90E0      		ldi r25,lo8(0)
+ 749               	.L58:
+ 751               	.LM39:
+ 752 033e 8081      		ld r24,Z
+ 753 0340 8823      		tst r24
+ 754 0342 01F0      		breq .L59
+ 756               	.LM40:
+ 757 0344 9F5F      		subi r25,lo8(-(1))
+ 758 0346 7296      		adiw r30,18
+ 759 0348 9A30      		cpi r25,lo8(10)
+ 760 034a 01F4      		brne .L58
+ 762               	.LM41:
+ 763 034c 81E0      		ldi r24,lo8(1)
+ 764 034e 0E94 0000 		call setIsaError
+ 765 0352 8FEF      		ldi r24,lo8(-1)
+ 766 0354 9FEF      		ldi r25,hi8(-1)
+ 767 0356 0895      		ret
+ 768               	.L59:
+ 770               	.LM42:
+ 771 0358 892F      		mov r24,r25
+ 772 035a 9927      		clr r25
+ 773 035c 880F      		lsl r24
+ 774 035e 991F      		rol r25
+ 775 0360 FC01      		movw r30,r24
+ 776 0362 33E0      		ldi r19,3
+ 777 0364 EE0F      	1:	lsl r30
+ 778 0366 FF1F      		rol r31
+ 779 0368 3A95      		dec r19
+ 780 036a 01F4      		brne 1b
+ 781 036c E80F      		add r30,r24
+ 782 036e F91F      		adc r31,r25
+ 783 0370 E050      		subi r30,lo8(-(dlmoLink))
+ 784 0372 F040      		sbci r31,hi8(-(dlmoLink))
+ 785 0374 81E0      		ldi r24,lo8(1)
+ 786 0376 8083      		st Z,r24
+ 788               	.LM43:
+ 789 0378 7187      		std Z+9,r23
+ 790 037a 6087      		std Z+8,r22
+ 792               	.LM44:
+ 793 037c 4483      		std Z+4,r20
+ 795               	.LM45:
+ 796 037e 208B      		std Z+16,r18
+ 797 0380 80E0      		ldi r24,lo8(0)
+ 798 0382 90E0      		ldi r25,hi8(0)
+ 800               	.LM46:
+ 801 0384 0895      		ret
+ 802               	/* epilogue: frame size=0 */
+ 803               	/* epilogue: noreturn */
+ 804               	/* epilogue end (size=0) */
+ 805               	/* function addLink size 40 (40) */
+ 810               	.Lscope6:
+ 812               		.stabd	78,0,0
+ 813               		.data
+ 814               	.LC0:
+ 815 0000 2043 7269 		.string	" Critical error 2"
+ 815      7469 6361 
+ 815      6C20 6572 
+ 815      726F 7220 
+ 815      3200 
+ 816               		.text
+ 823               	.global	enQueue
+ 825               	enQueue:
+ 826               		.stabd	46,0,0
+ 828               	.LM47:
+ 829               	.LFBB7:
+ 830               	/* prologue: frame size=0 */
+ 831 0386 0F93      		push r16
+ 832 0388 1F93      		push r17
+ 833 038a CF93      		push r28
+ 834 038c DF93      		push r29
+ 835               	/* prologue end (size=4) */
+ 836 038e EC01      		movw r28,r24
+ 837 0390 D801      		movw r26,r16
+ 839               	.LM48:
+ 840 0392 8091 0000 		lds r24,isaTxQueueSize
+ 841 0396 8B30      		cpi r24,lo8(11)
+ 842 0398 00F0      		brlo .L67
+ 844               	.LM49:
+ 845 039a 83E0      		ldi r24,lo8(3)
+ 846 039c 00C0      		rjmp .L82
+ 847               	.L67:
+ 849               	.LM50:
+ 850 039e 4437      		cpi r20,lo8(116)
+ 851 03a0 00F0      		brlo .L70
+ 853               	.LM51:
+ 854 03a2 84E0      		ldi r24,lo8(4)
+ 855               	.L82:
+ 856 03a4 0E94 0000 		call setIsaError
+ 857 03a8 8FEF      		ldi r24,lo8(-1)
+ 858 03aa 9FEF      		ldi r25,hi8(-1)
+ 859 03ac 00C0      		rjmp .L69
+ 860               	.L70:
+ 862               	.LM52:
+ 863 03ae E0E0      		ldi r30,lo8(isaQueue+118)
+ 864 03b0 F0E0      		ldi r31,hi8(isaQueue+118)
+ 865 03b2 00E0      		ldi r16,lo8(0)
+ 866 03b4 10E0      		ldi r17,hi8(0)
+ 867               	.L72:
+ 869               	.LM53:
+ 870 03b6 8081      		ld r24,Z
+ 871 03b8 8823      		tst r24
+ 872 03ba 01F4      		brne .L73
+ 874               	.LM54:
+ 875 03bc 84E8      		ldi r24,lo8(132)
+ 876 03be 90E0      		ldi r25,hi8(132)
+ 877 03c0 F801      		movw r30,r16
+ 878 03c2 E89F      		mul r30,r24
+ 879 03c4 8001      		movw r16,r0
+ 880 03c6 E99F      		mul r30,r25
+ 881 03c8 100D      		add r17,r0
+ 882 03ca F89F      		mul r31,r24
+ 883 03cc 100D      		add r17,r0
+ 884 03ce 1124      		clr r1
+ 885 03d0 F801      		movw r30,r16
+ 886 03d2 E050      		subi r30,lo8(-(isaQueue))
+ 887 03d4 F040      		sbci r31,hi8(-(isaQueue))
+ 888 03d6 4083      		st Z,r20
+ 890               	.LM55:
+ 891 03d8 E758      		subi r30,lo8(-(121))
+ 892 03da FF4F      		sbci r31,hi8(-(121))
+ 893 03dc 6083      		st Z,r22
+ 895               	.LM56:
+ 896 03de 3497      		sbiw r30,4
+ 897 03e0 81E0      		ldi r24,lo8(1)
+ 898 03e2 8193      		st Z+,r24
+ 900               	.LM57:
+ 901 03e4 8083      		st Z,r24
+ 903               	.LM58:
+ 904 03e6 3496      		adiw r30,4
+ 905 03e8 D183      		std Z+1,r29
+ 906 03ea C083      		st Z,r28
+ 908               	.LM59:
+ 909 03ec 3397      		sbiw r30,3
+ 910 03ee B183      		std Z+1,r27
+ 911 03f0 A083      		st Z,r26
+ 913               	.LM60:
+ 914 03f2 5527      		clr r21
+ 915 03f4 B901      		movw r22,r18
+ 916 03f6 C801      		movw r24,r16
+ 917 03f8 8050      		subi r24,lo8(-(isaQueue+1))
+ 918 03fa 9040      		sbci r25,hi8(-(isaQueue+1))
+ 919 03fc 0E94 0000 		call memcpy
+ 921               	.LM61:
+ 922 0400 C801      		movw r24,r16
+ 923 0402 8050      		subi r24,lo8(-(isaQueue+124))
+ 924 0404 9040      		sbci r25,hi8(-(isaQueue+124))
+ 925 0406 0E94 0000 		call nrk_time_get
+ 927               	.LM62:
+ 928 040a 8091 0000 		lds r24,isaTxQueueSize
+ 929 040e 8F5F      		subi r24,lo8(-(1))
+ 930 0410 8093 0000 		sts isaTxQueueSize,r24
+ 931 0414 00C0      		rjmp .L83
+ 932               	.L73:
+ 934               	.LM63:
+ 935 0416 802F      		mov r24,r16
+ 936 0418 8F5F      		subi r24,lo8(-(1))
+ 937 041a 0F5F      		subi r16,lo8(-(1))
+ 938 041c 1F4F      		sbci r17,hi8(-(1))
+ 939 041e EC57      		subi r30,lo8(-(132))
+ 940 0420 FF4F      		sbci r31,hi8(-(132))
+ 942               	.LM64:
+ 943 0422 0A30      		cpi r16,10
+ 944 0424 1105      		cpc r17,__zero_reg__
+ 945 0426 01F4      		brne .L72
+ 947               	.LM65:
+ 948 0428 8A30      		cpi r24,lo8(10)
+ 949 042a 01F0      		breq .L77
+ 950               	.L83:
+ 951 042c 81E0      		ldi r24,lo8(1)
+ 952 042e 90E0      		ldi r25,hi8(1)
+ 953 0430 00C0      		rjmp .L69
+ 954               	.L77:
+ 956               	.LM66:
+ 957 0432 80E0      		ldi r24,lo8(.LC0)
+ 958 0434 90E0      		ldi r25,hi8(.LC0)
+ 959 0436 9F93      		push r25
+ 960 0438 8F93      		push r24
+ 961 043a 0E94 0000 		call printf
+ 962 043e 8FEF      		ldi r24,lo8(-1)
+ 963 0440 9FEF      		ldi r25,hi8(-1)
+ 964 0442 0F90      		pop __tmp_reg__
+ 965 0444 0F90      		pop __tmp_reg__
+ 966               	.L69:
+ 967               	/* epilogue: frame size=0 */
+ 968 0446 DF91      		pop r29
+ 969 0448 CF91      		pop r28
+ 970 044a 1F91      		pop r17
+ 971 044c 0F91      		pop r16
+ 972 044e 0895      		ret
+ 973               	/* epilogue end (size=5) */
+ 974               	/* function enQueue size 101 (92) */
+ 979               	.Lscope7:
+ 981               		.stabd	78,0,0
+ 993               	.global	dd_data_request
+ 995               	dd_data_request:
+ 996               		.stabd	46,0,0
+ 998               	.LM67:
+ 999               	.LFBB8:
+ 1000               	/* prologue: frame size=0 */
+ 1001 0450 8F92      		push r8
+ 1002 0452 9F92      		push r9
+ 1003 0454 AF92      		push r10
+ 1004 0456 0F93      		push r16
+ 1005 0458 1F93      		push r17
+ 1006 045a CF93      		push r28
+ 1007 045c DF93      		push r29
+ 1008 045e CDB7      		in r28,__SP_L__
+ 1009 0460 DEB7      		in r29,__SP_H__
+ 1010               	/* prologue end (size=9) */
+ 1011 0462 CB01      		movw r24,r22
+ 1012 0464 642F      		mov r22,r20
+ 1013 0466 4A2D      		mov r20,r10
+ 1014 0468 F401      		movw r30,r8
+ 1016               	.LM68:
+ 1017 046a 8383      		std Z+3,r24
+ 1019               	.LM69:
+ 1020 046c 0A85      		ldd r16,Y+10
+ 1021 046e 1B85      		ldd r17,Y+11
+ 1022 0470 9401      		movw r18,r8
+ 1023 0472 0E94 0000 		call enQueue
+ 1025               	.LM70:
+ 1026 0476 9927      		clr r25
+ 1027 0478 87FD      		sbrc r24,7
+ 1028 047a 9095      		com r25
+ 1029               	/* epilogue: frame size=0 */
+ 1030 047c DF91      		pop r29
+ 1031 047e CF91      		pop r28
+ 1032 0480 1F91      		pop r17
+ 1033 0482 0F91      		pop r16
+ 1034 0484 AF90      		pop r10
+ 1035 0486 9F90      		pop r9
+ 1036 0488 8F90      		pop r8
+ 1037 048a 0895      		ret
+ 1038               	/* epilogue end (size=8) */
+ 1039               	/* function dd_data_request size 30 (13) */
+ 1041               	.Lscope8:
+ 1043               		.stabd	78,0,0
+ 1044               		.data
+ 1045               	.LC1:
+ 1046 0012 4E65 6967 		.string	"Neighbor Exists in Table at %d\n"
+ 1046      6862 6F72 
+ 1046      2045 7869 
+ 1046      7374 7320 
+ 1046      696E 2054 
+ 1047               		.text
+ 1057               	.global	addNeighbor
+ 1059               	addNeighbor:
+ 1060               		.stabd	46,0,0
+ 1062               	.LM71:
+ 1063               	.LFBB9:
+ 1064               	/* prologue: frame size=8 */
+ 1065 048c 6F92      		push r6
+ 1066 048e 7F92      		push r7
+ 1067 0490 8F92      		push r8
+ 1068 0492 AF92      		push r10
+ 1069 0494 CF92      		push r12
+ 1070 0496 EF92      		push r14
+ 1071 0498 0F93      		push r16
+ 1072 049a 1F93      		push r17
+ 1073 049c CF93      		push r28
+ 1074 049e DF93      		push r29
+ 1075 04a0 CDB7      		in r28,__SP_L__
+ 1076 04a2 DEB7      		in r29,__SP_H__
+ 1077 04a4 2897      		sbiw r28,8
+ 1078 04a6 0FB6      		in __tmp_reg__,__SREG__
+ 1079 04a8 F894      		cli
+ 1080 04aa DEBF      		out __SP_H__,r29
+ 1081 04ac 0FBE      		out __SREG__,__tmp_reg__
+ 1082 04ae CDBF      		out __SP_L__,r28
+ 1083               	/* prologue end (size=18) */
+ 1084 04b0 3C01      		movw r6,r24
+ 1085 04b2 0983      		std Y+1,r16
+ 1086 04b4 1A83      		std Y+2,r17
+ 1087 04b6 2B83      		std Y+3,r18
+ 1088 04b8 3C83      		std Y+4,r19
+ 1089 04ba 4D83      		std Y+5,r20
+ 1090 04bc 5E83      		std Y+6,r21
+ 1091 04be 6F83      		std Y+7,r22
+ 1092 04c0 7887      		std Y+8,r23
+ 1093 04c2 E0E0      		ldi r30,lo8(dlmoNeighbor)
+ 1094 04c4 F0E0      		ldi r31,hi8(dlmoNeighbor)
+ 1095 04c6 10E0      		ldi r17,lo8(0)
+ 1096 04c8 40E0      		ldi r20,lo8(0)
+ 1097 04ca 20E0      		ldi r18,lo8(0)
+ 1098 04cc 30E0      		ldi r19,hi8(0)
+ 1099               	.L87:
+ 1100               	.LBB2:
+ 1102               	.LM72:
+ 1103 04ce 8181      		ldd r24,Z+1
+ 1104 04d0 9281      		ldd r25,Z+2
+ 1105 04d2 6816      		cp r6,r24
+ 1106 04d4 7906      		cpc r7,r25
+ 1107 04d6 01F4      		brne .L88
+ 1109               	.LM73:
+ 1110 04d8 7F92      		push r7
+ 1111 04da 6F92      		push r6
+ 1112 04dc 80E0      		ldi r24,lo8(.LC1)
+ 1113 04de 90E0      		ldi r25,hi8(.LC1)
+ 1114 04e0 9F93      		push r25
+ 1115 04e2 8F93      		push r24
+ 1116 04e4 0E94 0000 		call printf
+ 1118               	.LM74:
+ 1119 04e8 81E1      		ldi r24,lo8(17)
+ 1120 04ea 189F      		mul r17,r24
+ 1121 04ec C001      		movw r24,r0
+ 1122 04ee 1124      		clr r1
+ 1123 04f0 8050      		subi r24,lo8(-(dlmoNeighbor))
+ 1124 04f2 9040      		sbci r25,hi8(-(dlmoNeighbor))
+ 1125 04f4 0F90      		pop __tmp_reg__
+ 1126 04f6 0F90      		pop __tmp_reg__
+ 1127 04f8 0F90      		pop __tmp_reg__
+ 1128 04fa 0F90      		pop __tmp_reg__
+ 1129 04fc 00C0      		rjmp .L90
+ 1130               	.L88:
+ 1132               	.LM75:
+ 1133 04fe 8081      		ld r24,Z
+ 1134 0500 8823      		tst r24
+ 1135 0502 01F4      		brne .L91
+ 1136 0504 122F      		mov r17,r18
+ 1137 0506 41E0      		ldi r20,lo8(1)
+ 1138               	.L91:
+ 1140               	.LM76:
+ 1141 0508 2F5F      		subi r18,lo8(-(1))
+ 1142 050a 3F4F      		sbci r19,hi8(-(1))
+ 1143 050c 7196      		adiw r30,17
+ 1144 050e 2931      		cpi r18,25
+ 1145 0510 3105      		cpc r19,__zero_reg__
+ 1146 0512 01F4      		brne .L87
+ 1147               	.LBE2:
+ 1149               	.LM77:
+ 1150 0514 4423      		tst r20
+ 1151 0516 01F4      		brne .L94
+ 1153               	.LM78:
+ 1154 0518 82E0      		ldi r24,lo8(2)
+ 1155 051a 0E94 0000 		call setIsaError
+ 1156 051e 80E0      		ldi r24,lo8(0)
+ 1157 0520 90E0      		ldi r25,hi8(0)
+ 1158 0522 00C0      		rjmp .L90
+ 1159               	.L94:
+ 1161               	.LM79:
+ 1162 0524 812F      		mov r24,r17
+ 1163 0526 9927      		clr r25
+ 1164 0528 DC01      		movw r26,r24
+ 1165 052a 64E0      		ldi r22,4
+ 1166 052c AA0F      	1:	lsl r26
+ 1167 052e BB1F      		rol r27
+ 1168 0530 6A95      		dec r22
+ 1169 0532 01F4      		brne 1b
+ 1170 0534 A80F      		add r26,r24
+ 1171 0536 B91F      		adc r27,r25
+ 1172 0538 A050      		subi r26,lo8(-(dlmoNeighbor))
+ 1173 053a B040      		sbci r27,hi8(-(dlmoNeighbor))
+ 1174 053c FD01      		movw r30,r26
+ 1175 053e 7282      		std Z+2,r7
+ 1176 0540 6182      		std Z+1,r6
+ 1178               	.LM80:
+ 1179 0542 81E0      		ldi r24,lo8(1)
+ 1180 0544 8C93      		st X,r24
+ 1182               	.LM81:
+ 1183 0546 9D01      		movw r18,r26
+ 1184 0548 2D5F      		subi r18,lo8(-(3))
+ 1185 054a 3F4F      		sbci r19,hi8(-(3))
+ 1186 054c 8981      		ldd r24,Y+1
+ 1187 054e 8383      		std Z+3,r24
+ 1188 0550 8A81      		ldd r24,Y+2
+ 1189 0552 F901      		movw r30,r18
+ 1190 0554 8183      		std Z+1,r24
+ 1191 0556 8B81      		ldd r24,Y+3
+ 1192 0558 8283      		std Z+2,r24
+ 1193 055a 8C81      		ldd r24,Y+4
+ 1194 055c 8383      		std Z+3,r24
+ 1195 055e 8D81      		ldd r24,Y+5
+ 1196 0560 8483      		std Z+4,r24
+ 1197 0562 8E81      		ldd r24,Y+6
+ 1198 0564 8583      		std Z+5,r24
+ 1199 0566 8F81      		ldd r24,Y+7
+ 1200 0568 8683      		std Z+6,r24
+ 1201 056a 8885      		ldd r24,Y+8
+ 1202 056c 8783      		std Z+7,r24
+ 1204               	.LM82:
+ 1205 056e FD01      		movw r30,r26
+ 1206 0570 E386      		std Z+11,r14
+ 1208               	.LM83:
+ 1209 0572 C486      		std Z+12,r12
+ 1211               	.LM84:
+ 1212 0574 AA20      		tst r10
+ 1213 0576 01F0      		breq .L96
+ 1214 0578 8585      		ldd r24,Z+13
+ 1215 057a 8068      		ori r24,lo8(-128)
+ 1216 057c 8587      		std Z+13,r24
+ 1217               	.L96:
+ 1219               	.LM85:
+ 1220 057e FD01      		movw r30,r26
+ 1221 0580 8686      		std Z+14,r8
+ 1223               	.LM86:
+ 1224 0582 8D89      		ldd r24,Y+21
+ 1225 0584 8787      		std Z+15,r24
+ 1227               	.LM87:
+ 1228 0586 8E89      		ldd r24,Y+22
+ 1229 0588 808B      		std Z+16,r24
+ 1231               	.LM88:
+ 1232 058a 81E1      		ldi r24,lo8(17)
+ 1233 058c 189F      		mul r17,r24
+ 1234 058e C001      		movw r24,r0
+ 1235 0590 1124      		clr r1
+ 1236 0592 8050      		subi r24,lo8(-(dlmoNeighbor))
+ 1237 0594 9040      		sbci r25,hi8(-(dlmoNeighbor))
+ 1238               	.L90:
+ 1239               	/* epilogue: frame size=8 */
+ 1240 0596 2896      		adiw r28,8
+ 1241 0598 0FB6      		in __tmp_reg__,__SREG__
+ 1242 059a F894      		cli
+ 1243 059c DEBF      		out __SP_H__,r29
+ 1244 059e 0FBE      		out __SREG__,__tmp_reg__
+ 1245 05a0 CDBF      		out __SP_L__,r28
+ 1246 05a2 DF91      		pop r29
+ 1247 05a4 CF91      		pop r28
+ 1248 05a6 1F91      		pop r17
+ 1249 05a8 0F91      		pop r16
+ 1250 05aa EF90      		pop r14
+ 1251 05ac CF90      		pop r12
+ 1252 05ae AF90      		pop r10
+ 1253 05b0 8F90      		pop r8
+ 1254 05b2 7F90      		pop r7
+ 1255 05b4 6F90      		pop r6
+ 1256 05b6 0895      		ret
+ 1257               	/* epilogue end (size=17) */
+ 1258               	/* function addNeighbor size 150 (115) */
+ 1269               	.Lscope9:
+ 1271               		.stabd	78,0,0
+ 1272               		.data
+ 1273               	.LC2:
+ 1274 0032 5468 6973 		.string	"This slot is not configured yet: %d\n\r"
+ 1274      2073 6C6F 
+ 1274      7420 6973 
+ 1274      206E 6F74 
+ 1274      2063 6F6E 
+ 1275               		.text
+ 1278               	.global	findLink
+ 1280               	findLink:
+ 1281               		.stabd	46,0,0
+ 1283               	.LM89:
+ 1284               	.LFBB10:
+ 1285               	/* prologue: frame size=0 */
+ 1286               	/* prologue end (size=0) */
+ 1287 05b8 482F      		mov r20,r24
+ 1288 05ba E0E0      		ldi r30,lo8(dlmoLink)
+ 1289 05bc F0E0      		ldi r31,hi8(dlmoLink)
+ 1290 05be 20E0      		ldi r18,lo8(0)
+ 1291 05c0 30E0      		ldi r19,hi8(0)
+ 1292               	.L102:
+ 1294               	.LM90:
+ 1295 05c2 8081      		ld r24,Z
+ 1296 05c4 8823      		tst r24
+ 1297 05c6 01F0      		breq .L103
+ 1298 05c8 8089      		ldd r24,Z+16
+ 1299 05ca 8417      		cp r24,r20
+ 1300 05cc 01F4      		brne .L103
+ 1302               	.LM91:
+ 1303 05ce 82E1      		ldi r24,lo8(18)
+ 1304 05d0 289F      		mul r18,r24
+ 1305 05d2 C001      		movw r24,r0
+ 1306 05d4 1124      		clr r1
+ 1307 05d6 8050      		subi r24,lo8(-(dlmoLink))
+ 1308 05d8 9040      		sbci r25,hi8(-(dlmoLink))
+ 1309 05da 0895      		ret
+ 1310               	.L103:
+ 1311 05dc 2F5F      		subi r18,lo8(-(1))
+ 1312 05de 3F4F      		sbci r19,hi8(-(1))
+ 1313 05e0 7296      		adiw r30,18
+ 1315               	.LM92:
+ 1316 05e2 2A30      		cpi r18,10
+ 1317 05e4 3105      		cpc r19,__zero_reg__
+ 1318 05e6 01F4      		brne .L102
+ 1320               	.LM93:
+ 1321 05e8 842F      		mov r24,r20
+ 1322 05ea 9927      		clr r25
+ 1323 05ec 9F93      		push r25
+ 1324 05ee 8F93      		push r24
+ 1325 05f0 80E0      		ldi r24,lo8(.LC2)
+ 1326 05f2 90E0      		ldi r25,hi8(.LC2)
+ 1327 05f4 9F93      		push r25
+ 1328 05f6 8F93      		push r24
+ 1329 05f8 0E94 0000 		call printf
+ 1330 05fc 80E0      		ldi r24,lo8(0)
+ 1331 05fe 90E0      		ldi r25,hi8(0)
+ 1332 0600 0F90      		pop __tmp_reg__
+ 1333 0602 0F90      		pop __tmp_reg__
+ 1334 0604 0F90      		pop __tmp_reg__
+ 1335 0606 0F90      		pop __tmp_reg__
+ 1337               	.LM94:
+ 1338 0608 0895      		ret
+ 1339               	/* epilogue: frame size=0 */
+ 1340               	/* epilogue: noreturn */
+ 1341               	/* epilogue end (size=0) */
+ 1342               	/* function findLink size 41 (41) */
+ 1347               	.Lscope10:
+ 1349               		.stabd	78,0,0
+ 1358               	.global	dd_data_indication
+ 1360               	dd_data_indication:
+ 1361               		.stabd	46,0,0
+ 1363               	.LM95:
+ 1364               	.LFBB11:
+ 1365               	/* prologue: frame size=0 */
+ 1366               	/* prologue end (size=0) */
+ 1368               	.LM96:
+ 1369 060a 0E94 0000 		call isa_rx_pkt_release
+ 1370               	/* epilogue: frame size=0 */
+ 1371 060e 0895      		ret
+ 1372               	/* epilogue end (size=1) */
+ 1373               	/* function dd_data_indication size 3 (2) */
+ 1375               	.Lscope11:
+ 1377               		.stabd	78,0,0
+ 1383               	.global	sendPacket
+ 1385               	sendPacket:
+ 1386               		.stabd	46,0,0
+ 1388               	.LM97:
+ 1389               	.LFBB12:
+ 1390               	/* prologue: frame size=0 */
+ 1391 0610 8F92      		push r8
+ 1392 0612 9F92      		push r9
+ 1393 0614 AF92      		push r10
+ 1394 0616 CF92      		push r12
+ 1395 0618 EF92      		push r14
+ 1396 061a 0F93      		push r16
+ 1397               	/* prologue end (size=6) */
+ 1399               	.LM98:
+ 1400 061c 3F93      		push r19
+ 1401 061e 2F93      		push r18
+ 1402 0620 4A01      		movw r8,r20
+ 1403 0622 A62E      		mov r10,r22
+ 1404 0624 CC24      		clr r12
+ 1405 0626 EE24      		clr r14
+ 1406 0628 00E0      		ldi r16,lo8(0)
+ 1407 062a 20E0      		ldi r18,lo8(0)
+ 1408 062c 40E0      		ldi r20,lo8(0)
+ 1409 062e BC01      		movw r22,r24
+ 1410 0630 80E0      		ldi r24,lo8(0)
+ 1411 0632 90E0      		ldi r25,hi8(0)
+ 1412 0634 0E94 0000 		call dd_data_request
+ 1413 0638 0F90      		pop __tmp_reg__
+ 1414 063a 0F90      		pop __tmp_reg__
+ 1415 063c 8F3F      		cpi r24,lo8(-1)
+ 1416 063e 01F4      		brne .L116
+ 1418               	.LM99:
+ 1419 0640 0E94 0000 		call printIsaError
+ 1420               	.L116:
+ 1421               	/* epilogue: frame size=0 */
+ 1422 0644 0F91      		pop r16
+ 1423 0646 EF90      		pop r14
+ 1424 0648 CF90      		pop r12
+ 1425 064a AF90      		pop r10
+ 1426 064c 9F90      		pop r9
+ 1427 064e 8F90      		pop r8
+ 1428 0650 0895      		ret
+ 1429               	/* epilogue end (size=7) */
+ 1430               	/* function sendPacket size 33 (20) */
+ 1432               	.Lscope12:
+ 1434               		.stabd	78,0,0
+ 1435               		.data
+ 1436               	.LC3:
+ 1437 0058 536C 6F74 		.string	"Slot number not in range"
+ 1437      206E 756D 
+ 1437      6265 7220 
+ 1437      6E6F 7420 
+ 1437      696E 2072 
+ 1438               		.text
+ 1444               	.global	configureSlot
+ 1446               	configureSlot:
+ 1447               		.stabd	46,0,0
+ 1449               	.LM100:
+ 1450               	.LFBB13:
+ 1451               	/* prologue: frame size=0 */
+ 1452 0652 6F92      		push r6
+ 1453 0654 7F92      		push r7
+ 1454 0656 8F92      		push r8
+ 1455 0658 9F92      		push r9
+ 1456 065a AF92      		push r10
+ 1457 065c BF92      		push r11
+ 1458 065e CF92      		push r12
+ 1459 0660 DF92      		push r13
+ 1460 0662 EF92      		push r14
+ 1461 0664 FF92      		push r15
+ 1462 0666 0F93      		push r16
+ 1463 0668 1F93      		push r17
+ 1464               	/* prologue end (size=12) */
+ 1465 066a 982E      		mov r9,r24
+ 1466 066c CB01      		movw r24,r22
+ 1467 066e 742E      		mov r7,r20
+ 1468 0670 A22E      		mov r10,r18
+ 1470               	.LM101:
+ 1471 0672 2EE3      		ldi r18,lo8(62)
+ 1472 0674 2915      		cp r18,r9
+ 1473 0676 00F4      		brsh .L118
+ 1475               	.LM102:
+ 1476 0678 80E0      		ldi r24,lo8(.LC3)
+ 1477 067a 90E0      		ldi r25,hi8(.LC3)
+ 1478 067c 9F93      		push r25
+ 1479 067e 8F93      		push r24
+ 1480 0680 0E94 0000 		call printf
+ 1482               	.LM103:
+ 1483 0684 0F90      		pop __tmp_reg__
+ 1484 0686 0F90      		pop __tmp_reg__
+ 1485 0688 00C0      		rjmp .L126
+ 1486               	.L118:
+ 1488               	.LM104:
+ 1489 068a 28E0      		ldi r18,lo8(8)
+ 1490 068c 4217      		cp r20,r18
+ 1491 068e 01F0      		breq .L121
+ 1493               	.LM105:
+ 1494 0690 1F92      		push __zero_reg__
+ 1495 0692 1F92      		push __zero_reg__
+ 1496 0694 8824      		clr r8
+ 1497 0696 CC24      		clr r12
+ 1498 0698 EE24      		clr r14
+ 1499 069a 00E0      		ldi r16,lo8(0)
+ 1500 069c 10E0      		ldi r17,lo8(0)
+ 1501 069e 20E0      		ldi r18,lo8(0)
+ 1502 06a0 30E0      		ldi r19,lo8(0)
+ 1503 06a2 40E0      		ldi r20,lo8(0)
+ 1504 06a4 50E0      		ldi r21,lo8(0)
+ 1505 06a6 60E0      		ldi r22,lo8(0)
+ 1506 06a8 70E0      		ldi r23,lo8(0)
+ 1507 06aa 0E94 0000 		call addNeighbor
+ 1508 06ae BC01      		movw r22,r24
+ 1510               	.LM106:
+ 1511 06b0 0F90      		pop __tmp_reg__
+ 1512 06b2 0F90      		pop __tmp_reg__
+ 1513 06b4 892B      		or r24,r25
+ 1514 06b6 01F0      		breq .L127
+ 1515               	.L121:
+ 1517               	.LM107:
+ 1518 06b8 472D      		mov r20,r7
+ 1519 06ba 892D      		mov r24,r9
+ 1520 06bc 0E94 0000 		call addLink
+ 1521 06c0 8F3F      		cpi r24,lo8(-1)
+ 1522 06c2 01F4      		brne .L124
+ 1523               	.L127:
+ 1525               	.LM108:
+ 1526 06c4 0E94 0000 		call printIsaError
+ 1527 06c8 00C0      		rjmp .L126
+ 1528               	.L124:
+ 1530               	.LM109:
+ 1531 06ca 092D      		mov r16,r9
+ 1532 06cc 1127      		clr r17
+ 1533 06ce 21E0      		ldi r18,lo8(1)
+ 1534 06d0 30E0      		ldi r19,lo8(0)
+ 1535 06d2 40E0      		ldi r20,lo8(0)
+ 1536 06d4 50E0      		ldi r21,lo8(0)
+ 1537 06d6 60E0      		ldi r22,lo8(0)
+ 1538 06d8 70E0      		ldi r23,lo8(0)
+ 1539 06da 80E0      		ldi r24,lo8(0)
+ 1540 06dc 90E0      		ldi r25,lo8(0)
+ 1541 06de 0E94 0000 		call __ashldi3
+ 1542 06e2 A22E      		mov r10,r18
+ 1543 06e4 B32E      		mov r11,r19
+ 1544 06e6 C42E      		mov r12,r20
+ 1545 06e8 D52E      		mov r13,r21
+ 1546 06ea E62E      		mov r14,r22
+ 1547 06ec F72E      		mov r15,r23
+ 1548 06ee 082F      		mov r16,r24
+ 1549 06f0 192F      		mov r17,r25
+ 1550 06f2 E091 0000 		lds r30,isa_slot
+ 1551 06f6 F091 0000 		lds r31,isa_slot+1
+ 1552 06fa A091 0000 		lds r26,isa_slot+2
+ 1553 06fe B091 0000 		lds r27,isa_slot+3
+ 1554 0702 9090 0000 		lds r9,isa_slot+4
+ 1555 0706 8090 0000 		lds r8,isa_slot+5
+ 1556 070a 7090 0000 		lds r7,isa_slot+6
+ 1557 070e 6090 0000 		lds r6,isa_slot+7
+ 1558 0712 2E2F      		mov r18,r30
+ 1559 0714 2A29      		or r18,r10
+ 1560 0716 3F2F      		mov r19,r31
+ 1561 0718 3B29      		or r19,r11
+ 1562 071a 4A2F      		mov r20,r26
+ 1563 071c 4C29      		or r20,r12
+ 1564 071e 5B2F      		mov r21,r27
+ 1565 0720 5D29      		or r21,r13
+ 1566 0722 692D      		mov r22,r9
+ 1567 0724 6E29      		or r22,r14
+ 1568 0726 782D      		mov r23,r8
+ 1569 0728 7F29      		or r23,r15
+ 1570 072a 872D      		mov r24,r7
+ 1571 072c 802B      		or r24,r16
+ 1572 072e 962D      		mov r25,r6
+ 1573 0730 912B      		or r25,r17
+ 1574 0732 2093 0000 		sts isa_slot,r18
+ 1575 0736 3093 0000 		sts isa_slot+1,r19
+ 1576 073a 4093 0000 		sts isa_slot+2,r20
+ 1577 073e 5093 0000 		sts isa_slot+3,r21
+ 1578 0742 6093 0000 		sts isa_slot+4,r22
+ 1579 0746 7093 0000 		sts isa_slot+5,r23
+ 1580 074a 8093 0000 		sts isa_slot+6,r24
+ 1581 074e 9093 0000 		sts isa_slot+7,r25
+ 1582               	.L126:
+ 1583               	/* epilogue: frame size=0 */
+ 1584 0752 1F91      		pop r17
+ 1585 0754 0F91      		pop r16
+ 1586 0756 FF90      		pop r15
+ 1587 0758 EF90      		pop r14
+ 1588 075a DF90      		pop r13
+ 1589 075c CF90      		pop r12
+ 1590 075e BF90      		pop r11
+ 1591 0760 AF90      		pop r10
+ 1592 0762 9F90      		pop r9
+ 1593 0764 8F90      		pop r8
+ 1594 0766 7F90      		pop r7
+ 1595 0768 6F90      		pop r6
+ 1596 076a 0895      		ret
+ 1597               	/* epilogue end (size=13) */
+ 1598               	/* function configureSlot size 141 (116) */
+ 1603               	.Lscope13:
+ 1605               		.stabd	78,0,0
+ 1606               		.comm _nrk_signal_list,4,1
+ 1607               		.comm nrk_idle_task_stk,128,1
+ 1608               		.comm nrk_kernel_stk_ptr,2,1
+ 1609               		.comm _nrk_prev_timer_val,1,1
+ 1610               		.comm _nrk_time_trigger,1,1
+ 1611               		.comm app_timer0_callback,2,1
+ 1612               		.comm app_timer0_prescale,1,1
+ 1613               		.comm error_task,1,1
+ 1614               		.comm error_num,1,1
+ 1615               		.comm dlmoLink,180,1
+ 1616               		.comm dlmoNeighbor,425,1
+ 1617               		.comm isaQueue,1320,1
+ 1618               		.comm isa_sched,25,1
+ 1619               		.comm isa_tdma_rx_mask,8,1
+ 1620               		.comm isa_tdma_tx_mask,8,1
+ 1621               		.comm isa_slot,8,1
+ 1622               		.comm isaTxQueueSize,1,1
+ 1641               	.Letext0:
+ 1642               	/* File "../../../src/net/isa/dlmo.c": code  952 = 0x03b8 ( 773), prologues  87, epilogues  92 */
+DEFINED SYMBOLS
+                            *ABS*:00000000 dlmo.c
+     /tmp/ccbtK6rL.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccbtK6rL.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccbtK6rL.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccbtK6rL.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccbtK6rL.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccbtK6rL.s:155    .text:00000000 dlmoInit
+                            *COM*:000000b4 dlmoLink
+                            *COM*:000001a9 dlmoNeighbor
+                            *COM*:00000001 isaTxQueueSize
+     /tmp/ccbtK6rL.s:203    .text:00000026 isTransmitLinkPresent
+     /tmp/ccbtK6rL.s:260    .text:00000066 isa_get_slots_until_next_wakeup
+                            *COM*:00000008 isa_slot
+     /tmp/ccbtK6rL.s:547    .text:0000024a getHighPriorityEntry
+                            *COM*:00000528 isaQueue
+     /tmp/ccbtK6rL.s:706    .text:00000322 isaFreePacket
+     /tmp/ccbtK6rL.s:738    .text:00000336 addLink
+     /tmp/ccbtK6rL.s:825    .text:00000386 enQueue
+     /tmp/ccbtK6rL.s:995    .text:00000450 dd_data_request
+     /tmp/ccbtK6rL.s:1059   .text:0000048c addNeighbor
+     /tmp/ccbtK6rL.s:1280   .text:000005b8 findLink
+     /tmp/ccbtK6rL.s:1360   .text:0000060a dd_data_indication
+     /tmp/ccbtK6rL.s:1385   .text:00000610 sendPacket
+     /tmp/ccbtK6rL.s:1446   .text:00000652 configureSlot
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000080 nrk_idle_task_stk
+                            *COM*:00000002 nrk_kernel_stk_ptr
+                            *COM*:00000001 _nrk_prev_timer_val
+                            *COM*:00000001 _nrk_time_trigger
+                            *COM*:00000002 app_timer0_callback
+                            *COM*:00000001 app_timer0_prescale
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+                            *COM*:00000019 isa_sched
+                            *COM*:00000008 isa_tdma_rx_mask
+                            *COM*:00000008 isa_tdma_tx_mask
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__udivmodhi4
+__ashldi3
+setIsaError
+memcpy
+nrk_time_get
+printf
+isa_rx_pkt_release
+printIsaError

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <avr/sleep.h>
 #include <hal.h>
+#include <dlmo.h>
 #include <isa.h>
 #include <nrk_error.h>
 #include <slip.h>
@@ -12,7 +13,7 @@
 
 
 #define MY_CHANNEL 19 
-#define MY_ID 0 //change
+#define MY_ID 1 //change
 
 #define MY_TX_SLOT  2
 #define NUM_OF_TEST_SET 16
@@ -96,6 +97,24 @@ int main ()
   return 0;
 }
 
+//*********************Making a callback function***************************************
+
+void transmitCallback1(ISA_QUEUE *entry , bool status){
+uint8_t length;
+	 isaFreePacket(entry);
+	  sprintf( &tx_buf[PKT_DATA_START],"node" );
+	  length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
+
+	  	sendPacket(4, length, tx_buf, transmitCallback1);
+}
+
+//*****************************************************************************************
+
+
+//**************************Function for received message with my destination address ********
+
+
+//********************************************************************************************
 
 void Task1()
 {
@@ -111,20 +130,19 @@ void Task1()
   uint8_t finished = 0;
 
   printf( "Task1 PID=%d\r\n",nrk_get_pid());
-printf("Gateway");
-  nrk_led_set(RED_LED);
+  printf("Gateway");
 
+  nrk_led_set(RED_LED);
   nrk_led_set(BLUE_LED);
   
   isa_set_channel_pattern(1); // must before isa_init
-  
-  //isa_set_channel_pattern(3);	
-
   isa_init (ISA_GATEWAY, MY_ID, MY_ID);//change
-
-  isa_set_schedule(ISA_GATEWAY, MY_ID);
-
+  //isa_set_schedule(ISA_GATEWAY, MY_ID);
   isa_set_channel(MY_CHANNEL);
+  dlmoInit(); 	//Initialize the Data Link Management Object
+
+  configureSlot(3,3, RX, false);
+  configureSlot(2, 4, TX_NO_ADV, false);
 
   //configAdvDAUX(1, 0, 25, 1, NULL, NULL, NULL, 2, NULL, NULL, NULL);
 
@@ -135,10 +153,6 @@ printf("Gateway");
   //slip_init (stdin, stdout, 0, 0);
 
   //while (slip_started () != 1) nrk_wait_until_next_period ();
-
- 
-  config_child_list(1);
-  config_child_list(2);
 
   
   while(!isa_ready())  nrk_wait_until_next_period(); 
@@ -156,9 +170,10 @@ printf("Gateway");
   while(1){
 
 	  //Spit out log info
-	  	  if (txCount % 1000 == 0){
+	/*  	  if (txCount % 1000 == 0){
 	  	printf ("TxCount: %d\r\nRXCount: %d\r\nPacketLoss:%d", txCount,rxCount, packetsLost);
 	  	  }
+      */
        nrk_gpio_set(NRK_DEBUG_3);
        
        if( isa_rx_pkt_check()!=0 ) {
@@ -172,20 +187,27 @@ printf("Gateway");
 
 	    //printf( "%c",local_rx_buf[PKT_DATA_START]);
 
-	    isa_rx_pkt_release();
+
 	  //  printf("\r\n");
 	}
-	
+	/*
 	if(isa_tx_pkt_check(MY_TX_SLOT)!=0){
 	  // printf("Pending TX\r\n");
 	}
-	else{
+	*/
+	//else{
+if (cnt ==0 )
+{
 	sprintf( &tx_buf[PKT_DATA_START],"node %d,%c",MY_ID,cnt++);
   	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
-  	isa_tx_pkt(tx_buf,length,configDHDR(0),MY_TX_SLOT);
+  	sendPacket(4, length, tx_buf, transmitCallback1);
+
+}
+
+  	//isa_tx_pkt(tx_buf,length,configDHDR(0),MY_TX_SLOT);
 	//printf("Len:%d\r\n",length);
   	//printf("Hello world is sent.\n\r");
-  	}
+  	//}
 
 
 	isa_wait_until_rx_or_tx ();

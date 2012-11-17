@@ -4632,53 +4632,53 @@
  4306               	/* File "../../../src/radio/cc2420/source/basic_rf.c": code 2752 = 0x0ac0 (2532), prologues 101, ep
 DEFINED SYMBOLS
                             *ABS*:00000000 basic_rf.c
-     /tmp/ccgrnLJJ.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccgrnLJJ.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccgrnLJJ.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccgrnLJJ.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccgrnLJJ.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccgrnLJJ.s:128    .text:00000000 rf_security_last_pkt_status
+     /tmp/ccF95fSY.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccF95fSY.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccF95fSY.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccF95fSY.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccF95fSY.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccF95fSY.s:128    .text:00000000 rf_security_last_pkt_status
                             *COM*:00000001 last_pkt_encrypted
-     /tmp/ccgrnLJJ.s:151    .text:00000008 rf_security_set_ctr_counter
+     /tmp/ccF95fSY.s:151    .text:00000008 rf_security_set_ctr_counter
                             *COM*:00000004 tx_ctr
-     /tmp/ccgrnLJJ.s:261    .text:00000096 rf_security_enable
+     /tmp/ccF95fSY.s:261    .text:00000096 rf_security_enable
                             *COM*:00000001 security_enable
-     /tmp/ccgrnLJJ.s:329    .text:000000e2 rf_security_disable
-     /tmp/ccgrnLJJ.s:374    .text:0000010a rf_get_sem
+     /tmp/ccF95fSY.s:329    .text:000000e2 rf_security_disable
+     /tmp/ccF95fSY.s:374    .text:0000010a rf_get_sem
                             *COM*:00000002 radio_sem
-     /tmp/ccgrnLJJ.s:396    .text:00000114 rf_addr_decode_enable
+     /tmp/ccF95fSY.s:396    .text:00000114 rf_addr_decode_enable
                             *COM*:00000002 mdmctrl0
-     /tmp/ccgrnLJJ.s:445    .text:0000014a rf_addr_decode_disable
-     /tmp/ccgrnLJJ.s:494    .text:00000180 rf_auto_ack_enable
+     /tmp/ccF95fSY.s:445    .text:0000014a rf_addr_decode_disable
+     /tmp/ccF95fSY.s:494    .text:00000180 rf_auto_ack_enable
                             *COM*:00000001 auto_ack_enable
-     /tmp/ccgrnLJJ.s:547    .text:000001bc rf_auto_ack_disable
-     /tmp/ccgrnLJJ.s:599    .text:000001f6 rf_busy
-     /tmp/ccgrnLJJ.s:630    .text:0000020a rf_rx_check_fifop
-     /tmp/ccgrnLJJ.s:660    .text:0000021c rf_rx_check_sfd
-     /tmp/ccgrnLJJ.s:691    .text:00000230 rf_rx_packet
+     /tmp/ccF95fSY.s:547    .text:000001bc rf_auto_ack_disable
+     /tmp/ccF95fSY.s:599    .text:000001f6 rf_busy
+     /tmp/ccF95fSY.s:630    .text:0000020a rf_rx_check_fifop
+     /tmp/ccF95fSY.s:660    .text:0000021c rf_rx_check_sfd
+     /tmp/ccF95fSY.s:691    .text:00000230 rf_rx_packet
                             *COM*:00000001 rx_ready
-     /tmp/ccgrnLJJ.s:728    .text:0000024e rf_flush_rx_fifo
-     /tmp/ccgrnLJJ.s:768    .text:0000026c rf_carrier_off
-     /tmp/ccgrnLJJ.s:808    .text:00000294 rf_carrier_on
-     /tmp/ccgrnLJJ.s:848    .text:000002bc rf_data_mode
-     /tmp/ccgrnLJJ.s:932    .text:00000326 rf_test_mode
-     /tmp/ccgrnLJJ.s:1019   .text:00000394 rf_set_cca_thresh
-     /tmp/ccgrnLJJ.s:1089   .text:000003e6 rf_polling_rx_packet
+     /tmp/ccF95fSY.s:728    .text:0000024e rf_flush_rx_fifo
+     /tmp/ccF95fSY.s:768    .text:0000026c rf_carrier_off
+     /tmp/ccF95fSY.s:808    .text:00000294 rf_carrier_on
+     /tmp/ccF95fSY.s:848    .text:000002bc rf_data_mode
+     /tmp/ccF95fSY.s:932    .text:00000326 rf_test_mode
+     /tmp/ccF95fSY.s:1019   .text:00000394 rf_set_cca_thresh
+     /tmp/ccF95fSY.s:1089   .text:000003e6 rf_polling_rx_packet
                             *COM*:00000009 rfSettings
                             *COM*:00000004 rx_ctr
-     /tmp/ccgrnLJJ.s:1908   .text:000008d0 rf_rx_off
-     /tmp/ccgrnLJJ.s:1954   .text:00000900 rf_polling_rx_on
-     /tmp/ccgrnLJJ.s:2011   .text:00000940 rf_rx_on
-     /tmp/ccgrnLJJ.s:2069   .text:00000980 rf_tx_power
-     /tmp/ccgrnLJJ.s:2136   .text:000009ce rf_tx_packet
-     /tmp/ccgrnLJJ.s:2799   .text:00000d2c rf_tx_tdma_packet
-     /tmp/ccgrnLJJ.s:3411   .text:0000106a rf_addr_decode_set_my_mac
-     /tmp/ccgrnLJJ.s:3498   .text:000010e0 rf_security_set_key
-     /tmp/ccgrnLJJ.s:3804   .text:000012ba rf_set_rx
-     /tmp/ccgrnLJJ.s:3871   .text:0000130e rf_set_channel
-     /tmp/ccgrnLJJ.s:3910   .text:00001334 rf_init
-     /tmp/ccgrnLJJ.s:4261   .progmem.data:0000002d __c.2674
-     /tmp/ccgrnLJJ.s:4257   .progmem.data:00000000 __c.2736
+     /tmp/ccF95fSY.s:1908   .text:000008d0 rf_rx_off
+     /tmp/ccF95fSY.s:1954   .text:00000900 rf_polling_rx_on
+     /tmp/ccF95fSY.s:2011   .text:00000940 rf_rx_on
+     /tmp/ccF95fSY.s:2069   .text:00000980 rf_tx_power
+     /tmp/ccF95fSY.s:2136   .text:000009ce rf_tx_packet
+     /tmp/ccF95fSY.s:2799   .text:00000d2c rf_tx_tdma_packet
+     /tmp/ccF95fSY.s:3411   .text:0000106a rf_addr_decode_set_my_mac
+     /tmp/ccF95fSY.s:3498   .text:000010e0 rf_security_set_key
+     /tmp/ccF95fSY.s:3804   .text:000012ba rf_set_rx
+     /tmp/ccF95fSY.s:3871   .text:0000130e rf_set_channel
+     /tmp/ccF95fSY.s:3910   .text:00001334 rf_init
+     /tmp/ccF95fSY.s:4261   .progmem.data:0000002d __c.2674
+     /tmp/ccF95fSY.s:4257   .progmem.data:00000000 __c.2736
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr

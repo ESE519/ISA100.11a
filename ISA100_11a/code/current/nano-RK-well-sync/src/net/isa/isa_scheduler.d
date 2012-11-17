@@ -14,5 +14,5 @@ isa_scheduler.o isa_scheduler.d : ../../../src/net/isa/isa_scheduler.c \
   ../../../src/platform/firefly2_2/include/nrk_platform_time.h \
   ../../../src/net/isa/isa_scheduler.h ../../../src/kernel/include/nrk.h \
   ../../../src/kernel/hal/include/nrk_cpu.h nrk_cfg.h \
-  ../../../src/kernel/include/nrk_task.h \
+  ../../../src/kernel/include/nrk_task.h ../../../src/net/isa/dlmo.h \
   ../../../src/kernel/include/nrk_error.h

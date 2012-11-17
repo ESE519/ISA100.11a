@@ -126,12 +126,12 @@
  182               	/* File "../../../src/radio/cc2420/source/hal_rf_set_channel.c": code   37 = 0x0025 (  36), prologu
 DEFINED SYMBOLS
                             *ABS*:00000000 hal_rf_set_channel.c
-     /tmp/ccR17iOI.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccR17iOI.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccR17iOI.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccR17iOI.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccR17iOI.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccR17iOI.s:110    .text:00000000 halRfSetChannel
+     /tmp/ccDJi1lU.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccDJi1lU.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccDJi1lU.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccDJi1lU.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccDJi1lU.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccDJi1lU.s:110    .text:00000000 halRfSetChannel
                             *COM*:00000004 _nrk_signal_list
 
 UNDEFINED SYMBOLS

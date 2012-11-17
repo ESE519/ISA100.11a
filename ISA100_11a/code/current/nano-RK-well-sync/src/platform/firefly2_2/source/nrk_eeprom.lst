@@ -786,21 +786,21 @@
  722               	/* File "../../../src/platform/firefly2_2/source/nrk_eeprom.c": code  156 = 0x009c ( 147), prologue
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_eeprom.c
-     /tmp/ccVTpivc.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccVTpivc.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccVTpivc.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccVTpivc.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccVTpivc.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccVTpivc.s:115    .text:00000000 read_eeprom_current_image_checksum
-     /tmp/ccVTpivc.s:164    .text:00000014 write_eeprom_current_image_checksum
-     /tmp/ccVTpivc.s:208    .text:00000028 nrk_eeprom_read_byte
-     /tmp/ccVTpivc.s:251    .text:00000034 read_eeprom_mac_address
-     /tmp/ccVTpivc.s:415    .text:00000086 read_eeprom_channel
-     /tmp/ccVTpivc.s:464    .text:0000009a read_eeprom_load_img_pages
-     /tmp/ccVTpivc.s:513    .text:000000ae read_eeprom_aes_key
-     /tmp/ccVTpivc.s:578    .text:000000d6 nrk_eeprom_write_byte
-     /tmp/ccVTpivc.s:613    .text:000000e0 write_eeprom_load_img_pages
-     /tmp/ccVTpivc.s:659    .text:000000f4 write_eeprom_aes_key
+     /tmp/ccqlbCgg.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccqlbCgg.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccqlbCgg.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccqlbCgg.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccqlbCgg.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccqlbCgg.s:115    .text:00000000 read_eeprom_current_image_checksum
+     /tmp/ccqlbCgg.s:164    .text:00000014 write_eeprom_current_image_checksum
+     /tmp/ccqlbCgg.s:208    .text:00000028 nrk_eeprom_read_byte
+     /tmp/ccqlbCgg.s:251    .text:00000034 read_eeprom_mac_address
+     /tmp/ccqlbCgg.s:415    .text:00000086 read_eeprom_channel
+     /tmp/ccqlbCgg.s:464    .text:0000009a read_eeprom_load_img_pages
+     /tmp/ccqlbCgg.s:513    .text:000000ae read_eeprom_aes_key
+     /tmp/ccqlbCgg.s:578    .text:000000d6 nrk_eeprom_write_byte
+     /tmp/ccqlbCgg.s:613    .text:000000e0 write_eeprom_load_img_pages
+     /tmp/ccqlbCgg.s:659    .text:000000f4 write_eeprom_aes_key
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000001 error_task
                             *COM*:00000001 error_num

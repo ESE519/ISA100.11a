@@ -34,35 +34,19 @@
 #include <basic_rf.h>
 #include <nrk.h>
 #include <nrk_cfg.h>
+#include <dlmo.h>
 
 /*For isa link define */
 #define MAX_ISA_GLOBAL_SLOTS 100
 #define ISA_STACK_SIZE 128 
 #define ISA_TOKEN_TIMEOUT 10000
 
-/* For isa link*/
 
-typedef enum{
-    DHDR_INDEX=0,
-    DHR_INDEX=0,
-    DMXHR_INDEX=1,
-    DAUX_INDEX=5,
-    DROUT_INDEX=34,
-    DADDR_INDEX=37,
-    //SLOT_INDEX=6,
-    SLOT_INDEX=1,
-    SRC_INDEX=2,//change
-    OFFSET_HIGH=1,
-    OFFSET_LOW=2,
-    PKT_DATA_START=3
-    //PKT_DATA_START=42
-} isa_pkt_field_t;
 
 uint8_t isa_id;
 uint8_t isa_clk_src_id;//change
 uint8_t tx_slot_from_join[4]; //change
 uint32_t isa_rx_data_ready;
-uint32_t isa_tx_data_ready;
 uint32_t child_list; //FIXME change
 uint8_t DHDR;
 uint16_t last_slot;
@@ -72,13 +56,18 @@ extern uint16_t txCount;
 extern uint16_t rxCount;
 extern uint16_t packetsLost;
 
+/*
 typedef struct {
     int8_t length;
     int8_t DHDR;
     uint8_t *pPayload;
 } ISA_TX_INFO;
 
-volatile ISA_TX_INFO	isa_tx_info[ISA_SLOTS_PER_FRAME];
+
+
+volatile ISA_TX_INFO isa_tx_info[ISA_SLOTS_PER_FRAME];
+*/
+
 
 typedef struct {
     uint16_t mac_addr;
@@ -124,7 +113,7 @@ uint8_t isa_init(isa_node_mode_t mode,uint8_t id, uint8_t src_id);
 void isa_nw_task();
 void isa_set_channel (uint8_t chan);
 int8_t isa_ready();
-int8_t configDHDR(uint8_t);
+int8_t configDHDR(DLMO_LINK * link);
 
 /********************* waiting function ***********************************/
 int8_t isa_wait_until_rx_pkt ();
@@ -132,10 +121,10 @@ int8_t isa_wait_until_rx_or_tx ();
 
 /********************* rx and tx function ***********************************/
 int8_t isa_rx_pkt_set_buffer(uint8_t *buf, uint8_t size);
-void _isa_rx(uint8_t slot);
+void _isa_rx(DLMO_LINK * link,uint8_t slot);
 int8_t isa_rx_pkt_check();
 void isa_rx_pkt_release();
-void _isa_tx (uint8_t slot);
+void _isa_tx (DLMO_LINK* link, uint16_t slot);
 int8_t isa_tx_pkt (uint8_t *tx_buf, uint8_t len, uint8_t DHDR, uint8_t slot);
 uint8_t* isa_rx_pkt_get (uint8_t *len, int8_t *rssi);
 int8_t isa_tx_pkt_check(uint8_t slot);

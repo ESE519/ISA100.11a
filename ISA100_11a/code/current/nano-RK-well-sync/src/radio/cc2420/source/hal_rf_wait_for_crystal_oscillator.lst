@@ -97,12 +97,12 @@
  160               	/* File "../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c": code   18 = 0x0012
 DEFINED SYMBOLS
                             *ABS*:00000000 hal_rf_wait_for_crystal_oscillator.c
-     /tmp/ccQ4VEYK.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccQ4VEYK.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccQ4VEYK.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccQ4VEYK.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccQ4VEYK.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccQ4VEYK.s:109    .text:00000000 halRfWaitForCrystalOscillator
+     /tmp/ccHYqF3W.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccHYqF3W.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccHYqF3W.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccHYqF3W.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccHYqF3W.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccHYqF3W.s:109    .text:00000000 halRfWaitForCrystalOscillator
                             *COM*:00000004 _nrk_signal_list
 
 UNDEFINED SYMBOLS

@@ -708,40 +708,40 @@
  710               	/* File "../../../src/kernel/source/nrk_error.c": code  234 = 0x00ea ( 227), prologues   1, epilogu
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_error.c
-     /tmp/cc0g5oci.s:2      *ABS*:0000003f __SREG__
-     /tmp/cc0g5oci.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cc0g5oci.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cc0g5oci.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cc0g5oci.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cc0g5oci.s:136    .text:00000000 _nrk_errno_set
-     /tmp/cc0g5oci.s:159    .text:0000000c nrk_errno_get
-     /tmp/cc0g5oci.s:185    .text:0000001a nrk_error_get
+     /tmp/ccHaeOro.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccHaeOro.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccHaeOro.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccHaeOro.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccHaeOro.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccHaeOro.s:136    .text:00000000 _nrk_errno_set
+     /tmp/ccHaeOro.s:159    .text:0000000c nrk_errno_get
+     /tmp/ccHaeOro.s:185    .text:0000001a nrk_error_get
                             *COM*:00000001 error_num
                             *COM*:00000001 error_task
-     /tmp/cc0g5oci.s:232    .text:0000003a nrk_error_print
-     /tmp/cc0g5oci.s:666    .progmem.data:000001bc __c.2324
-     /tmp/cc0g5oci.s:662    .progmem.data:000001b8 __c.2326
-     /tmp/cc0g5oci.s:658    .progmem.data:00000191 __c.2329
-     /tmp/cc0g5oci.s:654    .progmem.data:0000017d __c.2333
-     /tmp/cc0g5oci.s:650    .progmem.data:00000167 __c.2336
-     /tmp/cc0g5oci.s:646    .progmem.data:0000014c __c.2339
-     /tmp/cc0g5oci.s:642    .progmem.data:00000136 __c.2342
-     /tmp/cc0g5oci.s:638    .progmem.data:0000011e __c.2345
-     /tmp/cc0g5oci.s:634    .progmem.data:0000010b __c.2348
-     /tmp/cc0g5oci.s:630    .progmem.data:000000f8 __c.2351
-     /tmp/cc0g5oci.s:626    .progmem.data:000000da __c.2354
-     /tmp/cc0g5oci.s:622    .progmem.data:000000b5 __c.2357
-     /tmp/cc0g5oci.s:618    .progmem.data:000000a9 __c.2360
-     /tmp/cc0g5oci.s:614    .progmem.data:0000008e __c.2363
-     /tmp/cc0g5oci.s:610    .progmem.data:0000007f __c.2366
-     /tmp/cc0g5oci.s:606    .progmem.data:0000006e __c.2369
-     /tmp/cc0g5oci.s:602    .progmem.data:0000005a __c.2372
-     /tmp/cc0g5oci.s:598    .progmem.data:0000003a __c.2375
-     /tmp/cc0g5oci.s:594    .progmem.data:00000022 __c.2378
-     /tmp/cc0g5oci.s:590    .progmem.data:00000007 __c.2381
-     /tmp/cc0g5oci.s:586    .progmem.data:00000000 __c.2384
-     /tmp/cc0g5oci.s:528    .text:0000018a nrk_kernel_error_add
-     /tmp/cc0g5oci.s:556    .text:00000198 nrk_error_add
+     /tmp/ccHaeOro.s:232    .text:0000003a nrk_error_print
+     /tmp/ccHaeOro.s:666    .progmem.data:000001bc __c.2324
+     /tmp/ccHaeOro.s:662    .progmem.data:000001b8 __c.2326
+     /tmp/ccHaeOro.s:658    .progmem.data:00000191 __c.2329
+     /tmp/ccHaeOro.s:654    .progmem.data:0000017d __c.2333
+     /tmp/ccHaeOro.s:650    .progmem.data:00000167 __c.2336
+     /tmp/ccHaeOro.s:646    .progmem.data:0000014c __c.2339
+     /tmp/ccHaeOro.s:642    .progmem.data:00000136 __c.2342
+     /tmp/ccHaeOro.s:638    .progmem.data:0000011e __c.2345
+     /tmp/ccHaeOro.s:634    .progmem.data:0000010b __c.2348
+     /tmp/ccHaeOro.s:630    .progmem.data:000000f8 __c.2351
+     /tmp/ccHaeOro.s:626    .progmem.data:000000da __c.2354
+     /tmp/ccHaeOro.s:622    .progmem.data:000000b5 __c.2357
+     /tmp/ccHaeOro.s:618    .progmem.data:000000a9 __c.2360
+     /tmp/ccHaeOro.s:614    .progmem.data:0000008e __c.2363
+     /tmp/ccHaeOro.s:610    .progmem.data:0000007f __c.2366
+     /tmp/ccHaeOro.s:606    .progmem.data:0000006e __c.2369
+     /tmp/ccHaeOro.s:602    .progmem.data:0000005a __c.2372
+     /tmp/ccHaeOro.s:598    .progmem.data:0000003a __c.2375
+     /tmp/ccHaeOro.s:594    .progmem.data:00000022 __c.2378
+     /tmp/ccHaeOro.s:590    .progmem.data:00000007 __c.2381
+     /tmp/ccHaeOro.s:586    .progmem.data:00000000 __c.2384
+     /tmp/ccHaeOro.s:528    .text:0000018a nrk_kernel_error_add
+     /tmp/ccHaeOro.s:556    .text:00000198 nrk_error_add
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr
