@@ -27,9 +27,9 @@
   14:main.c        **** 
   15:main.c        **** //#define MY_TX_SLOT_SYNC  2
   16:main.c        **** //#define s  17
-  17:main.c        **** #define MY_RX_SLOT  2
-  18:main.c        **** #define MY_TX_SLOT  7
-  19:main.c        **** #define MY_TX_SLOT1  8
+  17:main.c        **** //#define MY_RX_SLOT  2
+  18:main.c        **** //#define MY_TX_SLOT  7
+  19:main.c        **** //#define MY_TX_SLOT1  8
   20:main.c        **** 
   21:main.c        **** 
   22:main.c        **** #define MY_CLK_SRC_ID  3
@@ -115,8 +115,8 @@
  102:main.c        ****   
  103:main.c        ****   dlmoInit(); 	//Initialize the Data Link Management Object
  104:main.c        **** 
- 105:main.c        ****   //configureSlot(5,1, RX, false);
- 106:main.c        ****   configureSlot(8,1, RX, false);
+ 105:main.c        ****   configureSlot(8,1, RX, false);
+ 106:main.c        ****   //configureSlot(9,1, RX, false);
  107:main.c        ****   configureSlot(9, 3, TX_NO_ADV, true);
  108:main.c        ****   //configureSlot(8, 4, TX_NO_ADV, false);
  109:main.c        ****  // isa_set_schedule(ISA_REPEATER, MY_CLK_SRC_ID);
@@ -148,7 +148,7 @@
  135:main.c        **** //Spit out log info
  136:main.c        **** 
  137:main.c        **** 	  	  if (txCount % 1000 == 0){
- 138:main.c        **** 	  	printf ("TxCount: %d\r\nRXCount: %d\r\nPacketLoss:%d", txCount,rxCount, packetsLost);
+ 138:main.c        **** 	  	printf ("Tx: %d\r\nRX: %d\r\nPL:%d", txCount,rxCount, packetsLost);
  139:main.c        **** 	  	  }
  140:main.c        **** 
  141:main.c        **** //nrk_gpio_toggle(NRK_DEBUG_0);
@@ -202,8 +202,8 @@
  189:main.c        **** 	isa_wait_until_rx_or_tx ();*/
  190:main.c        **** 
  191:main.c        ****     //   }
- 192:main.c        **** 
- 193:main.c        ****        isa_wait_until_rx_or_tx ();
+ 192:main.c        ****     	   nrk_terminate_task();
+ 193:main.c        ****      //  isa_wait_until_rx_or_tx ();
  194:main.c        ****       // 	putchar('\n');
  195:main.c        ****       // 	putchar('\r');
  196:main.c        ****   }
@@ -227,8 +227,8 @@
  161 0008 8093 0000 		sts TaskOne+5,r24
  206:main.c        ****   TaskOne.Ptos = (void *) &Stack1[NRK_APP_STACKSIZE-1];
  163               	.LM2:
- 164 000c 80E0      		ldi r24,lo8(Stack1+127)
- 165 000e 90E0      		ldi r25,hi8(Stack1+127)
+ 164 000c 80E0      		ldi r24,lo8(Stack1+255)
+ 165 000e 90E0      		ldi r25,hi8(Stack1+255)
  166 0010 9093 0000 		sts (TaskOne+1)+1,r25
  167 0014 8093 0000 		sts TaskOne+1,r24
  207:main.c        ****   TaskOne.Pbos = (void *) &Stack1[0];
@@ -325,13 +325,13 @@
  254      7421 0A0D 
  254      00
  255               	.LC2:
- 256 001c 5478 436F 		.string	"TxCount: %d\r\nRXCount: %d\r\nPacketLoss:%d"
- 256      756E 743A 
- 256      2025 640D 
- 256      0A52 5843 
- 256      6F75 6E74 
+ 256 001c 5478 3A20 		.string	"Tx: %d\r\nRX: %d\r\nPL:%d"
+ 256      2564 0D0A 
+ 256      5258 3A20 
+ 256      2564 0D0A 
+ 256      504C 3A25 
  257               	.LC3:
- 258 0044 3200      		.string	"2"
+ 258 0032 3200      		.string	"2"
  259               		.text
  261               	.global	Task1
  263               	Task1:
@@ -536,7 +536,7 @@
  487 0236 3394      		inc r3
  488               	.L12:
  490               	.LM41:
- 491 0238 0E94 0000 		call isa_wait_until_rx_or_tx
+ 491 0238 0E94 0000 		call nrk_terminate_task
  492 023c 00C0      		rjmp .L7
  493               	/* epilogue: frame size=2 */
  494               	/* epilogue: noreturn */
@@ -610,7 +610,7 @@
  587               		.stabd	78,0,0
  588               		.data
  589               	.LC4:
- 590 0046 6E6F 6465 		.string	"node"
+ 590 0034 6E6F 6465 		.string	"node"
  590      00
  591               		.text
  595               	.global	transmitCallback1
@@ -690,7 +690,7 @@
  673               		.comm _isa_join_ok,1,1
  674               		.comm error_task,1,1
  675               		.comm error_num,1,1
- 676               		.comm Stack1,128,1
+ 676               		.comm Stack1,256,1
  677               		.comm TaskOne,35,1
  678               		.comm tx_buf,116,1
  679               		.comm rx_buf,116,1
@@ -703,21 +703,21 @@
  720               	/* File "main.c": code  369 = 0x0171 ( 332), prologues  31, epilogues   6 */
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-     /tmp/cc5S9acv.s:2      *ABS*:0000003f __SREG__
-     /tmp/cc5S9acv.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cc5S9acv.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cc5S9acv.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cc5S9acv.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cc5S9acv.s:149    .text:00000000 nrk_create_taskset
-     /tmp/cc5S9acv.s:263    .text:000000ba Task1
+     /tmp/ccOFiliA.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccOFiliA.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccOFiliA.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccOFiliA.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccOFiliA.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccOFiliA.s:149    .text:00000000 nrk_create_taskset
+     /tmp/ccOFiliA.s:263    .text:000000ba Task1
                             *COM*:00000023 TaskOne
-                            *COM*:00000080 Stack1
-     /tmp/cc5S9acv.s:647    .progmem.data:00000000 __c.2496
+                            *COM*:00000100 Stack1
+     /tmp/ccOFiliA.s:647    .progmem.data:00000000 __c.2496
                             *COM*:00000074 rx_buf
                             *COM*:00000074 tx_buf
-     /tmp/cc5S9acv.s:597    .text:000002a6 transmitCallback1
-     /tmp/cc5S9acv.s:509    .text:0000023e main
-     /tmp/cc5S9acv.s:651    .progmem.data:0000000e __c.2456
+     /tmp/ccOFiliA.s:597    .text:000002a6 transmitCallback1
+     /tmp/ccOFiliA.s:509    .text:0000023e main
+     /tmp/ccOFiliA.s:651    .progmem.data:0000000e __c.2456
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr
@@ -771,7 +771,7 @@ isa_rx_pkt_get
 isa_rx_pkt_release
 strcpy
 sendPacket
-isa_wait_until_rx_or_tx
+nrk_terminate_task
 __stack
 nrk_setup_ports
 nrk_setup_uart

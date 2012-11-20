@@ -487,8 +487,8 @@ if (pRTI->cca == TRUE)
 	 //nrk_gpio_set(DEBUG_0);
 
     // get the high speed timer value
-nrk_gpio_set(NRK_DEBUG_0);
-    *tx_start_time = (volatile)TCNT1;
+    nrk_gpio_set(NRK_DEBUG_0);
+
     // Fill in the rest of the packet now
     FASTSPI_WRITE_FIFO((uint8_t*) pRTI->pPayload, pRTI->length);  // Payload
     FASTSPI_WRITE_FIFO((uint8_t*) &checksum, 1);         // Checksum
@@ -500,6 +500,9 @@ nrk_gpio_set(NRK_DEBUG_0);
    // Wait for the transmission to begin before exiting (makes sure that this function cannot be called
 	// a second time, and thereby cancelling the first transmission (observe the FIFOP + SFD test above).
 	while (!SFD_IS_1);
+	 *tx_start_time = (volatile)TCNT1;
+	    nrk_gpio_set(NRK_DEBUG_2);
+	    nrk_gpio_clr(NRK_DEBUG_2);
 	success = TRUE;
 	// Turn interrupts back on
 //	ENABLE_GLOBAL_INT();

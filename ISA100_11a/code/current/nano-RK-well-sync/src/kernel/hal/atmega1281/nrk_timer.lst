@@ -1176,39 +1176,39 @@
  1189               	/* File "../../../src/kernel/hal/atmega1281/nrk_timer.c": code  519 = 0x0207 ( 401), prologues  62,
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_timer.c
-     /tmp/cctj4GTW.s:2      *ABS*:0000003f __SREG__
-     /tmp/cctj4GTW.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cctj4GTW.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cctj4GTW.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cctj4GTW.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cctj4GTW.s:116    .text:00000000 nrk_spin_wait_us
-     /tmp/cctj4GTW.s:157    .text:0000000e _nrk_high_speed_timer_stop
-     /tmp/cctj4GTW.s:178    .text:00000014 _nrk_high_speed_timer_start
-     /tmp/cctj4GTW.s:200    .text:0000001c _nrk_high_speed_timer_reset
-     /tmp/cctj4GTW.s:227    .text:0000002c _nrk_high_speed_timer_get
-     /tmp/cctj4GTW.s:276    .text:00000062 _nrk_os_timer_stop
-     /tmp/cctj4GTW.s:310    .text:00000078 _nrk_os_timer_set
-     /tmp/cctj4GTW.s:331    .text:0000007e _nrk_os_timer_start
-     /tmp/cctj4GTW.s:360    .text:00000090 _nrk_os_timer_reset
+     /tmp/ccftJ7s4.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccftJ7s4.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccftJ7s4.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccftJ7s4.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccftJ7s4.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccftJ7s4.s:116    .text:00000000 nrk_spin_wait_us
+     /tmp/ccftJ7s4.s:157    .text:0000000e _nrk_high_speed_timer_stop
+     /tmp/ccftJ7s4.s:178    .text:00000014 _nrk_high_speed_timer_start
+     /tmp/ccftJ7s4.s:200    .text:0000001c _nrk_high_speed_timer_reset
+     /tmp/ccftJ7s4.s:227    .text:0000002c _nrk_high_speed_timer_get
+     /tmp/ccftJ7s4.s:276    .text:00000062 _nrk_os_timer_stop
+     /tmp/ccftJ7s4.s:310    .text:00000078 _nrk_os_timer_set
+     /tmp/ccftJ7s4.s:331    .text:0000007e _nrk_os_timer_start
+     /tmp/ccftJ7s4.s:360    .text:00000090 _nrk_os_timer_reset
                             *COM*:00000001 _nrk_time_trigger
                             *COM*:00000001 _nrk_prev_timer_val
-     /tmp/cctj4GTW.s:392    .text:000000a4 _nrk_get_next_wakeup
-     /tmp/cctj4GTW.s:418    .text:000000ae _nrk_set_next_wakeup
-     /tmp/cctj4GTW.s:441    .text:000000b6 nrk_timer_int_stop
-     /tmp/cctj4GTW.s:472    .text:000000c4 nrk_timer_int_reset
-     /tmp/cctj4GTW.s:510    .text:000000dc nrk_timer_int_read
-     /tmp/cctj4GTW.s:546    .text:000000f0 nrk_timer_int_start
-     /tmp/cctj4GTW.s:587    .text:00000106 nrk_timer_int_configure
+     /tmp/ccftJ7s4.s:392    .text:000000a4 _nrk_get_next_wakeup
+     /tmp/ccftJ7s4.s:418    .text:000000ae _nrk_set_next_wakeup
+     /tmp/ccftJ7s4.s:441    .text:000000b6 nrk_timer_int_stop
+     /tmp/ccftJ7s4.s:472    .text:000000c4 nrk_timer_int_reset
+     /tmp/ccftJ7s4.s:510    .text:000000dc nrk_timer_int_read
+     /tmp/ccftJ7s4.s:546    .text:000000f0 nrk_timer_int_start
+     /tmp/ccftJ7s4.s:587    .text:00000106 nrk_timer_int_configure
                             *COM*:00000001 app_timer0_prescale
                             *COM*:00000002 app_timer0_callback
-     /tmp/cctj4GTW.s:694    .text:0000018c _nrk_os_timer_get
-     /tmp/cctj4GTW.s:718    .text:00000194 __vector_15
-     /tmp/cctj4GTW.s:737    .text:00000194 __vector_13
-     /tmp/cctj4GTW.s:808    .text:000001fa __vector_17
-     /tmp/cctj4GTW.s:835    .text:0000020e __vector_32
-     /tmp/cctj4GTW.s:903    .text:0000026a __vector_default
-     /tmp/cctj4GTW.s:947    .text:00000296 nrk_high_speed_timer_wait
-     /tmp/cctj4GTW.s:1068   .text:00000322 _nrk_setup_timer
+     /tmp/ccftJ7s4.s:694    .text:0000018c _nrk_os_timer_get
+     /tmp/ccftJ7s4.s:718    .text:00000194 __vector_15
+     /tmp/ccftJ7s4.s:737    .text:00000194 __vector_13
+     /tmp/ccftJ7s4.s:808    .text:000001fa __vector_17
+     /tmp/ccftJ7s4.s:835    .text:0000020e __vector_32
+     /tmp/ccftJ7s4.s:903    .text:0000026a __vector_default
+     /tmp/ccftJ7s4.s:947    .text:00000296 nrk_high_speed_timer_wait
+     /tmp/ccftJ7s4.s:1068   .text:00000322 _nrk_setup_timer
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000001 error_task
                             *COM*:00000001 error_num

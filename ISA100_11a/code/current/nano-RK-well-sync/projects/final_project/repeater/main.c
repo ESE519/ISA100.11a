@@ -14,9 +14,9 @@
 
 //#define MY_TX_SLOT_SYNC  2
 //#define s  17
-#define MY_RX_SLOT  2
-#define MY_TX_SLOT  7
-#define MY_TX_SLOT1  8
+//#define MY_RX_SLOT  2
+//#define MY_TX_SLOT  7
+//#define MY_TX_SLOT1  8
 
 
 #define MY_CLK_SRC_ID  3
@@ -102,8 +102,8 @@ void Task1()
   
   dlmoInit(); 	//Initialize the Data Link Management Object
 
-  //configureSlot(5,1, RX, false);
   configureSlot(8,1, RX, false);
+  //configureSlot(9,1, RX, false);
   configureSlot(9, 3, TX_NO_ADV, true);
   //configureSlot(8, 4, TX_NO_ADV, false);
  // isa_set_schedule(ISA_REPEATER, MY_CLK_SRC_ID);
@@ -135,7 +135,7 @@ void Task1()
 //Spit out log info
 
 	  	  if (txCount % 1000 == 0){
-	  	printf ("TxCount: %d\r\nRXCount: %d\r\nPacketLoss:%d", txCount,rxCount, packetsLost);
+	  	printf ("Tx: %d\r\nRX: %d\r\nPL:%d", txCount,rxCount, packetsLost);
 	  	  }
 
 //nrk_gpio_toggle(NRK_DEBUG_0);
@@ -189,8 +189,8 @@ void Task1()
 	isa_wait_until_rx_or_tx ();*/
 
     //   }
-
-       isa_wait_until_rx_or_tx ();
+    	   nrk_terminate_task();
+     //  isa_wait_until_rx_or_tx ();
       // 	putchar('\n');
       // 	putchar('\r');
   }

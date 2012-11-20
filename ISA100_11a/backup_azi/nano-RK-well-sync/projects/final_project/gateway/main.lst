@@ -1,0 +1,1496 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 145               	.global	pkt_record_check
+ 147               	pkt_record_check:
+ 148               		.stabd	46,0,0
+   1:main.c        **** #include <nrk.h>
+   2:main.c        **** #include <include.h>
+   3:main.c        **** #include <ulib.h>
+   4:main.c        **** #include <stdio.h>
+   5:main.c        **** #include <avr/sleep.h>
+   6:main.c        **** #include <hal.h>
+   7:main.c        **** #include <dlmo.h>
+   8:main.c        **** #include <isa.h>
+   9:main.c        **** #include <nrk_error.h>
+  10:main.c        **** #include <slip.h>
+  11:main.c        **** 
+  12:main.c        **** //#include <sys/time.h>
+  13:main.c        **** 
+  14:main.c        **** 
+  15:main.c        **** #define MY_CHANNEL 19 
+  16:main.c        **** #define MY_ID 0 //change
+  17:main.c        **** 
+  18:main.c        **** #define MY_TX_SLOT  2
+  19:main.c        **** #define NUM_OF_TEST_SET 16
+  20:main.c        **** #define MAX_SLIP_BUF 17
+  21:main.c        **** #define NUM_OF_NODES 3
+  22:main.c        **** //#define JOIN_TX_SLOT_START 22
+  23:main.c        **** //#define MY_RX_SLOT  15
+  24:main.c        **** #define MY_RX_SLOT  3//  change for test
+  25:main.c        **** 
+  26:main.c        **** #define CLOCK_CORRECTION_REQUIRED;
+  27:main.c        **** 
+  28:main.c        **** 
+  29:main.c        **** NRK_STK Stack1[NRK_APP_STACKSIZE];
+  30:main.c        **** nrk_task_type TaskOne;
+  31:main.c        **** void Task1(void);
+  32:main.c        **** 
+  33:main.c        **** NRK_STK Stack2[NRK_APP_STACKSIZE];
+  34:main.c        **** nrk_task_type TaskTwo;
+  35:main.c        **** void Task2 (void);
+  36:main.c        **** 
+  37:main.c        **** void nrk_create_taskset();
+  38:main.c        **** void packet_measurement_better(uint8_t * local_rx_buf);
+  39:main.c        **** 
+  40:main.c        **** /*Buffers*/
+  41:main.c        **** uint8_t tx_buf[RF_MAX_PAYLOAD_SIZE];
+  42:main.c        **** uint8_t rx_buf[RF_MAX_PAYLOAD_SIZE];
+  43:main.c        **** uint8_t slip_tx_buf[MAX_SLIP_BUF];
+  44:main.c        **** uint8_t slip_rx_buf[MAX_SLIP_BUF];
+  45:main.c        **** 
+  46:main.c        **** /*packet evaluation related*/
+  47:main.c        **** uint8_t pkt_measure[NUM_OF_NODES][NUM_OF_TEST_SET];
+  48:main.c        **** uint8_t sendFlag;
+  49:main.c        **** uint8_t frame_cnt[NUM_OF_NODES];  //add 1 every 8 packets
+  50:main.c        **** uint8_t pkt_cnt[NUM_OF_NODES];
+  51:main.c        **** uint8_t current_pkt_index[NUM_OF_NODES]; 
+  52:main.c        **** uint8_t received_pkt_index[NUM_OF_NODES];
+  53:main.c        **** uint8_t current_node;
+  54:main.c        **** uint8_t send_node;
+  55:main.c        **** 
+  56:main.c        **** /* signal related declaration */
+  57:main.c        **** int8_t pkt_record_done_signal;
+  58:main.c        **** 
+  59:main.c        **** 
+  60:main.c        **** 
+  61:main.c        **** int8_t pkt_record_check()
+  62:main.c        **** {
+ 150               	.LM0:
+ 151               	.LFBB1:
+ 152               	/* prologue: frame size=0 */
+ 153               	/* prologue end (size=0) */
+ 154 0000 8091 0000 		lds r24,sendFlag
+  63:main.c        ****   return sendFlag;
+  64:main.c        **** }
+ 156               	.LM1:
+ 157 0004 9927      		clr r25
+ 158 0006 87FD      		sbrc r24,7
+ 159 0008 9095      		com r25
+ 160               	/* epilogue: frame size=0 */
+ 161 000a 0895      		ret
+ 162               	/* epilogue end (size=1) */
+ 163               	/* function pkt_record_check size 6 (5) */
+ 165               	.Lscope1:
+ 167               		.stabd	78,0,0
+ 168               		.data
+ 169               	.LC0:
+ 170 0000 4855 4745 		.string	"HUGE LOSS\r"
+ 170      204C 4F53 
+ 170      530D 00
+ 171               	.LC1:
+ 172 000b 2564 2C25 		.string	"%d,%d,%d,%d,%d\r\n"
+ 172      642C 2564 
+ 172      2C25 642C 
+ 172      2564 0D0A 
+ 172      00
+ 173               		.text
+ 176               	.global	packet_measurement_better
+ 178               	packet_measurement_better:
+ 179               		.stabd	46,0,0
+  65:main.c        **** 
+  66:main.c        **** int8_t wait_until_record_full()
+  67:main.c        **** {
+  68:main.c        ****     nrk_signal_register(pkt_record_done_signal);
+  69:main.c        ****     if (pkt_record_check() != 0)
+  70:main.c        ****         return NRK_OK;
+  71:main.c        ****     nrk_event_wait (SIG(pkt_record_done_signal));
+  72:main.c        ****     return NRK_OK;
+  73:main.c        **** }
+  74:main.c        **** 
+  75:main.c        **** int main ()
+  76:main.c        **** {
+  77:main.c        ****   nrk_setup_ports();
+  78:main.c        ****   nrk_setup_uart(UART_BAUDRATE_115K2);
+  79:main.c        **** 
+  80:main.c        ****   nrk_kprintf( PSTR("Starting up...\r\n") );
+  81:main.c        **** 	
+  82:main.c        ****   nrk_init();
+  83:main.c        **** 
+  84:main.c        ****   nrk_led_clr(0);
+  85:main.c        ****   nrk_led_clr(1);
+  86:main.c        ****   nrk_led_clr(2);
+  87:main.c        ****   nrk_led_clr(3);
+  88:main.c        ****   
+  89:main.c        ****   nrk_time_set(0,0);
+  90:main.c        ****   
+  91:main.c        ****   isa_task_config();
+  92:main.c        ****   
+  93:main.c        ****   nrk_create_taskset ();
+  94:main.c        **** 
+  95:main.c        ****   nrk_start();
+  96:main.c        ****   
+  97:main.c        ****   return 0;
+  98:main.c        **** }
+  99:main.c        **** 
+ 100:main.c        **** //*********************Making a callback function***************************************
+ 101:main.c        **** 
+ 102:main.c        **** void transmitCallback1(ISA_QUEUE *entry){
+ 103:main.c        **** uint8_t length;
+ 104:main.c        **** 	 isaFreePacket(entry);
+ 105:main.c        **** 	  sprintf( &tx_buf[PKT_DATA_START],"node" );
+ 106:main.c        **** 	  length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
+ 107:main.c        **** 
+ 108:main.c        **** 	  	sendPacket(1, length, tx_buf, transmitCallback1);
+ 109:main.c        **** }
+ 110:main.c        **** 
+ 111:main.c        **** void transmitCallback2(ISA_QUEUE *entry){
+ 112:main.c        **** uint8_t length;
+ 113:main.c        **** 	 isaFreePacket(entry);
+ 114:main.c        **** 	  sprintf( &tx_buf[PKT_DATA_START],"node" );
+ 115:main.c        **** 	  length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
+ 116:main.c        **** 
+ 117:main.c        **** 	  	sendPacket(2, length, tx_buf, transmitCallback2);
+ 118:main.c        **** }
+ 119:main.c        **** //*****************************************************************************************
+ 120:main.c        **** 
+ 121:main.c        **** void Task1()
+ 122:main.c        **** {
+ 123:main.c        **** 
+ 124:main.c        ****   uint8_t j, i;
+ 125:main.c        ****   uint8_t length,slot,len;
+ 126:main.c        ****   uint8_t *local_rx_buf;
+ 127:main.c        ****   //uint32_t Score = 0;
+ 128:main.c        ****   int8_t rssi;
+ 129:main.c        ****   uint8_t cnt=0;
+ 130:main.c        ****   //char c = -1;
+ 131:main.c        ****   nrk_sig_t uart_rx_signal;
+ 132:main.c        ****   uint8_t finished = 0;
+ 133:main.c        **** 
+ 134:main.c        ****   printf( "Task1 PID=%d\r\n",nrk_get_pid());
+ 135:main.c        ****   printf("Gateway");
+ 136:main.c        **** 
+ 137:main.c        ****   nrk_led_set(RED_LED);
+ 138:main.c        ****   nrk_led_set(BLUE_LED);
+ 139:main.c        ****   
+ 140:main.c        ****   isa_set_channel_pattern(1); // must before isa_init
+ 141:main.c        ****   isa_init (ISA_GATEWAY, MY_ID, MY_ID);//change
+ 142:main.c        ****   //isa_set_schedule(ISA_GATEWAY, MY_ID);
+ 143:main.c        ****   isa_set_channel(MY_CHANNEL);
+ 144:main.c        ****   dlmoInit(); 	//Initialize the Data Link Management Object
+ 145:main.c        **** 
+ 146:main.c        ****   configureSlot(1, 1, TX_NO_ADV, false);
+ 147:main.c        ****   configureSlot(2, 2, TX_NO_ADV, true);
+ 148:main.c        ****   //configAdvDAUX(1, 0, 25, 1, NULL, NULL, NULL, 2, NULL, NULL, NULL);
+ 149:main.c        **** 
+ 150:main.c        ****   isa_start();
+ 151:main.c        **** 
+ 152:main.c        ****   isa_rx_pkt_set_buffer(rx_buf, RF_MAX_PAYLOAD_SIZE);
+ 153:main.c        **** 
+ 154:main.c        ****   //slip_init (stdin, stdout, 0, 0);
+ 155:main.c        **** 
+ 156:main.c        ****   //while (slip_started () != 1) nrk_wait_until_next_period ();
+ 157:main.c        **** 
+ 158:main.c        ****   
+ 159:main.c        ****   while(!isa_ready())  nrk_wait_until_next_period(); 
+ 160:main.c        ****   printf("isa start!\n\r");
+ 161:main.c        **** 
+ 162:main.c        ****    
+ 163:main.c        ****     pkt_record_done_signal=nrk_signal_create();
+ 164:main.c        ****     if(pkt_record_done_signal==NRK_ERROR){
+ 165:main.c        **** 	nrk_kprintf(PSTR("ERROR: creating packet record signal failed\r\n"));
+ 166:main.c        **** 	nrk_kernel_error_add(NRK_SIGNAL_CREATE_ERROR,nrk_cur_task_TCB->task_ID);
+ 167:main.c        **** 	return NRK_ERROR;
+ 168:main.c        ****     }  
+ 169:main.c        **** 
+ 170:main.c        **** 
+ 171:main.c        ****   while(1){
+ 172:main.c        **** 
+ 173:main.c        **** 	  //Spit out log info
+ 174:main.c        **** 	/*  	  if (txCount % 1000 == 0){
+ 175:main.c        **** 	  	printf ("TxCount: %d\r\nRXCount: %d\r\nPacketLoss:%d", txCount,rxCount, packetsLost);
+ 176:main.c        **** 	  	  }
+ 177:main.c        ****       */
+ 178:main.c        ****        nrk_gpio_set(NRK_DEBUG_3);
+ 179:main.c        ****        
+ 180:main.c        ****        if( isa_rx_pkt_check()!=0 ) {
+ 181:main.c        **** 	   // printf("message is received.\n\r");
+ 182:main.c        **** 	    local_rx_buf=isa_rx_pkt_get(&length, &rssi);
+ 183:main.c        **** 	    //printf("RXLEN:%d\r\n",length);
+ 184:main.c        **** 	    //for(i=PKT_DATA_START; i<length-1; i++ )
+ 185:main.c        **** 	    	//printf( "node %c,%d\r\n",local_rx_buf[PKT_DATA_START+5],local_rx_buf[PKT_DATA_START+7]);
+ 186:main.c        **** 	    //packet_measurement(local_rx_buf,length);
+ 187:main.c        ****  	    packet_measurement_better(local_rx_buf);
+ 188:main.c        **** 
+ 189:main.c        **** 	    //printf( "%c",local_rx_buf[PKT_DATA_START]);
+ 190:main.c        **** 
+ 191:main.c        **** 	    isa_rx_pkt_release();
+ 192:main.c        **** 	  //  printf("\r\n");
+ 193:main.c        **** 	}
+ 194:main.c        **** 	/*
+ 195:main.c        **** 	if(isa_tx_pkt_check(MY_TX_SLOT)!=0){
+ 196:main.c        **** 	  // printf("Pending TX\r\n");
+ 197:main.c        **** 	}
+ 198:main.c        **** 	*/
+ 199:main.c        **** 	//else{
+ 200:main.c        **** if (cnt ==0 )
+ 201:main.c        **** {
+ 202:main.c        **** 	sprintf( &tx_buf[PKT_DATA_START],"node %d,%c",MY_ID,cnt++);
+ 203:main.c        ****   	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
+ 204:main.c        ****   	sendPacket(1, length, tx_buf, transmitCallback1);
+ 205:main.c        ****   	sendPacket(2, length, tx_buf, transmitCallback2);
+ 206:main.c        **** }
+ 207:main.c        **** 
+ 208:main.c        ****   	//isa_tx_pkt(tx_buf,length,configDHDR(0),MY_TX_SLOT);
+ 209:main.c        **** 	//printf("Len:%d\r\n",length);
+ 210:main.c        ****   	//printf("Hello world is sent.\n\r");
+ 211:main.c        ****   	//}
+ 212:main.c        **** 
+ 213:main.c        **** 
+ 214:main.c        **** 	isa_wait_until_rx_or_tx ();
+ 215:main.c        **** 
+ 216:main.c        **** 
+ 217:main.c        ****   }
+ 218:main.c        ****   
+ 219:main.c        **** 
+ 220:main.c        **** }
+ 221:main.c        **** 
+ 222:main.c        **** 
+ 223:main.c        **** void Task2 ()
+ 224:main.c        **** {
+ 225:main.c        **** 
+ 226:main.c        ****   uint8_t len,i;
+ 227:main.c        ****   uint8_t zero_killer=0xaa;
+ 228:main.c        **** 
+ 229:main.c        ****   slip_init (stdin, stdout, 0, 0);
+ 230:main.c        **** 
+ 231:main.c        ****   wait_until_record_full(); //wait for first batch of packets
+ 232:main.c        **** 
+ 233:main.c        ****   while (1) {
+ 234:main.c        ****     //nrk_led_set (ORANGE_LED);
+ 235:main.c        ****     //sprintf (slip_tx_buf, pkt_measure);
+ 236:main.c        **** 	//if(sendFlag){
+ 237:main.c        **** 		//printf("")
+ 238:main.c        **** 		nrk_gpio_set(NRK_DEBUG_1);
+ 239:main.c        **** 		//printf("CN:%d\r\n",send_node);
+ 240:main.c        **** 		slip_tx_buf[0]=send_node+1;  // get rid of '\0'
+ 241:main.c        **** 		for(uint8_t i=0;i<NUM_OF_TEST_SET;i++){
+ 242:main.c        **** 		   slip_tx_buf[i+1]=pkt_measure[send_node][i] ^ zero_killer;  //get rid of '\0'
+ 243:main.c        **** 		}
+ 244:main.c        **** 		//slip_tx_buf[i+1]=0; // add '\0' at the end
+ 245:main.c        ****     	len = strlen (slip_tx_buf);
+ 246:main.c        **** 	//printf("%d\r\n",len);
+ 247:main.c        ****     	slip_tx (slip_tx_buf, len);
+ 248:main.c        **** 		sendFlag=0;
+ 249:main.c        **** 		for(i=0;i<NUM_OF_TEST_SET;i++){
+ 250:main.c        **** 		    pkt_measure[send_node][i]=0;	    
+ 251:main.c        **** 		}
+ 252:main.c        **** 	printf("KO,%d,%d\r\n",send_node,resync_times);
+ 253:main.c        ****     	//nrk_wait_until_next_period ();
+ 254:main.c        **** 		nrk_gpio_clr(NRK_DEBUG_1);
+ 255:main.c        **** 	//}	
+ 256:main.c        **** 	wait_until_record_full();
+ 257:main.c        ****   }
+ 258:main.c        **** }
+ 259:main.c        **** 
+ 260:main.c        **** 
+ 261:main.c        **** 
+ 262:main.c        **** void
+ 263:main.c        **** nrk_create_taskset()
+ 264:main.c        **** {
+ 265:main.c        ****   TaskOne.task = Task1;
+ 266:main.c        ****   TaskOne.Ptos = (void *) &Stack1[NRK_APP_STACKSIZE-1];
+ 267:main.c        ****   TaskOne.Pbos = (void *) &Stack1[0];
+ 268:main.c        ****   TaskOne.prio = 2;
+ 269:main.c        ****   TaskOne.FirstActivation = TRUE;
+ 270:main.c        ****   TaskOne.Type = BASIC_TASK;
+ 271:main.c        ****   TaskOne.SchType = PREEMPTIVE;
+ 272:main.c        ****   TaskOne.period.secs = 10;
+ 273:main.c        ****   TaskOne.period.nano_secs = 0*NANOS_PER_MS;
+ 274:main.c        ****   TaskOne.cpu_reserve.secs = 0;
+ 275:main.c        ****   TaskOne.cpu_reserve.nano_secs = 500*NANOS_PER_MS;
+ 276:main.c        ****   TaskOne.offset.secs = 0;
+ 277:main.c        ****   TaskOne.offset.nano_secs= 60*NANOS_PER_MS;
+ 278:main.c        ****   nrk_activate_task (&TaskOne);
+ 279:main.c        **** 	
+ 280:main.c        ****   TaskTwo.task = Task2;
+ 281:main.c        ****   nrk_task_set_stk( &TaskTwo, Stack2, NRK_APP_STACKSIZE);
+ 282:main.c        ****   TaskTwo.prio = 3;
+ 283:main.c        ****   TaskTwo.FirstActivation = TRUE;
+ 284:main.c        ****   TaskTwo.Type = BASIC_TASK;
+ 285:main.c        ****   TaskTwo.SchType = PREEMPTIVE;
+ 286:main.c        ****   TaskTwo.period.secs = 20;
+ 287:main.c        ****   TaskTwo.period.nano_secs = 0;
+ 288:main.c        ****   TaskTwo.cpu_reserve.secs = 0;
+ 289:main.c        ****   TaskTwo.cpu_reserve.nano_secs = 0;
+ 290:main.c        ****   TaskTwo.offset.secs = 0;
+ 291:main.c        ****   TaskTwo.offset.nano_secs = 100*NANOS_PER_MS;
+ 292:main.c        ****   nrk_activate_task (&TaskTwo);
+ 293:main.c        **** 
+ 294:main.c        ****   nrk_kprintf( PSTR("Create Done\r\n") );
+ 295:main.c        **** }
+ 296:main.c        **** 
+ 297:main.c        **** void packet_measurement_better(uint8_t * local_rx_buf)
+ 298:main.c        **** {
+ 181               	.LM2:
+ 182               	.LFBB2:
+ 183               	/* prologue: frame size=0 */
+ 184 000c 1F93      		push r17
+ 185 000e CF93      		push r28
+ 186 0010 DF93      		push r29
+ 187               	/* prologue end (size=3) */
+ 188 0012 EC01      		movw r28,r24
+ 299:main.c        **** 	uint8_t i,length;
+ 300:main.c        **** 	uint8_t next_pkt_offset;
+ 301:main.c        **** 	uint8_t temp;
+ 302:main.c        **** 
+ 303:main.c        **** 	if(local_rx_buf[PKT_DATA_START]=='n'){
+ 190               	.LM3:
+ 191 0014 8B81      		ldd r24,Y+3
+ 192 0016 8E36      		cpi r24,lo8(110)
+ 193 0018 01F0      		breq .+2
+ 194 001a 00C0      		rjmp .L12
+ 304:main.c        **** 		current_node = local_rx_buf[PKT_DATA_START+5]-'0';  // node number
+ 196               	.LM4:
+ 197 001c E885      		ldd r30,Y+8
+ 198 001e E053      		subi r30,lo8(-(-48))
+ 199 0020 E093 0000 		sts current_node,r30
+ 305:main.c        **** 		received_pkt_index[current_node] = local_rx_buf[PKT_DATA_START+7]; 
+ 201               	.LM5:
+ 202 0024 FF27      		clr r31
+ 203 0026 9A85      		ldd r25,Y+10
+ 204 0028 DF01      		movw r26,r30
+ 205 002a A050      		subi r26,lo8(-(received_pkt_index))
+ 206 002c B040      		sbci r27,hi8(-(received_pkt_index))
+ 207 002e 9C93      		st X,r25
+ 306:main.c        **** 		
+ 307:main.c        **** 
+ 308:main.c        **** 		next_pkt_offset = received_pkt_index[current_node]-current_pkt_index[current_node];  // packet in
+ 209               	.LM6:
+ 210 0030 E050      		subi r30,lo8(-(current_pkt_index))
+ 211 0032 F040      		sbci r31,hi8(-(current_pkt_index))
+ 212 0034 8081      		ld r24,Z
+ 213 0036 192F      		mov r17,r25
+ 214 0038 181B      		sub r17,r24
+ 309:main.c        **** 		//printf("%d,%d\r\n",next_pkt_offset,current_node);
+ 310:main.c        **** 
+ 311:main.c        **** 		//if(next_pkt_offset!=1){
+ 312:main.c        **** //printf("%d,%d,%d,%d,%d\r\n", local_rx_buf[PKT_DATA_START+7],current_pkt_index[current_node],next_
+ 313:main.c        **** 			if(next_pkt_offset>=20){
+ 216               	.LM7:
+ 217 003a 1431      		cpi r17,lo8(20)
+ 218 003c 00F0      		brlo .L6
+ 314:main.c        **** 				printf("HUGE LOSS\r\n");
+ 220               	.LM8:
+ 221 003e 80E0      		ldi r24,lo8(.LC0)
+ 222 0040 90E0      		ldi r25,hi8(.LC0)
+ 223 0042 0E94 0000 		call puts
+ 315:main.c        **** 				printf("%d,%d,%d,%d,%d\r\n", local_rx_buf[PKT_DATA_START+7],current_pkt_index[current_node],nex
+ 225               	.LM9:
+ 226 0046 0E94 0000 		call isa_get_channel
+ 227 004a E091 0000 		lds r30,current_node
+ 228 004e FF27      		clr r31
+ 229 0050 9F93      		push r25
+ 230 0052 8F93      		push r24
+ 231 0054 FF93      		push r31
+ 232 0056 EF93      		push r30
+ 233 0058 812F      		mov r24,r17
+ 234 005a 9927      		clr r25
+ 235 005c 9F93      		push r25
+ 236 005e 8F93      		push r24
+ 237 0060 E050      		subi r30,lo8(-(current_pkt_index))
+ 238 0062 F040      		sbci r31,hi8(-(current_pkt_index))
+ 239 0064 8081      		ld r24,Z
+ 240 0066 9927      		clr r25
+ 241 0068 9F93      		push r25
+ 242 006a 8F93      		push r24
+ 243 006c 8A85      		ldd r24,Y+10
+ 244 006e 9927      		clr r25
+ 245 0070 9F93      		push r25
+ 246 0072 8F93      		push r24
+ 247 0074 80E0      		ldi r24,lo8(.LC1)
+ 248 0076 90E0      		ldi r25,hi8(.LC1)
+ 249 0078 9F93      		push r25
+ 250 007a 8F93      		push r24
+ 251 007c 0E94 0000 		call printf
+ 252 0080 8DB7      		in r24,__SP_L__
+ 253 0082 9EB7      		in r25,__SP_H__
+ 254 0084 0C96      		adiw r24,12
+ 255 0086 0FB6      		in __tmp_reg__,__SREG__
+ 256 0088 F894      		cli
+ 257 008a 9EBF      		out __SP_H__,r25
+ 258 008c 0FBE      		out __SREG__,__tmp_reg__
+ 259 008e 8DBF      		out __SP_L__,r24
+ 260               	.L6:
+ 316:main.c        **** 			}
+ 317:main.c        **** 		//}
+ 318:main.c        **** 		current_pkt_index[current_node] = local_rx_buf[PKT_DATA_START+7];  // update current pakcet index
+ 262               	.LM10:
+ 263 0090 9091 0000 		lds r25,current_node
+ 264 0094 492F      		mov r20,r25
+ 265 0096 5527      		clr r21
+ 266 0098 8A85      		ldd r24,Y+10
+ 267 009a FA01      		movw r30,r20
+ 268 009c E050      		subi r30,lo8(-(current_pkt_index))
+ 269 009e F040      		sbci r31,hi8(-(current_pkt_index))
+ 270 00a0 8083      		st Z,r24
+ 319:main.c        **** 		
+ 320:main.c        **** 		pkt_cnt[current_node] += next_pkt_offset; // add the number of packet been measured
+ 272               	.LM11:
+ 273 00a2 DA01      		movw r26,r20
+ 274 00a4 A050      		subi r26,lo8(-(pkt_cnt))
+ 275 00a6 B040      		sbci r27,hi8(-(pkt_cnt))
+ 276 00a8 2C91      		ld r18,X
+ 277 00aa 210F      		add r18,r17
+ 278 00ac 2C93      		st X,r18
+ 321:main.c        **** 		temp = current_pkt_index[current_node] % 8; // use 1 byte to record 8 packets
+ 280               	.LM12:
+ 281 00ae 382F      		mov r19,r24
+ 282 00b0 3770      		andi r19,lo8(7)
+ 322:main.c        **** 		//printf("%d,%d,%d\r\n",temp,frame_cnt[0],pkt_cnt[0]);
+ 323:main.c        **** 
+ 324:main.c        **** 		if(pkt_cnt[current_node]>=8){
+ 284               	.LM13:
+ 285 00b2 2830      		cpi r18,lo8(8)
+ 286 00b4 00F0      		brlo .L8
+ 325:main.c        **** 		   frame_cnt[current_node]+=pkt_cnt[current_node]/8;
+ 288               	.LM14:
+ 289 00b6 FA01      		movw r30,r20
+ 290 00b8 E050      		subi r30,lo8(-(frame_cnt))
+ 291 00ba F040      		sbci r31,hi8(-(frame_cnt))
+ 292 00bc 2695      		lsr r18
+ 293 00be 2695      		lsr r18
+ 294 00c0 2695      		lsr r18
+ 295 00c2 8081      		ld r24,Z
+ 296 00c4 280F      		add r18,r24
+ 297 00c6 2083      		st Z,r18
+ 326:main.c        **** 		   pkt_cnt[current_node]=temp;
+ 299               	.LM15:
+ 300 00c8 3C93      		st X,r19
+ 301               	.L8:
+ 327:main.c        **** 		   //printf("current frame cnt: %d\r\n", frame_cnt[current_node]);		   
+ 328:main.c        **** 		}
+ 329:main.c        **** 		
+ 330:main.c        **** 		
+ 331:main.c        **** 		if(frame_cnt[current_node]<NUM_OF_TEST_SET){
+ 303               	.LM16:
+ 304 00ca FA01      		movw r30,r20
+ 305 00cc E050      		subi r30,lo8(-(frame_cnt))
+ 306 00ce F040      		sbci r31,hi8(-(frame_cnt))
+ 307 00d0 8081      		ld r24,Z
+ 308 00d2 8031      		cpi r24,lo8(16)
+ 309 00d4 00F4      		brsh .L10
+ 332:main.c        **** 		  //printf("%d,%d,%d\r\n",temp,frame_cnt[0],pkt_cnt[0]);
+ 333:main.c        **** 		  pkt_measure[current_node][frame_cnt[current_node]] |= ((uint8_t) 1) << temp;
+ 311               	.LM17:
+ 312 00d6 FA01      		movw r30,r20
+ 313 00d8 94E0      		ldi r25,4
+ 314 00da EE0F      	1:	lsl r30
+ 315 00dc FF1F      		rol r31
+ 316 00de 9A95      		dec r25
+ 317 00e0 01F4      		brne 1b
+ 318 00e2 E80F      		add r30,r24
+ 319 00e4 F11D      		adc r31,__zero_reg__
+ 320 00e6 E050      		subi r30,lo8(-(pkt_measure))
+ 321 00e8 F040      		sbci r31,hi8(-(pkt_measure))
+ 322 00ea 81E0      		ldi r24,lo8(1)
+ 323 00ec 90E0      		ldi r25,hi8(1)
+ 324 00ee 00C0      		rjmp 2f
+ 325 00f0 880F      	1:	lsl r24
+ 326 00f2 991F      		rol r25
+ 327 00f4 3A95      	2:	dec r19
+ 328 00f6 02F4      		brpl 1b
+ 329 00f8 2081      		ld r18,Z
+ 330 00fa 282B      		or r18,r24
+ 331 00fc 2083      		st Z,r18
+ 332 00fe 00C0      		rjmp .L12
+ 333               	.L10:
+ 334:main.c        **** 		}	
+ 335:main.c        **** 
+ 336:main.c        **** 		if(frame_cnt[current_node]>=NUM_OF_TEST_SET){
+ 337:main.c        **** 		  /*for(i=0;i<NUM_OF_TEST_SET;i++){
+ 338:main.c        **** 		    printf("pkt: %x\r\n",pkt_measure[current_node][i]);
+ 339:main.c        **** 		  }*/
+ 340:main.c        **** 		  //printf("KO %d\r\n",current_node);
+ 341:main.c        **** 		  // reboot buffer for further test
+ 342:main.c        **** 		  frame_cnt[current_node]=0;
+ 335               	.LM18:
+ 336 0100 1082      		st Z,__zero_reg__
+ 343:main.c        **** 		  sendFlag=1;
+ 338               	.LM19:
+ 339 0102 81E0      		ldi r24,lo8(1)
+ 340 0104 8093 0000 		sts sendFlag,r24
+ 344:main.c        **** 		  send_node=current_node;
+ 342               	.LM20:
+ 343 0108 9093 0000 		sts send_node,r25
+ 345:main.c        **** 		  nrk_event_signal (pkt_record_done_signal);
+ 345               	.LM21:
+ 346 010c 8091 0000 		lds r24,pkt_record_done_signal
+ 347 0110 0E94 0000 		call nrk_event_signal
+ 348               	.L12:
+ 349               	/* epilogue: frame size=0 */
+ 350 0114 DF91      		pop r29
+ 351 0116 CF91      		pop r28
+ 352 0118 1F91      		pop r17
+ 353 011a 0895      		ret
+ 354               	/* epilogue end (size=4) */
+ 355               	/* function packet_measurement_better size 137 (130) */
+ 361               	.Lscope2:
+ 363               		.stabd	78,0,0
+ 365               	.global	nrk_create_taskset
+ 367               	nrk_create_taskset:
+ 368               		.stabd	46,0,0
+ 370               	.LM22:
+ 371               	.LFBB3:
+ 372               	/* prologue: frame size=0 */
+ 373 011c EF92      		push r14
+ 374 011e FF92      		push r15
+ 375 0120 1F93      		push r17
+ 376               	/* prologue end (size=3) */
+ 378               	.LM23:
+ 379 0122 80E0      		ldi r24,lo8(pm(Task1))
+ 380 0124 90E0      		ldi r25,hi8(pm(Task1))
+ 381 0126 9093 0000 		sts (TaskOne+5)+1,r25
+ 382 012a 8093 0000 		sts TaskOne+5,r24
+ 384               	.LM24:
+ 385 012e 80E0      		ldi r24,lo8(Stack1+255)
+ 386 0130 90E0      		ldi r25,hi8(Stack1+255)
+ 387 0132 9093 0000 		sts (TaskOne+1)+1,r25
+ 388 0136 8093 0000 		sts TaskOne+1,r24
+ 390               	.LM25:
+ 391 013a 80E0      		ldi r24,lo8(Stack1)
+ 392 013c 90E0      		ldi r25,hi8(Stack1)
+ 393 013e 9093 0000 		sts (TaskOne+3)+1,r25
+ 394 0142 8093 0000 		sts TaskOne+3,r24
+ 396               	.LM26:
+ 397 0146 82E0      		ldi r24,lo8(2)
+ 398 0148 8093 0000 		sts TaskOne+8,r24
+ 400               	.LM27:
+ 401 014c 11E0      		ldi r17,lo8(1)
+ 402 014e 1093 0000 		sts TaskOne+7,r17
+ 404               	.LM28:
+ 405 0152 1093 0000 		sts TaskOne+9,r17
+ 407               	.LM29:
+ 408 0156 1093 0000 		sts TaskOne+10,r17
+ 410               	.LM30:
+ 411 015a 8AE0      		ldi r24,lo8(10)
+ 412 015c 90E0      		ldi r25,hi8(10)
+ 413 015e A0E0      		ldi r26,hlo8(10)
+ 414 0160 B0E0      		ldi r27,hhi8(10)
+ 415 0162 8093 0000 		sts TaskOne+11,r24
+ 416 0166 9093 0000 		sts (TaskOne+11)+1,r25
+ 417 016a A093 0000 		sts (TaskOne+11)+2,r26
+ 418 016e B093 0000 		sts (TaskOne+11)+3,r27
+ 420               	.LM31:
+ 421 0172 1092 0000 		sts TaskOne+15,__zero_reg__
+ 422 0176 1092 0000 		sts (TaskOne+15)+1,__zero_reg__
+ 423 017a 1092 0000 		sts (TaskOne+15)+2,__zero_reg__
+ 424 017e 1092 0000 		sts (TaskOne+15)+3,__zero_reg__
+ 426               	.LM32:
+ 427 0182 1092 0000 		sts TaskOne+19,__zero_reg__
+ 428 0186 1092 0000 		sts (TaskOne+19)+1,__zero_reg__
+ 429 018a 1092 0000 		sts (TaskOne+19)+2,__zero_reg__
+ 430 018e 1092 0000 		sts (TaskOne+19)+3,__zero_reg__
+ 432               	.LM33:
+ 433 0192 80E0      		ldi r24,lo8(500000000)
+ 434 0194 95E6      		ldi r25,hi8(500000000)
+ 435 0196 ADEC      		ldi r26,hlo8(500000000)
+ 436 0198 BDE1      		ldi r27,hhi8(500000000)
+ 437 019a 8093 0000 		sts TaskOne+23,r24
+ 438 019e 9093 0000 		sts (TaskOne+23)+1,r25
+ 439 01a2 A093 0000 		sts (TaskOne+23)+2,r26
+ 440 01a6 B093 0000 		sts (TaskOne+23)+3,r27
+ 442               	.LM34:
+ 443 01aa 1092 0000 		sts TaskOne+27,__zero_reg__
+ 444 01ae 1092 0000 		sts (TaskOne+27)+1,__zero_reg__
+ 445 01b2 1092 0000 		sts (TaskOne+27)+2,__zero_reg__
+ 446 01b6 1092 0000 		sts (TaskOne+27)+3,__zero_reg__
+ 448               	.LM35:
+ 449 01ba 80E0      		ldi r24,lo8(60000000)
+ 450 01bc 97E8      		ldi r25,hi8(60000000)
+ 451 01be A3E9      		ldi r26,hlo8(60000000)
+ 452 01c0 B3E0      		ldi r27,hhi8(60000000)
+ 453 01c2 8093 0000 		sts TaskOne+31,r24
+ 454 01c6 9093 0000 		sts (TaskOne+31)+1,r25
+ 455 01ca A093 0000 		sts (TaskOne+31)+2,r26
+ 456 01ce B093 0000 		sts (TaskOne+31)+3,r27
+ 458               	.LM36:
+ 459 01d2 80E0      		ldi r24,lo8(TaskOne)
+ 460 01d4 90E0      		ldi r25,hi8(TaskOne)
+ 461 01d6 0E94 0000 		call nrk_activate_task
+ 463               	.LM37:
+ 464 01da 80E0      		ldi r24,lo8(pm(Task2))
+ 465 01dc 90E0      		ldi r25,hi8(pm(Task2))
+ 466 01de 9093 0000 		sts (TaskTwo+5)+1,r25
+ 467 01e2 8093 0000 		sts TaskTwo+5,r24
+ 469               	.LM38:
+ 470 01e6 20E0      		ldi r18,lo8(TaskTwo)
+ 471 01e8 E22E      		mov r14,r18
+ 472 01ea 20E0      		ldi r18,hi8(TaskTwo)
+ 473 01ec F22E      		mov r15,r18
+ 474 01ee 40E0      		ldi r20,lo8(256)
+ 475 01f0 51E0      		ldi r21,hi8(256)
+ 476 01f2 60E0      		ldi r22,lo8(Stack2)
+ 477 01f4 70E0      		ldi r23,hi8(Stack2)
+ 478 01f6 C701      		movw r24,r14
+ 479 01f8 0E94 0000 		call nrk_task_set_stk
+ 481               	.LM39:
+ 482 01fc 83E0      		ldi r24,lo8(3)
+ 483 01fe 8093 0000 		sts TaskTwo+8,r24
+ 485               	.LM40:
+ 486 0202 1093 0000 		sts TaskTwo+7,r17
+ 488               	.LM41:
+ 489 0206 1093 0000 		sts TaskTwo+9,r17
+ 491               	.LM42:
+ 492 020a 1093 0000 		sts TaskTwo+10,r17
+ 494               	.LM43:
+ 495 020e 84E1      		ldi r24,lo8(20)
+ 496 0210 90E0      		ldi r25,hi8(20)
+ 497 0212 A0E0      		ldi r26,hlo8(20)
+ 498 0214 B0E0      		ldi r27,hhi8(20)
+ 499 0216 8093 0000 		sts TaskTwo+11,r24
+ 500 021a 9093 0000 		sts (TaskTwo+11)+1,r25
+ 501 021e A093 0000 		sts (TaskTwo+11)+2,r26
+ 502 0222 B093 0000 		sts (TaskTwo+11)+3,r27
+ 504               	.LM44:
+ 505 0226 1092 0000 		sts TaskTwo+15,__zero_reg__
+ 506 022a 1092 0000 		sts (TaskTwo+15)+1,__zero_reg__
+ 507 022e 1092 0000 		sts (TaskTwo+15)+2,__zero_reg__
+ 508 0232 1092 0000 		sts (TaskTwo+15)+3,__zero_reg__
+ 510               	.LM45:
+ 511 0236 1092 0000 		sts TaskTwo+19,__zero_reg__
+ 512 023a 1092 0000 		sts (TaskTwo+19)+1,__zero_reg__
+ 513 023e 1092 0000 		sts (TaskTwo+19)+2,__zero_reg__
+ 514 0242 1092 0000 		sts (TaskTwo+19)+3,__zero_reg__
+ 516               	.LM46:
+ 517 0246 1092 0000 		sts TaskTwo+23,__zero_reg__
+ 518 024a 1092 0000 		sts (TaskTwo+23)+1,__zero_reg__
+ 519 024e 1092 0000 		sts (TaskTwo+23)+2,__zero_reg__
+ 520 0252 1092 0000 		sts (TaskTwo+23)+3,__zero_reg__
+ 522               	.LM47:
+ 523 0256 1092 0000 		sts TaskTwo+27,__zero_reg__
+ 524 025a 1092 0000 		sts (TaskTwo+27)+1,__zero_reg__
+ 525 025e 1092 0000 		sts (TaskTwo+27)+2,__zero_reg__
+ 526 0262 1092 0000 		sts (TaskTwo+27)+3,__zero_reg__
+ 528               	.LM48:
+ 529 0266 80E0      		ldi r24,lo8(100000000)
+ 530 0268 91EE      		ldi r25,hi8(100000000)
+ 531 026a A5EF      		ldi r26,hlo8(100000000)
+ 532 026c B5E0      		ldi r27,hhi8(100000000)
+ 533 026e 8093 0000 		sts TaskTwo+31,r24
+ 534 0272 9093 0000 		sts (TaskTwo+31)+1,r25
+ 535 0276 A093 0000 		sts (TaskTwo+31)+2,r26
+ 536 027a B093 0000 		sts (TaskTwo+31)+3,r27
+ 538               	.LM49:
+ 539 027e C701      		movw r24,r14
+ 540 0280 0E94 0000 		call nrk_activate_task
+ 542               	.LM50:
+ 543 0284 80E0      		ldi r24,lo8(__c.2556)
+ 544 0286 90E0      		ldi r25,hi8(__c.2556)
+ 545 0288 0E94 0000 		call nrk_kprintf
+ 546               	/* epilogue: frame size=0 */
+ 547 028c 1F91      		pop r17
+ 548 028e FF90      		pop r15
+ 549 0290 EF90      		pop r14
+ 550 0292 0895      		ret
+ 551               	/* epilogue end (size=4) */
+ 552               	/* function nrk_create_taskset size 188 (181) */
+ 554               	.Lscope3:
+ 556               		.stabd	78,0,0
+ 557               		.data
+ 558               	.LC2:
+ 559 001c 5461 736B 		.string	"Task1 PID=%d\r\n"
+ 559      3120 5049 
+ 559      443D 2564 
+ 559      0D0A 00
+ 560               	.LC3:
+ 561 002b 4761 7465 		.string	"Gateway"
+ 561      7761 7900 
+ 562               	.LC4:
+ 563 0033 6973 6120 		.string	"isa start!\n\r"
+ 563      7374 6172 
+ 563      7421 0A0D 
+ 563      00
+ 564               	.LC5:
+ 565 0040 6E6F 6465 		.string	"node %d,%c"
+ 565      2025 642C 
+ 565      2563 00
+ 566               		.text
+ 568               	.global	Task1
+ 570               	Task1:
+ 571               		.stabd	46,0,0
+ 573               	.LM51:
+ 574               	.LFBB4:
+ 575               	/* prologue: frame size=2 */
+ 576 0294 2F92      		push r2
+ 577 0296 3F92      		push r3
+ 578 0298 4F92      		push r4
+ 579 029a 5F92      		push r5
+ 580 029c 6F92      		push r6
+ 581 029e 7F92      		push r7
+ 582 02a0 8F92      		push r8
+ 583 02a2 9F92      		push r9
+ 584 02a4 AF92      		push r10
+ 585 02a6 BF92      		push r11
+ 586 02a8 CF92      		push r12
+ 587 02aa DF92      		push r13
+ 588 02ac EF92      		push r14
+ 589 02ae FF92      		push r15
+ 590 02b0 0F93      		push r16
+ 591 02b2 1F93      		push r17
+ 592 02b4 CF93      		push r28
+ 593 02b6 DF93      		push r29
+ 594 02b8 CDB7      		in r28,__SP_L__
+ 595 02ba DEB7      		in r29,__SP_H__
+ 596 02bc 2297      		sbiw r28,2
+ 597 02be 0FB6      		in __tmp_reg__,__SREG__
+ 598 02c0 F894      		cli
+ 599 02c2 DEBF      		out __SP_H__,r29
+ 600 02c4 0FBE      		out __SREG__,__tmp_reg__
+ 601 02c6 CDBF      		out __SP_L__,r28
+ 602               	/* prologue end (size=26) */
+ 604               	.LM52:
+ 605 02c8 0E94 0000 		call nrk_get_pid
+ 606 02cc 9927      		clr r25
+ 607 02ce 9F93      		push r25
+ 608 02d0 8F93      		push r24
+ 609 02d2 80E0      		ldi r24,lo8(.LC2)
+ 610 02d4 90E0      		ldi r25,hi8(.LC2)
+ 611 02d6 9F93      		push r25
+ 612 02d8 8F93      		push r24
+ 613 02da 0E94 0000 		call printf
+ 615               	.LM53:
+ 616 02de 80E0      		ldi r24,lo8(.LC3)
+ 617 02e0 90E0      		ldi r25,hi8(.LC3)
+ 618 02e2 9F93      		push r25
+ 619 02e4 8F93      		push r24
+ 620 02e6 0E94 0000 		call printf
+ 622               	.LM54:
+ 623 02ea 83E0      		ldi r24,lo8(3)
+ 624 02ec 90E0      		ldi r25,hi8(3)
+ 625 02ee 0E94 0000 		call nrk_led_set
+ 627               	.LM55:
+ 628 02f2 81E0      		ldi r24,lo8(1)
+ 629 02f4 90E0      		ldi r25,hi8(1)
+ 630 02f6 0E94 0000 		call nrk_led_set
+ 632               	.LM56:
+ 633 02fa 81E0      		ldi r24,lo8(1)
+ 634 02fc 90E0      		ldi r25,hi8(1)
+ 635 02fe 0E94 0000 		call isa_set_channel_pattern
+ 637               	.LM57:
+ 638 0302 40E0      		ldi r20,lo8(0)
+ 639 0304 60E0      		ldi r22,lo8(0)
+ 640 0306 82E0      		ldi r24,lo8(2)
+ 641 0308 0E94 0000 		call isa_init
+ 643               	.LM58:
+ 644 030c 83E1      		ldi r24,lo8(19)
+ 645 030e 0E94 0000 		call isa_set_channel
+ 647               	.LM59:
+ 648 0312 0E94 0000 		call dlmoInit
+ 650               	.LM60:
+ 651 0316 20E0      		ldi r18,lo8(0)
+ 652 0318 41E0      		ldi r20,lo8(1)
+ 653 031a 61E0      		ldi r22,lo8(1)
+ 654 031c 70E0      		ldi r23,hi8(1)
+ 655 031e 81E0      		ldi r24,lo8(1)
+ 656 0320 0E94 0000 		call configureSlot
+ 658               	.LM61:
+ 659 0324 21E0      		ldi r18,lo8(1)
+ 660 0326 41E0      		ldi r20,lo8(1)
+ 661 0328 62E0      		ldi r22,lo8(2)
+ 662 032a 70E0      		ldi r23,hi8(2)
+ 663 032c 82E0      		ldi r24,lo8(2)
+ 664 032e 0E94 0000 		call configureSlot
+ 666               	.LM62:
+ 667 0332 0E94 0000 		call isa_start
+ 669               	.LM63:
+ 670 0336 64E7      		ldi r22,lo8(116)
+ 671 0338 80E0      		ldi r24,lo8(rx_buf)
+ 672 033a 90E0      		ldi r25,hi8(rx_buf)
+ 673 033c 0E94 0000 		call isa_rx_pkt_set_buffer
+ 675               	.LM64:
+ 676 0340 8DB7      		in r24,__SP_L__
+ 677 0342 9EB7      		in r25,__SP_H__
+ 678 0344 0696      		adiw r24,6
+ 679 0346 0FB6      		in __tmp_reg__,__SREG__
+ 680 0348 F894      		cli
+ 681 034a 9EBF      		out __SP_H__,r25
+ 682 034c 0FBE      		out __SREG__,__tmp_reg__
+ 683 034e 8DBF      		out __SP_L__,r24
+ 684 0350 00C0      		rjmp .L16
+ 685               	.L17:
+ 687               	.LM65:
+ 688 0352 0E94 0000 		call nrk_wait_until_next_period
+ 689               	.L16:
+ 690 0356 0E94 0000 		call isa_ready
+ 691 035a 8823      		tst r24
+ 692 035c 01F0      		breq .L17
+ 694               	.LM66:
+ 695 035e 80E0      		ldi r24,lo8(.LC4)
+ 696 0360 90E0      		ldi r25,hi8(.LC4)
+ 697 0362 9F93      		push r25
+ 698 0364 8F93      		push r24
+ 699 0366 0E94 0000 		call printf
+ 701               	.LM67:
+ 702 036a 0E94 0000 		call nrk_signal_create
+ 703 036e 8093 0000 		sts pkt_record_done_signal,r24
+ 705               	.LM68:
+ 706 0372 0F90      		pop __tmp_reg__
+ 707 0374 0F90      		pop __tmp_reg__
+ 708 0376 8F3F      		cpi r24,lo8(-1)
+ 709 0378 01F4      		brne .+2
+ 710 037a 00C0      		rjmp .L27
+ 712               	.LM69:
+ 713 037c C090 0000 		lds r12,NRK_DEBUG_3
+ 714 0380 DD24      		clr r13
+ 716               	.LM70:
+ 717 0382 72E0      		ldi r23,lo8(2)
+ 718 0384 272E      		mov r2,r23
+ 719 0386 312C      		mov r3,__zero_reg__
+ 720 0388 2C0E      		add r2,r28
+ 721 038a 3D1E      		adc r3,r29
+ 722 038c 2E01      		movw r4,r28
+ 723 038e 0894      		sec
+ 724 0390 411C      		adc r4,__zero_reg__
+ 725 0392 511C      		adc r5,__zero_reg__
+ 727               	.LM71:
+ 728 0394 00E0      		ldi r16,lo8(tx_buf+3)
+ 729 0396 10E0      		ldi r17,hi8(tx_buf+3)
+ 730 0398 60E0      		ldi r22,lo8(.LC5)
+ 731 039a 662E      		mov r6,r22
+ 732 039c 60E0      		ldi r22,hi8(.LC5)
+ 733 039e 762E      		mov r7,r22
+ 734 03a0 50E0      		ldi r21,lo8(pm(transmitCallback1))
+ 735 03a2 852E      		mov r8,r21
+ 736 03a4 50E0      		ldi r21,hi8(pm(transmitCallback1))
+ 737 03a6 952E      		mov r9,r21
+ 738 03a8 4DEF      		ldi r20,lo8(-3)
+ 739 03aa E42E      		mov r14,r20
+ 740 03ac 4FEF      		ldi r20,hi8(-3)
+ 741 03ae F42E      		mov r15,r20
+ 742 03b0 E00E      		add r14,r16
+ 743 03b2 F11E      		adc r15,r17
+ 744 03b4 30E0      		ldi r19,lo8(pm(transmitCallback2))
+ 745 03b6 A32E      		mov r10,r19
+ 746 03b8 30E0      		ldi r19,hi8(pm(transmitCallback2))
+ 747 03ba B32E      		mov r11,r19
+ 748               	.L21:
+ 750               	.LM72:
+ 751 03bc 8C2D      		mov r24,r12
+ 752 03be 0E94 0000 		call nrk_gpio_set
+ 754               	.LM73:
+ 755 03c2 0E94 0000 		call isa_rx_pkt_check
+ 756 03c6 8823      		tst r24
+ 757 03c8 01F0      		breq .L22
+ 759               	.LM74:
+ 760 03ca B101      		movw r22,r2
+ 761 03cc C201      		movw r24,r4
+ 762 03ce 0E94 0000 		call isa_rx_pkt_get
+ 764               	.LM75:
+ 765 03d2 0E94 0000 		call packet_measurement_better
+ 767               	.LM76:
+ 768 03d6 0E94 0000 		call isa_rx_pkt_release
+ 769               	.L22:
+ 771               	.LM77:
+ 772 03da DD20      		tst r13
+ 773 03dc 01F4      		brne .L24
+ 775               	.LM78:
+ 776 03de 1F92      		push __zero_reg__
+ 777 03e0 1F92      		push __zero_reg__
+ 778 03e2 1F92      		push __zero_reg__
+ 779 03e4 1F92      		push __zero_reg__
+ 780 03e6 7F92      		push r7
+ 781 03e8 6F92      		push r6
+ 782 03ea 1F93      		push r17
+ 783 03ec 0F93      		push r16
+ 784 03ee 0E94 0000 		call sprintf
+ 786               	.LM79:
+ 787 03f2 F801      		movw r30,r16
+ 788 03f4 0190      		ld __tmp_reg__,Z+
+ 789 03f6 0020      		tst __tmp_reg__
+ 790 03f8 01F4      		brne .-6
+ 791 03fa E050      		subi r30,lo8(tx_buf+4)
+ 792 03fc F040      		sbci r31,hi8(tx_buf+4)
+ 793 03fe EC5F      		subi r30,lo8(-(4))
+ 794 0400 E983      		std Y+1,r30
+ 796               	.LM80:
+ 797 0402 9401      		movw r18,r8
+ 798 0404 A701      		movw r20,r14
+ 799 0406 6E2F      		mov r22,r30
+ 800 0408 81E0      		ldi r24,lo8(1)
+ 801 040a 90E0      		ldi r25,hi8(1)
+ 802 040c 0E94 0000 		call sendPacket
+ 804               	.LM81:
+ 805 0410 9501      		movw r18,r10
+ 806 0412 A701      		movw r20,r14
+ 807 0414 6981      		ldd r22,Y+1
+ 808 0416 82E0      		ldi r24,lo8(2)
+ 809 0418 90E0      		ldi r25,hi8(2)
+ 810 041a 0E94 0000 		call sendPacket
+ 811 041e DD24      		clr r13
+ 812 0420 D394      		inc r13
+ 813 0422 8DB7      		in r24,__SP_L__
+ 814 0424 9EB7      		in r25,__SP_H__
+ 815 0426 0896      		adiw r24,8
+ 816 0428 0FB6      		in __tmp_reg__,__SREG__
+ 817 042a F894      		cli
+ 818 042c 9EBF      		out __SP_H__,r25
+ 819 042e 0FBE      		out __SREG__,__tmp_reg__
+ 820 0430 8DBF      		out __SP_L__,r24
+ 821               	.L24:
+ 823               	.LM82:
+ 824 0432 0E94 0000 		call isa_wait_until_rx_or_tx
+ 825 0436 00C0      		rjmp .L21
+ 826               	.L27:
+ 828               	.LM83:
+ 829 0438 80E0      		ldi r24,lo8(__c.2505)
+ 830 043a 90E0      		ldi r25,hi8(__c.2505)
+ 831 043c 0E94 0000 		call nrk_kprintf
+ 833               	.LM84:
+ 834 0440 E091 0000 		lds r30,nrk_cur_task_TCB
+ 835 0444 F091 0000 		lds r31,(nrk_cur_task_TCB)+1
+ 836 0448 6085      		ldd r22,Z+8
+ 837 044a 8EE0      		ldi r24,lo8(14)
+ 838 044c 0E94 0000 		call nrk_kernel_error_add
+ 839               	/* epilogue: frame size=2 */
+ 840 0450 2296      		adiw r28,2
+ 841 0452 0FB6      		in __tmp_reg__,__SREG__
+ 842 0454 F894      		cli
+ 843 0456 DEBF      		out __SP_H__,r29
+ 844 0458 0FBE      		out __SREG__,__tmp_reg__
+ 845 045a CDBF      		out __SP_L__,r28
+ 846 045c DF91      		pop r29
+ 847 045e CF91      		pop r28
+ 848 0460 1F91      		pop r17
+ 849 0462 0F91      		pop r16
+ 850 0464 FF90      		pop r15
+ 851 0466 EF90      		pop r14
+ 852 0468 DF90      		pop r13
+ 853 046a CF90      		pop r12
+ 854 046c BF90      		pop r11
+ 855 046e AF90      		pop r10
+ 856 0470 9F90      		pop r9
+ 857 0472 8F90      		pop r8
+ 858 0474 7F90      		pop r7
+ 859 0476 6F90      		pop r6
+ 860 0478 5F90      		pop r5
+ 861 047a 4F90      		pop r4
+ 862 047c 3F90      		pop r3
+ 863 047e 2F90      		pop r2
+ 864 0480 0895      		ret
+ 865               	/* epilogue end (size=25) */
+ 866               	/* function Task1 size 247 (196) */
+ 873               	.Lscope4:
+ 875               		.stabd	78,0,0
+ 876               		.data
+ 877               	.LC6:
+ 878 004b 6E6F 6465 		.string	"node"
+ 878      00
+ 879               		.text
+ 882               	.global	transmitCallback2
+ 884               	transmitCallback2:
+ 885               		.stabd	46,0,0
+ 887               	.LM85:
+ 888               	.LFBB5:
+ 889               	/* prologue: frame size=0 */
+ 890 0482 0F93      		push r16
+ 891 0484 1F93      		push r17
+ 892               	/* prologue end (size=2) */
+ 894               	.LM86:
+ 895 0486 0E94 0000 		call isaFreePacket
+ 897               	.LM87:
+ 898 048a 00E0      		ldi r16,lo8(tx_buf+3)
+ 899 048c 10E0      		ldi r17,hi8(tx_buf+3)
+ 900 048e 60E0      		ldi r22,lo8(.LC6)
+ 901 0490 70E0      		ldi r23,hi8(.LC6)
+ 902 0492 C801      		movw r24,r16
+ 903 0494 0E94 0000 		call strcpy
+ 905               	.LM88:
+ 906 0498 F801      		movw r30,r16
+ 907 049a 0190      		ld __tmp_reg__,Z+
+ 908 049c 0020      		tst __tmp_reg__
+ 909 049e 01F4      		brne .-6
+ 910 04a0 E01B      		sub r30,r16
+ 911 04a2 ED5F      		subi r30,lo8(-(3))
+ 912 04a4 20E0      		ldi r18,lo8(pm(transmitCallback2))
+ 913 04a6 30E0      		ldi r19,hi8(pm(transmitCallback2))
+ 914 04a8 0350      		subi r16,lo8(-(-3))
+ 915 04aa 1040      		sbci r17,hi8(-(-3))
+ 916 04ac A801      		movw r20,r16
+ 917 04ae 6E2F      		mov r22,r30
+ 918 04b0 82E0      		ldi r24,lo8(2)
+ 919 04b2 90E0      		ldi r25,hi8(2)
+ 920 04b4 0E94 0000 		call sendPacket
+ 921               	/* epilogue: frame size=0 */
+ 922 04b8 1F91      		pop r17
+ 923 04ba 0F91      		pop r16
+ 924 04bc 0895      		ret
+ 925               	/* epilogue end (size=3) */
+ 926               	/* function transmitCallback2 size 30 (25) */
+ 928               	.Lscope5:
+ 930               		.stabd	78,0,0
+ 933               	.global	transmitCallback1
+ 935               	transmitCallback1:
+ 936               		.stabd	46,0,0
+ 938               	.LM89:
+ 939               	.LFBB6:
+ 940               	/* prologue: frame size=0 */
+ 941 04be 0F93      		push r16
+ 942 04c0 1F93      		push r17
+ 943               	/* prologue end (size=2) */
+ 945               	.LM90:
+ 946 04c2 0E94 0000 		call isaFreePacket
+ 948               	.LM91:
+ 949 04c6 00E0      		ldi r16,lo8(tx_buf+3)
+ 950 04c8 10E0      		ldi r17,hi8(tx_buf+3)
+ 951 04ca 60E0      		ldi r22,lo8(.LC6)
+ 952 04cc 70E0      		ldi r23,hi8(.LC6)
+ 953 04ce C801      		movw r24,r16
+ 954 04d0 0E94 0000 		call strcpy
+ 956               	.LM92:
+ 957 04d4 F801      		movw r30,r16
+ 958 04d6 0190      		ld __tmp_reg__,Z+
+ 959 04d8 0020      		tst __tmp_reg__
+ 960 04da 01F4      		brne .-6
+ 961 04dc E01B      		sub r30,r16
+ 962 04de ED5F      		subi r30,lo8(-(3))
+ 963 04e0 20E0      		ldi r18,lo8(pm(transmitCallback1))
+ 964 04e2 30E0      		ldi r19,hi8(pm(transmitCallback1))
+ 965 04e4 0350      		subi r16,lo8(-(-3))
+ 966 04e6 1040      		sbci r17,hi8(-(-3))
+ 967 04e8 A801      		movw r20,r16
+ 968 04ea 6E2F      		mov r22,r30
+ 969 04ec 81E0      		ldi r24,lo8(1)
+ 970 04ee 90E0      		ldi r25,hi8(1)
+ 971 04f0 0E94 0000 		call sendPacket
+ 972               	/* epilogue: frame size=0 */
+ 973 04f4 1F91      		pop r17
+ 974 04f6 0F91      		pop r16
+ 975 04f8 0895      		ret
+ 976               	/* epilogue end (size=3) */
+ 977               	/* function transmitCallback1 size 30 (25) */
+ 979               	.Lscope6:
+ 981               		.stabd	78,0,0
+ 983               	.global	main
+ 985               	main:
+ 986               		.stabd	46,0,0
+ 988               	.LM93:
+ 989               	.LFBB7:
+ 990               	/* prologue: frame size=0 */
+ 991 04fa C0E0      		ldi r28,lo8(__stack - 0)
+ 992 04fc D0E0      		ldi r29,hi8(__stack - 0)
+ 993 04fe DEBF      		out __SP_H__,r29
+ 994 0500 CDBF      		out __SP_L__,r28
+ 995               	/* prologue end (size=4) */
+ 997               	.LM94:
+ 998 0502 0E94 0000 		call nrk_setup_ports
+ 1000               	.LM95:
+ 1001 0506 87E0      		ldi r24,lo8(7)
+ 1002 0508 90E0      		ldi r25,hi8(7)
+ 1003 050a 0E94 0000 		call nrk_setup_uart
+ 1005               	.LM96:
+ 1006 050e 80E0      		ldi r24,lo8(__c.2468)
+ 1007 0510 90E0      		ldi r25,hi8(__c.2468)
+ 1008 0512 0E94 0000 		call nrk_kprintf
+ 1010               	.LM97:
+ 1011 0516 0E94 0000 		call nrk_init
+ 1013               	.LM98:
+ 1014 051a 80E0      		ldi r24,lo8(0)
+ 1015 051c 90E0      		ldi r25,hi8(0)
+ 1016 051e 0E94 0000 		call nrk_led_clr
+ 1018               	.LM99:
+ 1019 0522 81E0      		ldi r24,lo8(1)
+ 1020 0524 90E0      		ldi r25,hi8(1)
+ 1021 0526 0E94 0000 		call nrk_led_clr
+ 1023               	.LM100:
+ 1024 052a 82E0      		ldi r24,lo8(2)
+ 1025 052c 90E0      		ldi r25,hi8(2)
+ 1026 052e 0E94 0000 		call nrk_led_clr
+ 1028               	.LM101:
+ 1029 0532 83E0      		ldi r24,lo8(3)
+ 1030 0534 90E0      		ldi r25,hi8(3)
+ 1031 0536 0E94 0000 		call nrk_led_clr
+ 1033               	.LM102:
+ 1034 053a 20E0      		ldi r18,lo8(0)
+ 1035 053c 30E0      		ldi r19,hi8(0)
+ 1036 053e 40E0      		ldi r20,hlo8(0)
+ 1037 0540 50E0      		ldi r21,hhi8(0)
+ 1038 0542 60E0      		ldi r22,lo8(0)
+ 1039 0544 70E0      		ldi r23,hi8(0)
+ 1040 0546 80E0      		ldi r24,hlo8(0)
+ 1041 0548 90E0      		ldi r25,hhi8(0)
+ 1042 054a 0E94 0000 		call nrk_time_set
+ 1044               	.LM103:
+ 1045 054e 0E94 0000 		call isa_task_config
+ 1047               	.LM104:
+ 1048 0552 0E94 0000 		call nrk_create_taskset
+ 1050               	.LM105:
+ 1051 0556 0E94 0000 		call nrk_start
+ 1053               	.LM106:
+ 1054 055a 80E0      		ldi r24,lo8(0)
+ 1055 055c 90E0      		ldi r25,hi8(0)
+ 1056               	/* epilogue: frame size=0 */
+ 1057 055e 0C94 0000 		jmp exit
+ 1058               	/* epilogue end (size=2) */
+ 1059               	/* function main size 52 (46) */
+ 1061               	.Lscope7:
+ 1063               		.stabd	78,0,0
+ 1065               	.global	wait_until_record_full
+ 1067               	wait_until_record_full:
+ 1068               		.stabd	46,0,0
+ 1070               	.LM107:
+ 1071               	.LFBB8:
+ 1072               	/* prologue: frame size=0 */
+ 1073               	/* prologue end (size=0) */
+ 1075               	.LM108:
+ 1076 0562 8091 0000 		lds r24,pkt_record_done_signal
+ 1077 0566 0E94 0000 		call nrk_signal_register
+ 1079               	.LM109:
+ 1080 056a 8091 0000 		lds r24,sendFlag
+ 1081 056e 8823      		tst r24
+ 1082 0570 01F4      		brne .L35
+ 1084               	.LM110:
+ 1085 0572 61E0      		ldi r22,lo8(1)
+ 1086 0574 70E0      		ldi r23,hi8(1)
+ 1087 0576 80E0      		ldi r24,hlo8(1)
+ 1088 0578 90E0      		ldi r25,hhi8(1)
+ 1089 057a 0090 0000 		lds r0,pkt_record_done_signal
+ 1090 057e 00C0      		rjmp 2f
+ 1091 0580 660F      	1:	lsl r22
+ 1092 0582 771F      		rol r23
+ 1093 0584 881F      		rol r24
+ 1094 0586 991F      		rol r25
+ 1095 0588 0A94      	2:	dec r0
+ 1096 058a 02F4      		brpl 1b
+ 1097 058c 0E94 0000 		call nrk_event_wait
+ 1098               	.L35:
+ 1100               	.LM111:
+ 1101 0590 81E0      		ldi r24,lo8(1)
+ 1102 0592 90E0      		ldi r25,hi8(1)
+ 1103               	/* epilogue: frame size=0 */
+ 1104 0594 0895      		ret
+ 1105               	/* epilogue end (size=1) */
+ 1106               	/* function wait_until_record_full size 26 (25) */
+ 1108               	.Lscope8:
+ 1110               		.stabd	78,0,0
+ 1111               		.data
+ 1112               	.LC7:
+ 1113 0050 4B4F 2C25 		.string	"KO,%d,%d\r\n"
+ 1113      642C 2564 
+ 1113      0D0A 00
+ 1114               		.text
+ 1116               	.global	Task2
+ 1118               	Task2:
+ 1119               		.stabd	46,0,0
+ 1121               	.LM112:
+ 1122               	.LFBB9:
+ 1123               	/* prologue: frame size=0 */
+ 1124 0596 AF92      		push r10
+ 1125 0598 BF92      		push r11
+ 1126 059a CF92      		push r12
+ 1127 059c DF92      		push r13
+ 1128 059e FF92      		push r15
+ 1129 05a0 0F93      		push r16
+ 1130 05a2 1F93      		push r17
+ 1131 05a4 CF93      		push r28
+ 1132 05a6 DF93      		push r29
+ 1133               	/* prologue end (size=9) */
+ 1135               	.LM113:
+ 1136 05a8 6091 0000 		lds r22,__iob+2
+ 1137 05ac 7091 0000 		lds r23,(__iob+2)+1
+ 1138 05b0 20E0      		ldi r18,lo8(0)
+ 1139 05b2 40E0      		ldi r20,lo8(0)
+ 1140 05b4 8091 0000 		lds r24,__iob
+ 1141 05b8 9091 0000 		lds r25,(__iob)+1
+ 1142 05bc 0E94 0000 		call slip_init
+ 1144               	.LM114:
+ 1145 05c0 0E94 0000 		call wait_until_record_full
+ 1147               	.LM115:
+ 1148 05c4 F090 0000 		lds r15,NRK_DEBUG_1
+ 1150               	.LM116:
+ 1151 05c8 00E0      		ldi r16,lo8(slip_tx_buf+1)
+ 1152 05ca 10E0      		ldi r17,hi8(slip_tx_buf+1)
+ 1153               	.LBB4:
+ 1155               	.LM117:
+ 1156 05cc E801      		movw r28,r16
+ 1157 05ce 2197      		sbiw r28,1
+ 1158 05d0 5E01      		movw r10,r28
+ 1159               	.LBE4:
+ 1161               	.LM118:
+ 1162 05d2 80E0      		ldi r24,lo8(.LC7)
+ 1163 05d4 C82E      		mov r12,r24
+ 1164 05d6 80E0      		ldi r24,hi8(.LC7)
+ 1165 05d8 D82E      		mov r13,r24
+ 1166               	.L39:
+ 1168               	.LM119:
+ 1169 05da 8F2D      		mov r24,r15
+ 1170 05dc 0E94 0000 		call nrk_gpio_set
+ 1172               	.LM120:
+ 1173 05e0 8091 0000 		lds r24,send_node
+ 1174 05e4 8F5F      		subi r24,lo8(-(1))
+ 1175 05e6 8093 0000 		sts slip_tx_buf,r24
+ 1176 05ea 8150      		subi r24,lo8(-(-1))
+ 1177 05ec E82F      		mov r30,r24
+ 1178 05ee FF27      		clr r31
+ 1179 05f0 B4E0      		ldi r27,4
+ 1180 05f2 EE0F      	1:	lsl r30
+ 1181 05f4 FF1F      		rol r31
+ 1182 05f6 BA95      		dec r27
+ 1183 05f8 01F4      		brne 1b
+ 1184 05fa E050      		subi r30,lo8(-(pkt_measure))
+ 1185 05fc F040      		sbci r31,hi8(-(pkt_measure))
+ 1186 05fe D801      		movw r26,r16
+ 1187               	.L40:
+ 1188               	.LBB5:
+ 1190               	.LM121:
+ 1191 0600 8191      		ld r24,Z+
+ 1192 0602 9AEA      		ldi r25,lo8(-86)
+ 1193 0604 8927      		eor r24,r25
+ 1194 0606 8D93      		st X+,r24
+ 1196               	.LM122:
+ 1197 0608 80E0      		ldi r24,hi8(slip_tx_buf+17)
+ 1198 060a A030      		cpi r26,lo8(slip_tx_buf+17)
+ 1199 060c B807      		cpc r27,r24
+ 1200 060e 01F4      		brne .L40
+ 1201               	.LBE5:
+ 1203               	.LM123:
+ 1204 0610 F501      		movw r30,r10
+ 1205 0612 0190      		ld __tmp_reg__,Z+
+ 1206 0614 0020      		tst __tmp_reg__
+ 1207 0616 01F4      		brne .-6
+ 1208 0618 3197      		sbiw r30,1
+ 1209 061a E050      		subi r30,lo8(slip_tx_buf)
+ 1210 061c F040      		sbci r31,hi8(slip_tx_buf)
+ 1211 061e 6E2F      		mov r22,r30
+ 1212 0620 CE01      		movw r24,r28
+ 1213 0622 0E94 0000 		call slip_tx
+ 1215               	.LM124:
+ 1216 0626 1092 0000 		sts sendFlag,__zero_reg__
+ 1218               	.LM125:
+ 1219 062a 8091 0000 		lds r24,send_node
+ 1220 062e 282F      		mov r18,r24
+ 1221 0630 3327      		clr r19
+ 1222 0632 F901      		movw r30,r18
+ 1223 0634 A4E0      		ldi r26,4
+ 1224 0636 EE0F      	1:	lsl r30
+ 1225 0638 FF1F      		rol r31
+ 1226 063a AA95      		dec r26
+ 1227 063c 01F4      		brne 1b
+ 1228 063e E050      		subi r30,lo8(-(pkt_measure))
+ 1229 0640 F040      		sbci r31,hi8(-(pkt_measure))
+ 1230 0642 80E0      		ldi r24,lo8(0)
+ 1231               	.L42:
+ 1232 0644 1192      		st Z+,__zero_reg__
+ 1234               	.LM126:
+ 1235 0646 8F5F      		subi r24,lo8(-(1))
+ 1236 0648 8031      		cpi r24,lo8(16)
+ 1237 064a 01F4      		brne .L42
+ 1239               	.LM127:
+ 1240 064c 8091 0000 		lds r24,resync_times
+ 1241 0650 9091 0000 		lds r25,(resync_times)+1
+ 1242 0654 9F93      		push r25
+ 1243 0656 8F93      		push r24
+ 1244 0658 3F93      		push r19
+ 1245 065a 2F93      		push r18
+ 1246 065c DF92      		push r13
+ 1247 065e CF92      		push r12
+ 1248 0660 0E94 0000 		call printf
+ 1250               	.LM128:
+ 1251 0664 8F2D      		mov r24,r15
+ 1252 0666 0E94 0000 		call nrk_gpio_clr
+ 1254               	.LM129:
+ 1255 066a 0E94 0000 		call wait_until_record_full
+ 1257               	.LM130:
+ 1258 066e 8DB7      		in r24,__SP_L__
+ 1259 0670 9EB7      		in r25,__SP_H__
+ 1260 0672 0696      		adiw r24,6
+ 1261 0674 0FB6      		in __tmp_reg__,__SREG__
+ 1262 0676 F894      		cli
+ 1263 0678 9EBF      		out __SP_H__,r25
+ 1264 067a 0FBE      		out __SREG__,__tmp_reg__
+ 1265 067c 8DBF      		out __SP_L__,r24
+ 1266 067e 00C0      		rjmp .L39
+ 1267               	/* epilogue: frame size=0 */
+ 1268               	/* epilogue: noreturn */
+ 1269               	/* epilogue end (size=0) */
+ 1270               	/* function Task2 size 117 (108) */
+ 1275               	.Lscope9:
+ 1277               		.stabd	78,0,0
+ 1278               		.section	.progmem.data,"a",@progbits
+ 1281               	__c.2556:
+ 1282 0000 4372 6561 		.string	"Create Done\r\n"
+ 1282      7465 2044 
+ 1282      6F6E 650D 
+ 1282      0A00 
+ 1285               	__c.2505:
+ 1286 000e 4552 524F 		.string	"ERROR: creating packet record signal failed\r\n"
+ 1286      523A 2063 
+ 1286      7265 6174 
+ 1286      696E 6720 
+ 1286      7061 636B 
+ 1289               	__c.2468:
+ 1290 003c 5374 6172 		.string	"Starting up...\r\n"
+ 1290      7469 6E67 
+ 1290      2075 702E 
+ 1290      2E2E 0D0A 
+ 1290      00
+ 1291               		.comm _nrk_signal_list,4,1
+ 1292               		.comm nrk_idle_task_stk,128,1
+ 1293               		.comm nrk_kernel_stk_ptr,2,1
+ 1294               		.comm isa_id,1,1
+ 1295               		.comm isa_clk_src_id,1,1
+ 1296               		.comm tx_slot_from_join,4,1
+ 1297               		.comm isa_rx_data_ready,4,1
+ 1298               		.comm child_list,4,1
+ 1299               		.comm DHDR,1,1
+ 1300               		.comm last_slot,2,1
+ 1301               		.comm resync_times,2,1
+ 1302               		.comm isa_param,9,1
+ 1303               		.comm isa_node_mode,1,1
+ 1304               		.comm isa_task,35,1
+ 1305               		.comm isa_task_stack,128,1
+ 1306               		.comm isa_rfRxInfo,9,1
+ 1307               		.comm isa_ack_tx,7,1
+ 1308               		.comm isa_ack_buf,4,1
+ 1309               		.comm isa_rfTxInfo,7,1
+ 1310               		.comm _isa_ready,1,1
+ 1311               		.comm _isa_join_ok,1,1
+ 1312               		.comm error_task,1,1
+ 1313               		.comm error_num,1,1
+ 1314               		.comm Stack1,256,1
+ 1315               		.comm TaskOne,35,1
+ 1316               		.comm Stack2,256,1
+ 1317               		.comm TaskTwo,35,1
+ 1318               		.comm tx_buf,116,1
+ 1319               		.comm rx_buf,116,1
+ 1320               		.comm slip_tx_buf,17,1
+ 1321               		.comm slip_rx_buf,17,1
+ 1322               		.comm pkt_measure,48,1
+ 1323               		.comm sendFlag,1,1
+ 1324               		.comm frame_cnt,3,1
+ 1325               		.comm pkt_cnt,3,1
+ 1326               		.comm current_pkt_index,3,1
+ 1327               		.comm received_pkt_index,3,1
+ 1328               		.comm current_node,1,1
+ 1329               		.comm send_node,1,1
+ 1330               		.comm pkt_record_done_signal,1,1
+ 1374               		.text
+ 1376               	.Letext0:
+ 1377               	/* File "main.c": code  833 = 0x0341 ( 741), prologues  49, epilogues  43 */
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+     /tmp/ccdGat7J.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccdGat7J.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccdGat7J.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccdGat7J.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccdGat7J.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccdGat7J.s:147    .text:00000000 pkt_record_check
+                            *COM*:00000001 sendFlag
+     /tmp/ccdGat7J.s:178    .text:0000000c packet_measurement_better
+                            *COM*:00000001 current_node
+                            *COM*:00000003 received_pkt_index
+                            *COM*:00000003 current_pkt_index
+                            *COM*:00000003 pkt_cnt
+                            *COM*:00000003 frame_cnt
+                            *COM*:00000030 pkt_measure
+                            *COM*:00000001 send_node
+                            *COM*:00000001 pkt_record_done_signal
+     /tmp/ccdGat7J.s:367    .text:0000011c nrk_create_taskset
+     /tmp/ccdGat7J.s:570    .text:00000294 Task1
+                            *COM*:00000023 TaskOne
+                            *COM*:00000100 Stack1
+     /tmp/ccdGat7J.s:1118   .text:00000596 Task2
+                            *COM*:00000023 TaskTwo
+                            *COM*:00000100 Stack2
+     /tmp/ccdGat7J.s:1281   .progmem.data:00000000 __c.2556
+                            *COM*:00000074 rx_buf
+                            *COM*:00000074 tx_buf
+     /tmp/ccdGat7J.s:935    .text:000004be transmitCallback1
+     /tmp/ccdGat7J.s:884    .text:00000482 transmitCallback2
+     /tmp/ccdGat7J.s:1285   .progmem.data:0000000e __c.2505
+     /tmp/ccdGat7J.s:985    .text:000004fa main
+     /tmp/ccdGat7J.s:1289   .progmem.data:0000003c __c.2468
+     /tmp/ccdGat7J.s:1067   .text:00000562 wait_until_record_full
+                            *COM*:00000011 slip_tx_buf
+                            *COM*:00000002 resync_times
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000080 nrk_idle_task_stk
+                            *COM*:00000002 nrk_kernel_stk_ptr
+                            *COM*:00000001 isa_id
+                            *COM*:00000001 isa_clk_src_id
+                            *COM*:00000004 tx_slot_from_join
+                            *COM*:00000004 isa_rx_data_ready
+                            *COM*:00000004 child_list
+                            *COM*:00000001 DHDR
+                            *COM*:00000002 last_slot
+                            *COM*:00000009 isa_param
+                            *COM*:00000001 isa_node_mode
+                            *COM*:00000023 isa_task
+                            *COM*:00000080 isa_task_stack
+                            *COM*:00000009 isa_rfRxInfo
+                            *COM*:00000007 isa_ack_tx
+                            *COM*:00000004 isa_ack_buf
+                            *COM*:00000007 isa_rfTxInfo
+                            *COM*:00000001 _isa_ready
+                            *COM*:00000001 _isa_join_ok
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+                            *COM*:00000011 slip_rx_buf
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+puts
+isa_get_channel
+printf
+nrk_event_signal
+nrk_activate_task
+nrk_task_set_stk
+nrk_kprintf
+nrk_get_pid
+nrk_led_set
+isa_set_channel_pattern
+isa_init
+isa_set_channel
+dlmoInit
+configureSlot
+isa_start
+isa_rx_pkt_set_buffer
+nrk_wait_until_next_period
+isa_ready
+nrk_signal_create
+NRK_DEBUG_3
+nrk_gpio_set
+isa_rx_pkt_check
+isa_rx_pkt_get
+isa_rx_pkt_release
+sprintf
+sendPacket
+isa_wait_until_rx_or_tx
+nrk_cur_task_TCB
+nrk_kernel_error_add
+isaFreePacket
+strcpy
+__stack
+nrk_setup_ports
+nrk_setup_uart
+nrk_init
+nrk_led_clr
+nrk_time_set
+isa_task_config
+nrk_start
+exit
+nrk_signal_register
+nrk_event_wait
+__iob
+slip_init
+NRK_DEBUG_1
+slip_tx
+nrk_gpio_clr

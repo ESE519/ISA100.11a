@@ -1,0 +1,110 @@
+   1               		.file	"hal_rf_wait_for_crystal_oscillator.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 107               	.global	halRfWaitForCrystalOscillator
+ 109               	halRfWaitForCrystalOscillator:
+ 110               		.stabd	46,0,0
+   1:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** /******************************************************************************
+   2:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  All rights reserved.
+   5:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *
+   6:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *
+  10:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *
+  14:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  GNU General Public License for more details.
+  18:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *
+  19:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *
+  22:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *  Chipcon Development Team 
+  24:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** *******************************************************************************/
+  25:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** 
+  26:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** #include <include.h>
+  27:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** #include <ulib.h>
+  28:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** 
+  29:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //-------------------------------------------------------------------------------------------------
+  30:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //	void rfWaitForCrystalOscillator(void)
+  31:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //
+  32:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //	DESCRIPTION:
+  33:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //		Waits for the crystal oscillator to become stable. The flag is polled via the SPI status byte.
+  34:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //      
+  35:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //      Note that this function will lock up if the SXOSCON command strobe has not been given befor
+  36:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //      function call. Also note that global interrupts will always be enabled when this function 
+  37:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //      returns.
+  38:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** //-------------------------------------------------------------------------------------------------
+  39:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** void halRfWaitForCrystalOscillator(void) {
+ 112               	.LM0:
+ 113               	.LFBB1:
+ 114               	/* prologue: frame size=0 */
+ 115               	/* prologue end (size=0) */
+ 116               	.L3:
+  40:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c ****     uint8_t spiStatusByte;
+  41:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** 
+  42:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c ****     // Poll the SPI status byte until the crystal oscillator is stable
+  43:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c ****     do {
+  44:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** 	    DISABLE_GLOBAL_INT();
+ 118               	.LM1:
+ 119               	/* #APP */
+ 120 0000 F894      		cli
+ 121               		
+  45:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** 	    FASTSPI_UPD_STATUS(spiStatusByte);
+ 123               	.LM2:
+ 124               	/* #NOAPP */
+ 125 0002 4098      		cbi 40-0x20,0
+ 126 0004 1EBC      		out 78-0x20,__zero_reg__
+ 127               	.L4:
+ 129               	.LM3:
+ 130 0006 0DB4      		in __tmp_reg__,77-0x20
+ 131 0008 07FE      		sbrs __tmp_reg__,7
+ 132 000a 00C0      		rjmp .L4
+ 133 000c 8EB5      		in r24,78-0x20
+ 134 000e 409A      		sbi 40-0x20,0
+  46:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c **** 	    ENABLE_GLOBAL_INT();
+ 136               	.LM4:
+ 137               	/* #APP */
+ 138 0010 7894      		sei
+ 139               		
+  47:../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c ****     } while (!(spiStatusByte & (BM(CC2420_XOSC16M_STABLE))));
+ 141               	.LM5:
+ 142               	/* #NOAPP */
+ 143 0012 86FF      		sbrs r24,6
+ 144 0014 00C0      		rjmp .L3
+ 145               	/* epilogue: frame size=0 */
+ 146 0016 0895      		ret
+ 147               	/* epilogue end (size=1) */
+ 148               	/* function halRfWaitForCrystalOscillator size 18 (17) */
+ 153               	.Lscope1:
+ 155               		.stabd	78,0,0
+ 156               		.comm _nrk_signal_list,4,1
+ 159               	.Letext0:
+ 160               	/* File "../../../src/radio/cc2420/source/hal_rf_wait_for_crystal_oscillator.c": code   18 = 0x0012
+DEFINED SYMBOLS
+                            *ABS*:00000000 hal_rf_wait_for_crystal_oscillator.c
+     /tmp/cchEpwf9.s:2      *ABS*:0000003f __SREG__
+     /tmp/cchEpwf9.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cchEpwf9.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cchEpwf9.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cchEpwf9.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cchEpwf9.s:109    .text:00000000 halRfWaitForCrystalOscillator
+                            *COM*:00000004 _nrk_signal_list
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss

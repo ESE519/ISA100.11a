@@ -1,0 +1,23 @@
+   1               		.file	"nrk_reserve.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+  30               	.Letext0:
+  31               	/* File "../../../src/kernel/source/nrk_reserve.c": code    0 = 0x0000 (   0), prologues   0, epilo
+DEFINED SYMBOLS
+                            *ABS*:00000000 nrk_reserve.c
+     /tmp/ccyIPdjM.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccyIPdjM.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccyIPdjM.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccyIPdjM.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccyIPdjM.s:6      *ABS*:00000001 __zero_reg__
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss

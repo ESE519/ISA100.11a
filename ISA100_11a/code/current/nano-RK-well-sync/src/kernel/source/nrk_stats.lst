@@ -29,11 +29,11 @@
  165               	/* File "../../../src/kernel/source/nrk_stats.c": code    0 = 0x0000 (   0), prologues   0, epilogu
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_stats.c
-     /tmp/cc7HKTZl.s:2      *ABS*:0000003f __SREG__
-     /tmp/cc7HKTZl.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cc7HKTZl.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cc7HKTZl.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cc7HKTZl.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cc4AZZoE.s:2      *ABS*:0000003f __SREG__
+     /tmp/cc4AZZoE.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cc4AZZoE.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cc4AZZoE.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cc4AZZoE.s:6      *ABS*:00000001 __zero_reg__
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr

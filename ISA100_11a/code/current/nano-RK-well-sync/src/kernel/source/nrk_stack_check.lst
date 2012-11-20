@@ -470,15 +470,15 @@
  499               	/* File "../../../src/kernel/source/nrk_stack_check.c": code  246 = 0x00f6 ( 212), prologues  16, e
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_stack_check.c
-     /tmp/ccTWKQ4u.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccTWKQ4u.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccTWKQ4u.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccTWKQ4u.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccTWKQ4u.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccTWKQ4u.s:133    .text:00000000 nrk_stack_check_pid
-     /tmp/ccTWKQ4u.s:215    .text:0000004a dump_stack_info
-     /tmp/ccTWKQ4u.s:483    .progmem.data:00000000 __c.2257
-     /tmp/ccTWKQ4u.s:421    .text:000001a2 nrk_stack_check
+     /tmp/cckm452I.s:2      *ABS*:0000003f __SREG__
+     /tmp/cckm452I.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cckm452I.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cckm452I.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cckm452I.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cckm452I.s:133    .text:00000000 nrk_stack_check_pid
+     /tmp/cckm452I.s:215    .text:0000004a dump_stack_info
+     /tmp/cckm452I.s:483    .progmem.data:00000000 __c.2257
+     /tmp/cckm452I.s:421    .text:000001a2 nrk_stack_check
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr

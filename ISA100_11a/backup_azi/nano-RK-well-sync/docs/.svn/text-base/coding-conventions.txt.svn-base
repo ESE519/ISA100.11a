@@ -1,0 +1,36 @@
+Nano-RK Coding Conventions
+---------------------------
+1) private functions shall start with _ 
+2) prefix nrk_ or _nrk_ before any Nano-RK related functions or data types 
+3) defines and constants will have NRK_ prefixed 
+4) all lower case separated by _ for functions 
+5) try to avoid abrv. 
+6) all types end with _t 
+7) byte order is little endian 
+8) Use C99 types: 
+	#include <stdint.h>
+	#include <stdbool.h>
+        bool		// boolean
+	int8_t		
+	int16_t
+	int32_t		// signed int
+	int64_t
+
+	uint8_t		// as a "BYTE" value	
+	uint16_t
+	uint32_t	// unsigned int
+	uint64_t
+	
+	float		// at the mercy of the compiler no hardware support
+	double		// at the mercy of the compiler no hardware support
+	
+	void*		// instead of char* 
+	char		// for text characters
+9) use the following gnu INDENT options: 
+10) indent -br -brs -nut -npsl -i2 source_name.c 
+11) indent each level 2 more spaces than previous 
+12) Don't put else on the same line of if 
+
+    if (condition) foo (); else bar ();	/* Yuck! */
+13) Have the most significant description in a name first 
+    For example: nrk_led_clr() and not nrk_clr_led()

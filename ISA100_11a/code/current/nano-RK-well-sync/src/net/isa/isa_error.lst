@@ -181,15 +181,15 @@
  249               	/* File "../../../src/net/isa/isa_error.c": code   42 = 0x002a (  40), prologues   0, epilogues   2
 DEFINED SYMBOLS
                             *ABS*:00000000 isa_error.c
-     /tmp/ccPTMVeG.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccPTMVeG.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccPTMVeG.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccPTMVeG.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccPTMVeG.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccPTMVeG.s:119    .text:00000000 setIsaError
+     /tmp/cc71C3TN.s:2      *ABS*:0000003f __SREG__
+     /tmp/cc71C3TN.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cc71C3TN.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cc71C3TN.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cc71C3TN.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cc71C3TN.s:119    .text:00000000 setIsaError
                              .bss:00000000 isaError
-     /tmp/ccPTMVeG.s:140    .text:00000006 getIsaError
-     /tmp/ccPTMVeG.s:174    .text:0000000e printIsaError
+     /tmp/cc71C3TN.s:140    .text:00000006 getIsaError
+     /tmp/cc71C3TN.s:174    .text:0000000e printIsaError
                             *COM*:00000004 _nrk_signal_list
 
 UNDEFINED SYMBOLS

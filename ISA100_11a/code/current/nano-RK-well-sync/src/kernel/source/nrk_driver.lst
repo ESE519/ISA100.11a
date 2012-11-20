@@ -590,21 +590,21 @@
  655               	/* File "../../../src/kernel/source/nrk_driver.c": code  281 = 0x0119 ( 272), prologues   4, epilog
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_driver.c
-     /tmp/cc6vyPFV.s:2      *ABS*:0000003f __SREG__
-     /tmp/cc6vyPFV.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cc6vyPFV.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cc6vyPFV.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cc6vyPFV.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cc6vyPFV.s:134    .text:00000000 nrk_register_driver
+     /tmp/cc33xGYZ.s:2      *ABS*:0000003f __SREG__
+     /tmp/cc33xGYZ.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cc33xGYZ.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cc33xGYZ.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cc33xGYZ.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cc33xGYZ.s:134    .text:00000000 nrk_register_driver
                             *COM*:00000001 _nrk_driver_count
                             *COM*:00000004 nrk_drivers
-     /tmp/cc6vyPFV.s:194    .text:0000003a nrk_open
+     /tmp/cc33xGYZ.s:194    .text:0000003a nrk_open
                             *COM*:00000001 nrk_driver_init
-     /tmp/cc6vyPFV.s:320    .text:000000dc nrk_get_status
-     /tmp/cc6vyPFV.s:382    .text:00000120 nrk_set_status
-     /tmp/cc6vyPFV.s:444    .text:00000164 nrk_read
-     /tmp/cc6vyPFV.s:506    .text:000001a8 nrk_write
-     /tmp/cc6vyPFV.s:566    .text:000001ec nrk_close
+     /tmp/cc33xGYZ.s:320    .text:000000dc nrk_get_status
+     /tmp/cc33xGYZ.s:382    .text:00000120 nrk_set_status
+     /tmp/cc33xGYZ.s:444    .text:00000164 nrk_read
+     /tmp/cc33xGYZ.s:506    .text:000001a8 nrk_write
+     /tmp/cc33xGYZ.s:566    .text:000001ec nrk_close
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr

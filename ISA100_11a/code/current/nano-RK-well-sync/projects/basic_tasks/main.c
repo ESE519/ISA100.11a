@@ -35,7 +35,7 @@
 NRK_STK Stack1[NRK_APP_STACKSIZE];
 nrk_task_type TaskOne;
 void Task1(void);
-
+/*
 NRK_STK Stack2[NRK_APP_STACKSIZE];
 nrk_task_type TaskTwo;
 void Task2 (void);
@@ -48,7 +48,7 @@ void Task3 (void);
 NRK_STK Stack4[NRK_APP_STACKSIZE];
 nrk_task_type TaskFour;
 void Task4 (void);
-
+*/
 void nrk_create_taskset();
 uint8_t kill_stack(uint8_t val);
 
@@ -74,6 +74,9 @@ main ()
 
 void Task1()
 {
+	 uint8_t offsetSec, curSec;
+	    uint16_t offsetNanoSec;
+	    uint16_t time_correction1;
 nrk_time_t t;
 uint16_t cnt;
 uint16_t wait_high_time;
@@ -88,13 +91,13 @@ printf( "Task1 PID=%u\r\n",nrk_get_pid());
 //_nrk_high_speed_timer_start();
   while(1) {
 	//_nrk_high_speed_timer_reset();
-	nrk_led_toggle(ORANGE_LED);
-	nrk_gpio_set(NRK_DEBUG_0);
-	nrk_gpio_toggle(NRK_DEBUG_1);
+//	nrk_led_toggle(ORANGE_LED);
+//	nrk_gpio_set(NRK_DEBUG_0);
+//	nrk_gpio_toggle(NRK_DEBUG_1);
 	//printf( "Task1 cnt=%u\r\n, %d.",cnt);
-	do{
-		cur_TCNT2 = _nrk_os_timer_get();		
-	}while(cur_TCNT2<=20);
+	//do{
+	//	cur_TCNT2 = _nrk_os_timer_get();
+//	}while(cur_TCNT2<=20);
 	//printf("Task1 cnt=%u, current TCNT2 is %d\n\r",cnt, cur_TCNT2);
 	
 	//printf("current TCNT1 is %d.\n\r",_nrk_high_speed_timer_get());
@@ -108,18 +111,34 @@ printf( "Task1 PID=%u\r\n",nrk_get_pid());
 		while(_nrk_high_speed_timer_get()<50000);
 		_nrk_high_speed_timer_reset();
 	}*/
-	_nrk_high_speed_timer_reset();
+	//_nrk_high_speed_timer_reset();
 	//_nrk_os_timer_reset();
 	//printf("1st TCNT1 is %d.\n\r",_nrk_high_speed_timer_get());
 	//wait_high_time = _nrk_high_speed_timer_get() + 2577;
-	do{}while(TCNT1<2577);
+//	do{}while(TCNT1<2577);
 	//nrk_high_speed_timer_wait(,2577);//time escape 0.5ms
 	//printf("2nd TCNT1 is %d.\n\r",_nrk_high_speed_timer_get());
 	//_nrk_high_speed_timer_reset();
 	//printf("3rd TCNT1 is %d.\n\r",_nrk_high_speed_timer_get());
-	_nrk_os_timer_set(20);
+	//_nrk_os_timer_set(20);
 	//printf("TCNT1 is %d cnt is %d.\n\r",_nrk_high_speed_timer_get(),cnt);
-	nrk_gpio_clr(NRK_DEBUG_0);
+	nrk_gpio_set(NRK_DEBUG_1);
+//	_
+//
+	time_correction1 = 7480;
+	//curSec = _nrk_os_timer_get();
+	//offsetSec = time_correction1/7325+1; //This should be called offSetMilli-it gives the seconds I should speed up by
+	//offsetNanoSec = 7325-time_correction1%7325;
+	_nrk_os_timer_stop();
+	_nrk_high_speed_timer_reset();
+	nrk_high_speed_timer_wait(0,offsetNanoSec);
+	_nrk_os_timer_set(curSec+offsetSec);
+	_nrk_os_timer_start();
+	nrk_spin_wait_us(50);
+
+//printf ("Current SEc %d\n\r ", curSec);
+	//nrk_high_speed_timer_wait(0,29300);
+	nrk_gpio_clr(NRK_DEBUG_1);
 	nrk_wait_until_next_period();
 	
         // Uncomment this line to cause a stack overflow
@@ -131,12 +150,11 @@ printf( "Task1 PID=%u\r\n",nrk_get_pid());
 	//	nrk_stats_display_all();
 	//	nrk_halt();
 	//	}
-
 	cnt=0;
 	//cnt++;
 	}
 }
-
+/*
 void Task2()
 {
   int16_t cnt;
@@ -180,7 +198,7 @@ uint16_t cnt;
 	cnt++;
 	}
 }
-
+*/
 void
 nrk_create_taskset()
 {
@@ -191,13 +209,13 @@ nrk_create_taskset()
   TaskOne.Type = BASIC_TASK;
   TaskOne.SchType = PREEMPTIVE;
   TaskOne.period.secs = 0;
-  TaskOne.period.nano_secs = 50*NANOS_PER_MS;
+  TaskOne.period.nano_secs = 20*NANOS_PER_MS;
   TaskOne.cpu_reserve.secs = 0;
-  TaskOne.cpu_reserve.nano_secs = 50*NANOS_PER_MS;
+  TaskOne.cpu_reserve.nano_secs = 0;
   TaskOne.offset.secs = 0;
   TaskOne.offset.nano_secs= 0;
   nrk_activate_task (&TaskOne);
-
+/*
   nrk_task_set_entry_function( &TaskTwo, Task2);
   nrk_task_set_stk( &TaskTwo, Stack2, NRK_APP_STACKSIZE);
   TaskTwo.prio = 2;
@@ -242,7 +260,7 @@ nrk_create_taskset()
   TaskFour.offset.nano_secs= 0;
   //nrk_activate_task (&TaskFour);
 
-
+*/
 }
 
 uint8_t kill_stack(uint8_t val)

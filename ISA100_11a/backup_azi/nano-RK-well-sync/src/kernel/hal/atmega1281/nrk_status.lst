@@ -1,0 +1,104 @@
+   1               		.file	"nrk_status.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 107               	.global	_nrk_startup_ok
+ 109               	_nrk_startup_ok:
+ 110               		.stabd	46,0,0
+   1:../../../src/kernel/hal/atmega1281/nrk_status.c **** /******************************************************************************
+   2:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  All rights reserved.
+   5:../../../src/kernel/hal/atmega1281/nrk_status.c **** *
+   6:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/kernel/hal/atmega1281/nrk_status.c **** *
+  10:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/kernel/hal/atmega1281/nrk_status.c **** *
+  14:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  GNU General Public License for more details.
+  18:../../../src/kernel/hal/atmega1281/nrk_status.c **** *
+  19:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/kernel/hal/atmega1281/nrk_status.c **** *
+  22:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/kernel/hal/atmega1281/nrk_status.c **** *  Anthony Rowe
+  24:../../../src/kernel/hal/atmega1281/nrk_status.c **** *******************************************************************************/
+  25:../../../src/kernel/hal/atmega1281/nrk_status.c **** 
+  26:../../../src/kernel/hal/atmega1281/nrk_status.c **** 
+  27:../../../src/kernel/hal/atmega1281/nrk_status.c **** #include <include.h>
+  28:../../../src/kernel/hal/atmega1281/nrk_status.c **** #include <nrk_status.h>
+  29:../../../src/kernel/hal/atmega1281/nrk_status.c **** 
+  30:../../../src/kernel/hal/atmega1281/nrk_status.c **** uint8_t _nrk_startup_ok()
+  31:../../../src/kernel/hal/atmega1281/nrk_status.c **** {
+ 112               	.LM0:
+ 113               	.LFBB1:
+ 114               	/* prologue: frame size=0 */
+ 115               	/* prologue end (size=0) */
+  32:../../../src/kernel/hal/atmega1281/nrk_status.c **** // Use the timer settings that are normally 0 on reset to detect
+  33:../../../src/kernel/hal/atmega1281/nrk_status.c **** // if the OS has reboot by accident
+  34:../../../src/kernel/hal/atmega1281/nrk_status.c **** if((volatile uint8_t)TCCR2A!=0) return 0;
+ 117               	.LM1:
+ 118 0000 8091 B000 		lds r24,176
+ 119 0004 90E0      		ldi r25,lo8(0)
+ 120 0006 8111      		cpse r24,__zero_reg__
+ 122               	.LM2:
+ 123 0008 91E0      		ldi r25,lo8(1)
+ 124               	.L2:
+ 125 000a 81E0      		ldi r24,lo8(1)
+ 126 000c 9827      		eor r25,r24
+  35:../../../src/kernel/hal/atmega1281/nrk_status.c **** return 1;
+  36:../../../src/kernel/hal/atmega1281/nrk_status.c **** }
+ 128               	.LM3:
+ 129 000e 892F      		mov r24,r25
+ 130 0010 9927      		clr r25
+ 131               	/* epilogue: frame size=0 */
+ 132 0012 0895      		ret
+ 133               	/* epilogue end (size=1) */
+ 134               	/* function _nrk_startup_ok size 11 (10) */
+ 136               	.Lscope1:
+ 138               		.stabd	78,0,0
+ 140               	.global	update_watchdog
+ 142               	update_watchdog:
+ 143               		.stabd	46,0,0
+  37:../../../src/kernel/hal/atmega1281/nrk_status.c **** 
+  38:../../../src/kernel/hal/atmega1281/nrk_status.c **** inline void update_watchdog()
+  39:../../../src/kernel/hal/atmega1281/nrk_status.c **** {
+ 145               	.LM4:
+ 146               	.LFBB2:
+ 147               	/* prologue: frame size=0 */
+ 148               	/* prologue end (size=0) */
+ 149               	/* epilogue: frame size=0 */
+ 150 0014 0895      		ret
+ 151               	/* epilogue end (size=1) */
+ 152               	/* function update_watchdog size 1 (0) */
+ 154               	.Lscope2:
+ 156               		.stabd	78,0,0
+ 157               		.comm _nrk_signal_list,4,1
+ 160               	.Letext0:
+ 161               	/* File "../../../src/kernel/hal/atmega1281/nrk_status.c": code   12 = 0x000c (  10), prologues   0
+DEFINED SYMBOLS
+                            *ABS*:00000000 nrk_status.c
+     /tmp/ccjOcMqd.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccjOcMqd.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccjOcMqd.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccjOcMqd.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccjOcMqd.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccjOcMqd.s:109    .text:00000000 _nrk_startup_ok
+     /tmp/ccjOcMqd.s:142    .text:00000014 update_watchdog
+                            *COM*:00000004 _nrk_signal_list
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss

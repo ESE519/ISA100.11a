@@ -1,0 +1,9 @@
+In RECIEVE
+
+
+v-> Receiving sfd timeout
+b-> n!=1
+
+In Transmit
+s -> sfd timeout (for ACK)
+f-> n!=1

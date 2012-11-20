@@ -209,8 +209,8 @@ if (cnt ==0 )
   	//printf("Hello world is sent.\n\r");
   	//}
 
-
-	isa_wait_until_rx_or_tx ();
+nrk_terminate_task();
+//	isa_wait_until_rx_or_tx ();
 
 
   }
@@ -279,7 +279,7 @@ nrk_create_taskset()
   TaskTwo.task = Task2;
   nrk_task_set_stk( &TaskTwo, Stack2, NRK_APP_STACKSIZE);
   TaskTwo.prio = 3;
-  TaskTwo.FirstActivation = TRUE;
+  TaskTwo.FirstActivation = FALSE;
   TaskTwo.Type = BASIC_TASK;
   TaskTwo.SchType = PREEMPTIVE;
   TaskTwo.period.secs = 20;

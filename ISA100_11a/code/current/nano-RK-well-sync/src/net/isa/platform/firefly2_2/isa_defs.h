@@ -57,9 +57,9 @@
 //#define SFD_TO_NEXT_SLOT_TIME   (SLOT_TIME-TX_GUARD_TIME-TX_TO_SFD-OS_TICK_TO_TASK_START-OS_TICK_TO_TASK_START)
 //#define SFD_TO_NEXT_SLOT_TIME   (41100)
 //#define SFD_TO_NEXT_SLOT_TIME   (27750)//no channel hopping parameter
-#define SFD_TO_NEXT_SLOT_TIME   (37200)//Channel hopping parameter FIXME need to explain why
+#define SFD_TO_NEXT_SLOT_TIME   (32785)//Channel hopping parameter FIXME need to explain why
 #define CPU_PROCESS_TIME (4096)  // 8MHz high speed clock
-#define HIGH_TIMER_TICKES_PER_MILISEC (6500) //Should be 8000 but practically not, probablly due to function execution time
+#define HIGH_TIMER_TICKES_PER_MILISEC (7325) //Should be 8000 but practically not, probablly due to function execution time
 #define WAIT_TIME_BEFORE_TX (9600)
 
 

@@ -252,8 +252,8 @@
  209:main.c        ****   	//printf("Hello world is sent.\n\r");
  210:main.c        ****   	//}
  211:main.c        **** 
- 212:main.c        **** 
- 213:main.c        **** 	isa_wait_until_rx_or_tx ();
+ 212:main.c        **** nrk_terminate_task();
+ 213:main.c        **** //	isa_wait_until_rx_or_tx ();
  214:main.c        **** 
  215:main.c        **** 
  216:main.c        ****   }
@@ -322,7 +322,7 @@
  279:main.c        ****   TaskTwo.task = Task2;
  280:main.c        ****   nrk_task_set_stk( &TaskTwo, Stack2, NRK_APP_STACKSIZE);
  281:main.c        ****   TaskTwo.prio = 3;
- 282:main.c        ****   TaskTwo.FirstActivation = TRUE;
+ 282:main.c        ****   TaskTwo.FirstActivation = FALSE;
  283:main.c        ****   TaskTwo.Type = BASIC_TASK;
  284:main.c        ****   TaskTwo.SchType = PREEMPTIVE;
  285:main.c        ****   TaskTwo.period.secs = 20;
@@ -644,7 +644,7 @@
  484 01fc 83E0      		ldi r24,lo8(3)
  485 01fe 8093 0000 		sts TaskTwo+8,r24
  487               	.LM40:
- 488 0202 1093 0000 		sts TaskTwo+7,r17
+ 488 0202 1092 0000 		sts TaskTwo+7,__zero_reg__
  490               	.LM41:
  491 0206 1093 0000 		sts TaskTwo+9,r17
  493               	.LM42:
@@ -932,7 +932,7 @@
  807 0416 8DBF      		out __SP_L__,r24
  808               	.L24:
  810               	.LM80:
- 811 0418 0E94 0000 		call isa_wait_until_rx_or_tx
+ 811 0418 0E94 0000 		call nrk_terminate_task
  812 041c 00C0      		rjmp .L21
  813               	.L27:
  815               	.LM81:
@@ -1328,14 +1328,14 @@
  1312               	/* File "main.c": code  788 = 0x0314 ( 705), prologues  45, epilogues  38 */
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-     /tmp/cc70cMMQ.s:2      *ABS*:0000003f __SREG__
-     /tmp/cc70cMMQ.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cc70cMMQ.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cc70cMMQ.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cc70cMMQ.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cc70cMMQ.s:149    .text:00000000 pkt_record_check
+     /tmp/ccTd4ymp.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccTd4ymp.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccTd4ymp.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccTd4ymp.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccTd4ymp.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccTd4ymp.s:149    .text:00000000 pkt_record_check
                             *COM*:00000001 sendFlag
-     /tmp/cc70cMMQ.s:180    .text:0000000c packet_measurement_better
+     /tmp/ccTd4ymp.s:180    .text:0000000c packet_measurement_better
                             *COM*:00000001 current_node
                             *COM*:00000003 received_pkt_index
                             *COM*:00000003 current_pkt_index
@@ -1344,21 +1344,21 @@ DEFINED SYMBOLS
                             *COM*:00000030 pkt_measure
                             *COM*:00000001 send_node
                             *COM*:00000001 pkt_record_done_signal
-     /tmp/cc70cMMQ.s:369    .text:0000011c nrk_create_taskset
-     /tmp/cc70cMMQ.s:572    .text:00000294 Task1
+     /tmp/ccTd4ymp.s:369    .text:0000011c nrk_create_taskset
+     /tmp/ccTd4ymp.s:572    .text:00000294 Task1
                             *COM*:00000023 TaskOne
                             *COM*:00000100 Stack1
-     /tmp/cc70cMMQ.s:1053   .text:0000053c Task2
+     /tmp/ccTd4ymp.s:1053   .text:0000053c Task2
                             *COM*:00000023 TaskTwo
                             *COM*:00000100 Stack2
-     /tmp/cc70cMMQ.s:1216   .progmem.data:00000000 __c.2568
+     /tmp/ccTd4ymp.s:1216   .progmem.data:00000000 __c.2568
                             *COM*:00000074 rx_buf
                             *COM*:00000074 tx_buf
-     /tmp/cc70cMMQ.s:870    .text:00000464 transmitCallback1
-     /tmp/cc70cMMQ.s:1220   .progmem.data:0000000e __c.2516
-     /tmp/cc70cMMQ.s:920    .text:000004a0 main
-     /tmp/cc70cMMQ.s:1224   .progmem.data:0000003c __c.2486
-     /tmp/cc70cMMQ.s:1002   .text:00000508 wait_until_record_full
+     /tmp/ccTd4ymp.s:870    .text:00000464 transmitCallback1
+     /tmp/ccTd4ymp.s:1220   .progmem.data:0000000e __c.2516
+     /tmp/ccTd4ymp.s:920    .text:000004a0 main
+     /tmp/ccTd4ymp.s:1224   .progmem.data:0000003c __c.2486
+     /tmp/ccTd4ymp.s:1002   .text:00000508 wait_until_record_full
                             *COM*:00000011 slip_tx_buf
                             *COM*:00000002 resync_times
                             *COM*:00000004 _nrk_signal_list
@@ -1413,7 +1413,7 @@ isa_rx_pkt_check
 isa_rx_pkt_get
 sprintf
 sendPacket
-isa_wait_until_rx_or_tx
+nrk_terminate_task
 nrk_cur_task_TCB
 nrk_kernel_error_add
 isaFreePacket

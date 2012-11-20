@@ -1,0 +1,57 @@
+   1               		.file	"nrk_stats.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 129               		.comm _nrk_signal_list,4,1
+ 130               		.comm nrk_idle_task_stk,128,1
+ 131               		.comm nrk_kernel_stk_ptr,2,1
+ 132               		.comm nrk_task_TCB,99,1
+ 133               		.comm nrk_wakeup_signal,1,1
+ 134               		.comm _nrk_readyQ,20,1
+ 135               		.comm _free_node,2,1
+ 136               		.comm _head_node,2,1
+ 137               		.comm nrk_cur_task_prio,1,1
+ 138               		.comm nrk_cur_task_TCB,2,1
+ 139               		.comm nrk_high_ready_prio,1,1
+ 140               		.comm nrk_high_ready_TCB,2,1
+ 141               		.comm _nrk_resource_cnt,1,1
+ 142               		.comm nrk_system_time,8,1
+ 143               		.comm nrk_sem_list,6,1
+ 144               		.comm error_task,1,1
+ 145               		.comm error_num,1,1
+ 164               	.Letext0:
+ 165               	/* File "../../../src/kernel/source/nrk_stats.c": code    0 = 0x0000 (   0), prologues   0, epilogu
+DEFINED SYMBOLS
+                            *ABS*:00000000 nrk_stats.c
+     /tmp/ccdxJUp3.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccdxJUp3.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccdxJUp3.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccdxJUp3.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccdxJUp3.s:6      *ABS*:00000001 __zero_reg__
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000080 nrk_idle_task_stk
+                            *COM*:00000002 nrk_kernel_stk_ptr
+                            *COM*:00000063 nrk_task_TCB
+                            *COM*:00000001 nrk_wakeup_signal
+                            *COM*:00000014 _nrk_readyQ
+                            *COM*:00000002 _free_node
+                            *COM*:00000002 _head_node
+                            *COM*:00000001 nrk_cur_task_prio
+                            *COM*:00000002 nrk_cur_task_TCB
+                            *COM*:00000001 nrk_high_ready_prio
+                            *COM*:00000002 nrk_high_ready_TCB
+                            *COM*:00000001 _nrk_resource_cnt
+                            *COM*:00000008 nrk_system_time
+                            *COM*:00000006 nrk_sem_list
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss

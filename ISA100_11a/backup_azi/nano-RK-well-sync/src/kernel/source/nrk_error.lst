@@ -1,0 +1,764 @@
+   1               		.file	"nrk_error.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 134               	.global	_nrk_errno_set
+ 136               	_nrk_errno_set:
+ 137               		.stabd	46,0,0
+   1:../../../src/kernel/source/nrk_error.c **** /******************************************************************************
+   2:../../../src/kernel/source/nrk_error.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/kernel/source/nrk_error.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/kernel/source/nrk_error.c **** *  All rights reserved.
+   5:../../../src/kernel/source/nrk_error.c **** *
+   6:../../../src/kernel/source/nrk_error.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/kernel/source/nrk_error.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/kernel/source/nrk_error.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/kernel/source/nrk_error.c **** *
+  10:../../../src/kernel/source/nrk_error.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/kernel/source/nrk_error.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/kernel/source/nrk_error.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/kernel/source/nrk_error.c **** *
+  14:../../../src/kernel/source/nrk_error.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/kernel/source/nrk_error.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/kernel/source/nrk_error.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/kernel/source/nrk_error.c **** *  GNU General Public License for more details.
+  18:../../../src/kernel/source/nrk_error.c **** *
+  19:../../../src/kernel/source/nrk_error.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/kernel/source/nrk_error.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/kernel/source/nrk_error.c **** *
+  22:../../../src/kernel/source/nrk_error.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/kernel/source/nrk_error.c **** *  Anthony Rowe
+  24:../../../src/kernel/source/nrk_error.c **** *  Zane Starr
+  25:../../../src/kernel/source/nrk_error.c **** *  Anand Eswaren
+  26:../../../src/kernel/source/nrk_error.c **** *******************************************************************************/
+  27:../../../src/kernel/source/nrk_error.c ****  
+  28:../../../src/kernel/source/nrk_error.c **** #include <nrk_error.h>
+  29:../../../src/kernel/source/nrk_error.c **** #include <stdio.h>
+  30:../../../src/kernel/source/nrk_error.c **** #include <nrk.h>
+  31:../../../src/kernel/source/nrk_error.c **** #include <nrk_task.h>
+  32:../../../src/kernel/source/nrk_error.c **** #include <nrk_cfg.h>
+  33:../../../src/kernel/source/nrk_error.c **** #include <nrk_timer.h>
+  34:../../../src/kernel/source/nrk_error.c **** 
+  35:../../../src/kernel/source/nrk_error.c **** void _nrk_errno_set (NRK_ERRNO error_code) 
+  36:../../../src/kernel/source/nrk_error.c **** {
+ 139               	.LM0:
+ 140               	.LFBB1:
+ 141               	/* prologue: frame size=0 */
+ 142               	/* prologue end (size=0) */
+  37:../../../src/kernel/source/nrk_error.c ****   nrk_cur_task_TCB->errno = error_code;
+ 144               	.LM1:
+ 145 0000 E091 0000 		lds r30,nrk_cur_task_TCB
+ 146 0004 F091 0000 		lds r31,(nrk_cur_task_TCB)+1
+ 147 0008 8487      		std Z+12,r24
+ 148               	/* epilogue: frame size=0 */
+ 149 000a 0895      		ret
+ 150               	/* epilogue end (size=1) */
+ 151               	/* function _nrk_errno_set size 6 (5) */
+ 153               	.Lscope1:
+ 155               		.stabd	78,0,0
+ 157               	.global	nrk_errno_get
+ 159               	nrk_errno_get:
+ 160               		.stabd	46,0,0
+  38:../../../src/kernel/source/nrk_error.c **** } 
+  39:../../../src/kernel/source/nrk_error.c **** 
+  40:../../../src/kernel/source/nrk_error.c **** uint8_t nrk_errno_get () 
+  41:../../../src/kernel/source/nrk_error.c **** {
+ 162               	.LM2:
+ 163               	.LFBB2:
+ 164               	/* prologue: frame size=0 */
+ 165               	/* prologue end (size=0) */
+ 166 000c E091 0000 		lds r30,nrk_cur_task_TCB
+ 167 0010 F091 0000 		lds r31,(nrk_cur_task_TCB)+1
+ 168 0014 8485      		ldd r24,Z+12
+  42:../../../src/kernel/source/nrk_error.c ****   return nrk_cur_task_TCB->errno;
+  43:../../../src/kernel/source/nrk_error.c **** }
+ 170               	.LM3:
+ 171 0016 9927      		clr r25
+ 172               	/* epilogue: frame size=0 */
+ 173 0018 0895      		ret
+ 174               	/* epilogue end (size=1) */
+ 175               	/* function nrk_errno_get size 7 (6) */
+ 177               	.Lscope2:
+ 179               		.stabd	78,0,0
+ 183               	.global	nrk_error_get
+ 185               	nrk_error_get:
+ 186               		.stabd	46,0,0
+  44:../../../src/kernel/source/nrk_error.c **** 
+  45:../../../src/kernel/source/nrk_error.c **** void nrk_error_add (uint8_t n) 
+  46:../../../src/kernel/source/nrk_error.c **** {
+  47:../../../src/kernel/source/nrk_error.c ****   error_num = n;
+  48:../../../src/kernel/source/nrk_error.c ****   error_task = nrk_cur_task_TCB->task_ID;
+  49:../../../src/kernel/source/nrk_error.c ****   
+  50:../../../src/kernel/source/nrk_error.c **** #ifdef NRK_REPORT_ERRORS
+  51:../../../src/kernel/source/nrk_error.c ****     nrk_error_print ();
+  52:../../../src/kernel/source/nrk_error.c ****   
+  53:../../../src/kernel/source/nrk_error.c **** #endif  /*  */
+  54:../../../src/kernel/source/nrk_error.c **** } void nrk_kernel_error_add (uint8_t n, uint8_t task) 
+  55:../../../src/kernel/source/nrk_error.c **** {
+  56:../../../src/kernel/source/nrk_error.c ****   error_num = n;
+  57:../../../src/kernel/source/nrk_error.c ****   error_task = task;
+  58:../../../src/kernel/source/nrk_error.c ****   
+  59:../../../src/kernel/source/nrk_error.c **** #ifdef NRK_REPORT_ERRORS
+  60:../../../src/kernel/source/nrk_error.c ****     nrk_error_print ();
+  61:../../../src/kernel/source/nrk_error.c ****   
+  62:../../../src/kernel/source/nrk_error.c **** #endif  /*  */
+  63:../../../src/kernel/source/nrk_error.c **** } 
+  64:../../../src/kernel/source/nrk_error.c **** 
+  65:../../../src/kernel/source/nrk_error.c **** 
+  66:../../../src/kernel/source/nrk_error.c **** uint8_t nrk_error_get (uint8_t * task_id, uint8_t * code) 
+  67:../../../src/kernel/source/nrk_error.c **** {
+ 188               	.LM4:
+ 189               	.LFBB3:
+ 190               	/* prologue: frame size=0 */
+ 191               	/* prologue end (size=0) */
+ 192 001a DC01      		movw r26,r24
+ 193 001c FB01      		movw r30,r22
+  68:../../../src/kernel/source/nrk_error.c ****   if (error_num == 0)
+ 195               	.LM5:
+ 196 001e 8091 0000 		lds r24,error_num
+ 197 0022 8823      		tst r24
+ 198 0024 01F4      		brne .L6
+ 200               	.LM6:
+ 201 0026 80E0      		ldi r24,lo8(0)
+ 202 0028 90E0      		ldi r25,hi8(0)
+ 203 002a 0895      		ret
+ 204               	.L6:
+  69:../../../src/kernel/source/nrk_error.c ****     return 0;
+  70:../../../src/kernel/source/nrk_error.c ****   *code = error_num;
+ 206               	.LM7:
+ 207 002c 8083      		st Z,r24
+  71:../../../src/kernel/source/nrk_error.c ****   *task_id = error_task;
+ 209               	.LM8:
+ 210 002e 8091 0000 		lds r24,error_task
+ 211 0032 8C93      		st X,r24
+ 212 0034 81E0      		ldi r24,lo8(1)
+ 213 0036 90E0      		ldi r25,hi8(1)
+  72:../../../src/kernel/source/nrk_error.c ****   return 1;
+  73:../../../src/kernel/source/nrk_error.c **** }
+ 215               	.LM9:
+ 216 0038 0895      		ret
+ 217               	/* epilogue: frame size=0 */
+ 218               	/* epilogue: noreturn */
+ 219               	/* epilogue end (size=0) */
+ 220               	/* function nrk_error_get size 16 (16) */
+ 222               	.Lscope3:
+ 224               		.stabd	78,0,0
+ 225               		.data
+ 226               	.LC0:
+ 227 0000 2564 00   		.string	"%d"
+ 228               		.text
+ 230               	.global	nrk_error_print
+ 232               	nrk_error_print:
+ 233               		.stabd	46,0,0
+  74:../../../src/kernel/source/nrk_error.c **** 
+  75:../../../src/kernel/source/nrk_error.c **** int8_t nrk_error_print () 
+  76:../../../src/kernel/source/nrk_error.c **** {
+ 235               	.LM10:
+ 236               	.LFBB4:
+ 237               	/* prologue: frame size=0 */
+ 238 003a 1F93      		push r17
+ 239               	/* prologue end (size=1) */
+  77:../../../src/kernel/source/nrk_error.c ****   int8_t t;
+  78:../../../src/kernel/source/nrk_error.c ****   if (error_num == 0)
+ 241               	.LM11:
+ 242 003c 8091 0000 		lds r24,error_num
+ 243 0040 8823      		tst r24
+ 244 0042 01F4      		brne .+2
+ 245 0044 00C0      		rjmp .L41
+  79:../../../src/kernel/source/nrk_error.c ****     return 0;
+  80:../../../src/kernel/source/nrk_error.c ****  
+  81:../../../src/kernel/source/nrk_error.c ****    #ifdef NRK_HALT_ON_ERROR
+  82:../../../src/kernel/source/nrk_error.c ****      nrk_int_disable ();
+ 247               	.LM12:
+ 248 0046 0E94 0000 		call nrk_int_disable
+  83:../../../src/kernel/source/nrk_error.c ****        #ifdef NRK_WATCHDOG
+  84:../../../src/kernel/source/nrk_error.c ****          nrk_watchdog_disable();
+  85:../../../src/kernel/source/nrk_error.c ****        #endif
+  86:../../../src/kernel/source/nrk_error.c ****    #endif 
+  87:../../../src/kernel/source/nrk_error.c **** 
+  88:../../../src/kernel/source/nrk_error.c ****    #ifndef NRK_REBOOT_ON_ERROR
+  89:../../../src/kernel/source/nrk_error.c ****       nrk_int_disable ();
+ 250               	.LM13:
+ 251 004a 0E94 0000 		call nrk_int_disable
+  90:../../../src/kernel/source/nrk_error.c ****    #endif 
+  91:../../../src/kernel/source/nrk_error.c **** 
+  92:../../../src/kernel/source/nrk_error.c **** 
+  93:../../../src/kernel/source/nrk_error.c **** #ifdef NRK_HALT_AND_LOOP_ON_ERROR 
+  94:../../../src/kernel/source/nrk_error.c ****     nrk_int_disable ();
+  95:../../../src/kernel/source/nrk_error.c ****    #ifdef NRK_WATCHDOG
+  96:../../../src/kernel/source/nrk_error.c ****       nrk_watchdog_disable();
+  97:../../../src/kernel/source/nrk_error.c ****    #endif
+  98:../../../src/kernel/source/nrk_error.c **** 
+  99:../../../src/kernel/source/nrk_error.c ****   while (1)
+ 100:../../../src/kernel/source/nrk_error.c ****      {
+ 101:../../../src/kernel/source/nrk_error.c ****     
+ 102:../../../src/kernel/source/nrk_error.c **** #endif  
+ 103:../../../src/kernel/source/nrk_error.c ****     
+ 104:../../../src/kernel/source/nrk_error.c ****     nrk_kprintf (PSTR ("*NRK ERROR("));
+ 253               	.LM14:
+ 254 004e 80E0      		ldi r24,lo8(__c.2324)
+ 255 0050 90E0      		ldi r25,hi8(__c.2324)
+ 256 0052 0E94 0000 		call nrk_kprintf
+ 105:../../../src/kernel/source/nrk_error.c ****     printf ("%d", error_task);
+ 258               	.LM15:
+ 259 0056 8091 0000 		lds r24,error_task
+ 260 005a 9927      		clr r25
+ 261 005c 9F93      		push r25
+ 262 005e 8F93      		push r24
+ 263 0060 80E0      		ldi r24,lo8(.LC0)
+ 264 0062 90E0      		ldi r25,hi8(.LC0)
+ 265 0064 9F93      		push r25
+ 266 0066 8F93      		push r24
+ 267 0068 0E94 0000 		call printf
+ 106:../../../src/kernel/source/nrk_error.c ****     nrk_kprintf (PSTR ("): "));
+ 269               	.LM16:
+ 270 006c 80E0      		ldi r24,lo8(__c.2326)
+ 271 006e 90E0      		ldi r25,hi8(__c.2326)
+ 272 0070 0E94 0000 		call nrk_kprintf
+ 107:../../../src/kernel/source/nrk_error.c ****     if (error_num > NRK_NUM_ERRORS)
+ 274               	.LM17:
+ 275 0074 0F90      		pop __tmp_reg__
+ 276 0076 0F90      		pop __tmp_reg__
+ 277 0078 0F90      		pop __tmp_reg__
+ 278 007a 0F90      		pop __tmp_reg__
+ 279 007c 8091 0000 		lds r24,error_num
+ 280 0080 8431      		cpi r24,lo8(20)
+ 281 0082 00F0      		brlo .L13
+ 108:../../../src/kernel/source/nrk_error.c ****       error_num = NRK_UNKOWN;
+ 283               	.LM18:
+ 284 0084 1092 0000 		sts error_num,__zero_reg__
+ 285               	.L13:
+ 109:../../../src/kernel/source/nrk_error.c ****     switch (error_num)
+ 287               	.LM19:
+ 288 0088 8091 0000 		lds r24,error_num
+ 289 008c 9927      		clr r25
+ 290 008e AA27      		clr r26
+ 291 0090 BB27      		clr r27
+ 292 0092 FC01      		movw r30,r24
+ 293 0094 3197      		sbiw r30,1
+ 294 0096 E231      		cpi r30,18
+ 295 0098 F105      		cpc r31,__zero_reg__
+ 296 009a 00F4      		brsh .L15
+ 297 009c E050      		subi r30,lo8(-(pm(.L34)))
+ 298 009e F040      		sbci r31,hi8(-(pm(.L34)))
+ 299 00a0 EE0F      		lsl r30
+ 300 00a2 FF1F      		rol r31
+ 301 00a4 0590      		lpm __tmp_reg__,Z+
+ 302 00a6 F491      		lpm r31,Z
+ 303 00a8 E02D      		mov r30,__tmp_reg__
+ 304 00aa 0994      		ijmp
+ 305               		.data
+ 306               		.section .progmem.gcc_sw_table, "a", @progbits
+ 307               		.p2align 1
+ 308               	.L34:
+ 309               		.data
+ 310               		.section .progmem.gcc_sw_table, "a", @progbits
+ 311               		.p2align 1
+ 312 0000 0000      		.word pm(.L16)
+ 313 0002 0000      		.word pm(.L17)
+ 314 0004 0000      		.word pm(.L18)
+ 315 0006 0000      		.word pm(.L19)
+ 316 0008 0000      		.word pm(.L20)
+ 317 000a 0000      		.word pm(.L21)
+ 318 000c 0000      		.word pm(.L22)
+ 319 000e 0000      		.word pm(.L23)
+ 320 0010 0000      		.word pm(.L24)
+ 321 0012 0000      		.word pm(.L25)
+ 322 0014 0000      		.word pm(.L26)
+ 323 0016 0000      		.word pm(.L27)
+ 324 0018 0000      		.word pm(.L28)
+ 325 001a 0000      		.word pm(.L29)
+ 326 001c 0000      		.word pm(.L30)
+ 327 001e 0000      		.word pm(.L31)
+ 328 0020 0000      		.word pm(.L32)
+ 329 0022 0000      		.word pm(.L33)
+ 330               		.text
+ 331               	.L32:
+ 110:../../../src/kernel/source/nrk_error.c ****        {
+ 111:../../../src/kernel/source/nrk_error.c ****     case NRK_STACK_TOO_SMALL:
+ 112:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Stack was not defined as large enough!"));
+ 333               	.LM20:
+ 334 00ac 80E0      		ldi r24,lo8(__c.2329)
+ 335 00ae 90E0      		ldi r25,hi8(__c.2329)
+ 336 00b0 00C0      		rjmp .L46
+ 337               	.L16:
+ 113:../../../src/kernel/source/nrk_error.c ****       break;
+ 114:../../../src/kernel/source/nrk_error.c ****     case NRK_STACK_OVERFLOW:
+ 115:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Task Stack Overflow"));
+ 339               	.LM21:
+ 340 00b2 80E0      		ldi r24,lo8(__c.2333)
+ 341 00b4 90E0      		ldi r25,hi8(__c.2333)
+ 342 00b6 00C0      		rjmp .L46
+ 343               	.L33:
+ 116:../../../src/kernel/source/nrk_error.c ****       break;
+ 117:../../../src/kernel/source/nrk_error.c ****     case NRK_INVALID_STACK_POINTER:
+ 118:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Invalid Stack Pointer"));
+ 345               	.LM22:
+ 346 00b8 80E0      		ldi r24,lo8(__c.2336)
+ 347 00ba 90E0      		ldi r25,hi8(__c.2336)
+ 348 00bc 00C0      		rjmp .L46
+ 349               	.L17:
+ 119:../../../src/kernel/source/nrk_error.c ****       break;
+ 120:../../../src/kernel/source/nrk_error.c ****     case NRK_RESERVE_ERROR:
+ 121:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Reserve Error in Scheduler"));
+ 351               	.LM23:
+ 352 00be 80E0      		ldi r24,lo8(__c.2339)
+ 353 00c0 90E0      		ldi r25,hi8(__c.2339)
+ 354 00c2 00C0      		rjmp .L46
+ 355               	.L18:
+ 122:../../../src/kernel/source/nrk_error.c ****       break;
+ 123:../../../src/kernel/source/nrk_error.c ****     case NRK_RESERVE_VIOLATED:
+ 124:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Task Reserve Violated"));
+ 357               	.LM24:
+ 358 00c4 80E0      		ldi r24,lo8(__c.2342)
+ 359 00c6 90E0      		ldi r25,hi8(__c.2342)
+ 360 00c8 00C0      		rjmp .L46
+ 361               	.L19:
+ 125:../../../src/kernel/source/nrk_error.c ****       break;
+ 126:../../../src/kernel/source/nrk_error.c ****     case NRK_WAKEUP_MISSED:
+ 127:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Scheduler Missed Wakeup"));
+ 363               	.LM25:
+ 364 00ca 80E0      		ldi r24,lo8(__c.2345)
+ 365 00cc 90E0      		ldi r25,hi8(__c.2345)
+ 366 00ce 00C0      		rjmp .L46
+ 367               	.L20:
+ 128:../../../src/kernel/source/nrk_error.c ****       break;
+ 129:../../../src/kernel/source/nrk_error.c ****     case NRK_DUP_TASK_ID:
+ 130:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Duplicated Task ID"));
+ 369               	.LM26:
+ 370 00d0 80E0      		ldi r24,lo8(__c.2348)
+ 371 00d2 90E0      		ldi r25,hi8(__c.2348)
+ 372 00d4 00C0      		rjmp .L46
+ 373               	.L21:
+ 131:../../../src/kernel/source/nrk_error.c ****       break;
+ 132:../../../src/kernel/source/nrk_error.c ****     case NRK_BAD_STARTUP:
+ 133:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Unexpected Restart"));
+ 375               	.LM27:
+ 376 00d6 80E0      		ldi r24,lo8(__c.2351)
+ 377 00d8 90E0      		ldi r25,hi8(__c.2351)
+ 378 00da 00C0      		rjmp .L46
+ 379               	.L23:
+ 134:../../../src/kernel/source/nrk_error.c ****       break;
+ 135:../../../src/kernel/source/nrk_error.c ****     case NRK_STACK_SMASH:
+ 136:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Idle or Kernel Stack Overflow"));
+ 381               	.LM28:
+ 382 00dc 80E0      		ldi r24,lo8(__c.2354)
+ 383 00de 90E0      		ldi r25,hi8(__c.2354)
+ 384 00e0 00C0      		rjmp .L46
+ 385               	.L22:
+ 137:../../../src/kernel/source/nrk_error.c ****       break;
+ 138:../../../src/kernel/source/nrk_error.c ****     case NRK_EXTRA_TASK:
+ 139:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Extra Task started, is nrk_cfg.h ok?"));
+ 387               	.LM29:
+ 388 00e2 80E0      		ldi r24,lo8(__c.2357)
+ 389 00e4 90E0      		ldi r25,hi8(__c.2357)
+ 390 00e6 00C0      		rjmp .L46
+ 391               	.L24:
+ 140:../../../src/kernel/source/nrk_error.c ****       break;
+ 141:../../../src/kernel/source/nrk_error.c ****     case NRK_LOW_VOLTAGE:
+ 142:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Low Voltage"));
+ 393               	.LM30:
+ 394 00e8 80E0      		ldi r24,lo8(__c.2360)
+ 395 00ea 90E0      		ldi r25,hi8(__c.2360)
+ 396 00ec 00C0      		rjmp .L46
+ 397               	.L25:
+ 143:../../../src/kernel/source/nrk_error.c ****       break;
+ 144:../../../src/kernel/source/nrk_error.c ****     case NRK_SEG_FAULT:
+ 145:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Unhandled Interrupt Vector"));
+ 399               	.LM31:
+ 400 00ee 80E0      		ldi r24,lo8(__c.2363)
+ 401 00f0 90E0      		ldi r25,hi8(__c.2363)
+ 402 00f2 00C0      		rjmp .L46
+ 403               	.L26:
+ 146:../../../src/kernel/source/nrk_error.c ****       break;
+ 147:../../../src/kernel/source/nrk_error.c ****     case NRK_TIMER_OVERFLOW:
+ 148:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Timer Overflow"));
+ 405               	.LM32:
+ 406 00f4 80E0      		ldi r24,lo8(__c.2366)
+ 407 00f6 90E0      		ldi r25,hi8(__c.2366)
+ 408 00f8 00C0      		rjmp .L46
+ 409               	.L31:
+ 149:../../../src/kernel/source/nrk_error.c ****       break;
+ 150:../../../src/kernel/source/nrk_error.c ****     case NRK_WATCHDOG_ERROR:
+ 151:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Watchdog Restart"));
+ 411               	.LM33:
+ 412 00fa 80E0      		ldi r24,lo8(__c.2369)
+ 413 00fc 90E0      		ldi r25,hi8(__c.2369)
+ 414 00fe 00C0      		rjmp .L46
+ 415               	.L27:
+ 152:../../../src/kernel/source/nrk_error.c ****       break;
+ 153:../../../src/kernel/source/nrk_error.c ****     case NRK_DEVICE_DRIVER:
+ 154:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Device Driver Error"));
+ 417               	.LM34:
+ 418 0100 80E0      		ldi r24,lo8(__c.2372)
+ 419 0102 90E0      		ldi r25,hi8(__c.2372)
+ 420 0104 00C0      		rjmp .L46
+ 421               	.L28:
+ 155:../../../src/kernel/source/nrk_error.c ****       break;
+ 156:../../../src/kernel/source/nrk_error.c ****     case NRK_UNIMPLEMENTED:
+ 157:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Kernel function not implemented"));
+ 423               	.LM35:
+ 424 0106 80E0      		ldi r24,lo8(__c.2375)
+ 425 0108 90E0      		ldi r25,hi8(__c.2375)
+ 426 010a 00C0      		rjmp .L46
+ 427               	.L29:
+ 158:../../../src/kernel/source/nrk_error.c ****       break;
+ 159:../../../src/kernel/source/nrk_error.c ****     case NRK_SIGNAL_CREATE_ERROR:
+ 160:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Failed to create Signal"));
+ 429               	.LM36:
+ 430 010c 80E0      		ldi r24,lo8(__c.2378)
+ 431 010e 90E0      		ldi r25,hi8(__c.2378)
+ 432 0110 00C0      		rjmp .L46
+ 433               	.L30:
+ 161:../../../src/kernel/source/nrk_error.c ****       break;
+ 162:../../../src/kernel/source/nrk_error.c ****     case NRK_SEMAPHORE_CREATE_ERROR:
+ 163:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("Failed to create Semaphore"));
+ 435               	.LM37:
+ 436 0112 80E0      		ldi r24,lo8(__c.2381)
+ 437 0114 90E0      		ldi r25,hi8(__c.2381)
+ 438 0116 00C0      		rjmp .L46
+ 439               	.L15:
+ 164:../../../src/kernel/source/nrk_error.c ****       break;
+ 165:../../../src/kernel/source/nrk_error.c ****     default:
+ 166:../../../src/kernel/source/nrk_error.c ****       nrk_kprintf (PSTR ("UNKOWN"));
+ 441               	.LM38:
+ 442 0118 80E0      		ldi r24,lo8(__c.2384)
+ 443 011a 90E0      		ldi r25,hi8(__c.2384)
+ 444               	.L46:
+ 445 011c 0E94 0000 		call nrk_kprintf
+ 167:../../../src/kernel/source/nrk_error.c ****       }
+ 168:../../../src/kernel/source/nrk_error.c ****     putchar ('\r');
+ 447               	.LM39:
+ 448 0120 6091 0000 		lds r22,__iob+2
+ 449 0124 7091 0000 		lds r23,(__iob+2)+1
+ 450 0128 8DE0      		ldi r24,lo8(13)
+ 451 012a 90E0      		ldi r25,hi8(13)
+ 452 012c 0E94 0000 		call fputc
+ 169:../../../src/kernel/source/nrk_error.c ****     putchar ('\n');
+ 454               	.LM40:
+ 455 0130 6091 0000 		lds r22,__iob+2
+ 456 0134 7091 0000 		lds r23,(__iob+2)+1
+ 457 0138 8AE0      		ldi r24,lo8(10)
+ 458 013a 90E0      		ldi r25,hi8(10)
+ 459 013c 0E94 0000 		call fputc
+ 460               	.L36:
+ 170:../../../src/kernel/source/nrk_error.c **** 
+ 171:../../../src/kernel/source/nrk_error.c **** #ifdef NRK_REBOOT_ON_ERROR
+ 172:../../../src/kernel/source/nrk_error.c ****   // wait for watchdog to kick in
+ 173:../../../src/kernel/source/nrk_error.c ****   if(error_num!=NRK_WATCHDOG_ERROR)
+ 174:../../../src/kernel/source/nrk_error.c ****   {
+ 175:../../../src/kernel/source/nrk_error.c ****   nrk_watchdog_enable();
+ 176:../../../src/kernel/source/nrk_error.c ****   nrk_int_disable(); 
+ 177:../../../src/kernel/source/nrk_error.c ****   while(1);
+ 178:../../../src/kernel/source/nrk_error.c ****   }
+ 179:../../../src/kernel/source/nrk_error.c **** #endif
+ 180:../../../src/kernel/source/nrk_error.c **** 
+ 181:../../../src/kernel/source/nrk_error.c **** //t=error_num;
+ 182:../../../src/kernel/source/nrk_error.c **** #ifdef NRK_HALT_AND_LOOP_ON_ERROR
+ 183:../../../src/kernel/source/nrk_error.c ****       nrk_led_set (2);
+ 184:../../../src/kernel/source/nrk_error.c ****     nrk_led_clr (3);
+ 185:../../../src/kernel/source/nrk_error.c ****     for (t = 0; t < 100; t++)
+ 186:../../../src/kernel/source/nrk_error.c ****       nrk_spin_wait_us (1000);
+ 187:../../../src/kernel/source/nrk_error.c ****     nrk_led_set (3);
+ 188:../../../src/kernel/source/nrk_error.c ****     nrk_led_clr (2);
+ 189:../../../src/kernel/source/nrk_error.c ****     for (t = 0; t < 100; t++)
+ 190:../../../src/kernel/source/nrk_error.c ****       nrk_spin_wait_us (1000);
+ 191:../../../src/kernel/source/nrk_error.c ****     }
+ 192:../../../src/kernel/source/nrk_error.c ****   
+ 193:../../../src/kernel/source/nrk_error.c **** #endif  /*  */
+ 194:../../../src/kernel/source/nrk_error.c ****     
+ 195:../../../src/kernel/source/nrk_error.c **** #ifdef NRK_HALT_ON_ERROR
+ 196:../../../src/kernel/source/nrk_error.c ****     while (1)
+ 197:../../../src/kernel/source/nrk_error.c ****      {
+ 198:../../../src/kernel/source/nrk_error.c ****     nrk_led_set (2);
+ 462               	.LM41:
+ 463 0140 82E0      		ldi r24,lo8(2)
+ 464 0142 90E0      		ldi r25,hi8(2)
+ 465 0144 0E94 0000 		call nrk_led_set
+ 199:../../../src/kernel/source/nrk_error.c ****     nrk_led_clr (3);
+ 467               	.LM42:
+ 468 0148 83E0      		ldi r24,lo8(3)
+ 469 014a 90E0      		ldi r25,hi8(3)
+ 470 014c 0E94 0000 		call nrk_led_clr
+ 471 0150 10E0      		ldi r17,lo8(0)
+ 472               	.L37:
+ 200:../../../src/kernel/source/nrk_error.c ****     for (t = 0; t < 100; t++)
+ 201:../../../src/kernel/source/nrk_error.c ****       nrk_spin_wait_us (1000);
+ 474               	.LM43:
+ 475 0152 88EE      		ldi r24,lo8(1000)
+ 476 0154 93E0      		ldi r25,hi8(1000)
+ 477 0156 0E94 0000 		call nrk_spin_wait_us
+ 479               	.LM44:
+ 480 015a 1F5F      		subi r17,lo8(-(1))
+ 481 015c 1436      		cpi r17,lo8(100)
+ 482 015e 01F4      		brne .L37
+ 202:../../../src/kernel/source/nrk_error.c ****     nrk_led_set (3);
+ 484               	.LM45:
+ 485 0160 83E0      		ldi r24,lo8(3)
+ 486 0162 90E0      		ldi r25,hi8(3)
+ 487 0164 0E94 0000 		call nrk_led_set
+ 203:../../../src/kernel/source/nrk_error.c ****     nrk_led_clr (2);
+ 489               	.LM46:
+ 490 0168 82E0      		ldi r24,lo8(2)
+ 491 016a 90E0      		ldi r25,hi8(2)
+ 492 016c 0E94 0000 		call nrk_led_clr
+ 493 0170 10E0      		ldi r17,lo8(0)
+ 494               	.L39:
+ 204:../../../src/kernel/source/nrk_error.c ****     for (t = 0; t < 100; t++)
+ 205:../../../src/kernel/source/nrk_error.c ****       nrk_spin_wait_us (1000);
+ 496               	.LM47:
+ 497 0172 88EE      		ldi r24,lo8(1000)
+ 498 0174 93E0      		ldi r25,hi8(1000)
+ 499 0176 0E94 0000 		call nrk_spin_wait_us
+ 501               	.LM48:
+ 502 017a 1F5F      		subi r17,lo8(-(1))
+ 503 017c 1436      		cpi r17,lo8(100)
+ 504 017e 01F4      		brne .L39
+ 505 0180 00C0      		rjmp .L36
+ 506               	.L41:
+ 206:../../../src/kernel/source/nrk_error.c ****     }
+ 207:../../../src/kernel/source/nrk_error.c ****   
+ 208:../../../src/kernel/source/nrk_error.c **** #endif  /*  */
+ 209:../../../src/kernel/source/nrk_error.c ****     error_num = 0;
+ 210:../../../src/kernel/source/nrk_error.c ****   return t;
+ 211:../../../src/kernel/source/nrk_error.c **** }
+ 508               	.LM49:
+ 509 0182 80E0      		ldi r24,lo8(0)
+ 510 0184 90E0      		ldi r25,hi8(0)
+ 511               	/* epilogue: frame size=0 */
+ 512 0186 1F91      		pop r17
+ 513 0188 0895      		ret
+ 514               	/* epilogue end (size=2) */
+ 515               	/* function nrk_error_print size 186 (183) */
+ 520               	.Lscope4:
+ 522               		.stabd	78,0,0
+ 526               	.global	nrk_kernel_error_add
+ 528               	nrk_kernel_error_add:
+ 529               		.stabd	46,0,0
+ 531               	.LM50:
+ 532               	.LFBB5:
+ 533               	/* prologue: frame size=0 */
+ 534               	/* prologue end (size=0) */
+ 536               	.LM51:
+ 537 018a 8093 0000 		sts error_num,r24
+ 539               	.LM52:
+ 540 018e 6093 0000 		sts error_task,r22
+ 542               	.LM53:
+ 543 0192 0E94 0000 		call nrk_error_print
+ 544               	/* epilogue: frame size=0 */
+ 545 0196 0895      		ret
+ 546               	/* epilogue end (size=1) */
+ 547               	/* function nrk_kernel_error_add size 7 (6) */
+ 549               	.Lscope5:
+ 551               		.stabd	78,0,0
+ 554               	.global	nrk_error_add
+ 556               	nrk_error_add:
+ 557               		.stabd	46,0,0
+ 559               	.LM54:
+ 560               	.LFBB6:
+ 561               	/* prologue: frame size=0 */
+ 562               	/* prologue end (size=0) */
+ 564               	.LM55:
+ 565 0198 8093 0000 		sts error_num,r24
+ 567               	.LM56:
+ 568 019c E091 0000 		lds r30,nrk_cur_task_TCB
+ 569 01a0 F091 0000 		lds r31,(nrk_cur_task_TCB)+1
+ 570 01a4 8085      		ldd r24,Z+8
+ 571 01a6 8093 0000 		sts error_task,r24
+ 573               	.LM57:
+ 574 01aa 0E94 0000 		call nrk_error_print
+ 575               	/* epilogue: frame size=0 */
+ 576 01ae 0895      		ret
+ 577               	/* epilogue end (size=1) */
+ 578               	/* function nrk_error_add size 12 (11) */
+ 580               	.Lscope6:
+ 582               		.stabd	78,0,0
+ 583               		.section	.progmem.data,"a",@progbits
+ 586               	__c.2384:
+ 587 0000 554E 4B4F 		.string	"UNKOWN"
+ 587      574E 00
+ 590               	__c.2381:
+ 591 0007 4661 696C 		.string	"Failed to create Semaphore"
+ 591      6564 2074 
+ 591      6F20 6372 
+ 591      6561 7465 
+ 591      2053 656D 
+ 594               	__c.2378:
+ 595 0022 4661 696C 		.string	"Failed to create Signal"
+ 595      6564 2074 
+ 595      6F20 6372 
+ 595      6561 7465 
+ 595      2053 6967 
+ 598               	__c.2375:
+ 599 003a 4B65 726E 		.string	"Kernel function not implemented"
+ 599      656C 2066 
+ 599      756E 6374 
+ 599      696F 6E20 
+ 599      6E6F 7420 
+ 602               	__c.2372:
+ 603 005a 4465 7669 		.string	"Device Driver Error"
+ 603      6365 2044 
+ 603      7269 7665 
+ 603      7220 4572 
+ 603      726F 7200 
+ 606               	__c.2369:
+ 607 006e 5761 7463 		.string	"Watchdog Restart"
+ 607      6864 6F67 
+ 607      2052 6573 
+ 607      7461 7274 
+ 607      00
+ 610               	__c.2366:
+ 611 007f 5469 6D65 		.string	"Timer Overflow"
+ 611      7220 4F76 
+ 611      6572 666C 
+ 611      6F77 00
+ 614               	__c.2363:
+ 615 008e 556E 6861 		.string	"Unhandled Interrupt Vector"
+ 615      6E64 6C65 
+ 615      6420 496E 
+ 615      7465 7272 
+ 615      7570 7420 
+ 618               	__c.2360:
+ 619 00a9 4C6F 7720 		.string	"Low Voltage"
+ 619      566F 6C74 
+ 619      6167 6500 
+ 622               	__c.2357:
+ 623 00b5 4578 7472 		.string	"Extra Task started, is nrk_cfg.h ok?"
+ 623      6120 5461 
+ 623      736B 2073 
+ 623      7461 7274 
+ 623      6564 2C20 
+ 626               	__c.2354:
+ 627 00da 4964 6C65 		.string	"Idle or Kernel Stack Overflow"
+ 627      206F 7220 
+ 627      4B65 726E 
+ 627      656C 2053 
+ 627      7461 636B 
+ 630               	__c.2351:
+ 631 00f8 556E 6578 		.string	"Unexpected Restart"
+ 631      7065 6374 
+ 631      6564 2052 
+ 631      6573 7461 
+ 631      7274 00
+ 634               	__c.2348:
+ 635 010b 4475 706C 		.string	"Duplicated Task ID"
+ 635      6963 6174 
+ 635      6564 2054 
+ 635      6173 6B20 
+ 635      4944 00
+ 638               	__c.2345:
+ 639 011e 5363 6865 		.string	"Scheduler Missed Wakeup"
+ 639      6475 6C65 
+ 639      7220 4D69 
+ 639      7373 6564 
+ 639      2057 616B 
+ 642               	__c.2342:
+ 643 0136 5461 736B 		.string	"Task Reserve Violated"
+ 643      2052 6573 
+ 643      6572 7665 
+ 643      2056 696F 
+ 643      6C61 7465 
+ 646               	__c.2339:
+ 647 014c 5265 7365 		.string	"Reserve Error in Scheduler"
+ 647      7276 6520 
+ 647      4572 726F 
+ 647      7220 696E 
+ 647      2053 6368 
+ 650               	__c.2336:
+ 651 0167 496E 7661 		.string	"Invalid Stack Pointer"
+ 651      6C69 6420 
+ 651      5374 6163 
+ 651      6B20 506F 
+ 651      696E 7465 
+ 654               	__c.2333:
+ 655 017d 5461 736B 		.string	"Task Stack Overflow"
+ 655      2053 7461 
+ 655      636B 204F 
+ 655      7665 7266 
+ 655      6C6F 7700 
+ 658               	__c.2329:
+ 659 0191 5374 6163 		.string	"Stack was not defined as large enough!"
+ 659      6B20 7761 
+ 659      7320 6E6F 
+ 659      7420 6465 
+ 659      6669 6E65 
+ 662               	__c.2326:
+ 663 01b8 293A 2000 		.string	"): "
+ 666               	__c.2324:
+ 667 01bc 2A4E 524B 		.string	"*NRK ERROR("
+ 667      2045 5252 
+ 667      4F52 2800 
+ 668               		.comm _nrk_signal_list,4,1
+ 669               		.comm error_task,1,1
+ 670               		.comm error_num,1,1
+ 671               		.comm nrk_idle_task_stk,128,1
+ 672               		.comm nrk_kernel_stk_ptr,2,1
+ 673               		.comm _nrk_prev_timer_val,1,1
+ 674               		.comm _nrk_time_trigger,1,1
+ 675               		.comm app_timer0_callback,2,1
+ 676               		.comm app_timer0_prescale,1,1
+ 707               		.text
+ 709               	.Letext0:
+ 710               	/* File "../../../src/kernel/source/nrk_error.c": code  234 = 0x00ea ( 227), prologues   1, epilogu
+DEFINED SYMBOLS
+                            *ABS*:00000000 nrk_error.c
+     /tmp/ccN83XoA.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccN83XoA.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccN83XoA.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccN83XoA.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccN83XoA.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccN83XoA.s:136    .text:00000000 _nrk_errno_set
+     /tmp/ccN83XoA.s:159    .text:0000000c nrk_errno_get
+     /tmp/ccN83XoA.s:185    .text:0000001a nrk_error_get
+                            *COM*:00000001 error_num
+                            *COM*:00000001 error_task
+     /tmp/ccN83XoA.s:232    .text:0000003a nrk_error_print
+     /tmp/ccN83XoA.s:666    .progmem.data:000001bc __c.2324
+     /tmp/ccN83XoA.s:662    .progmem.data:000001b8 __c.2326
+     /tmp/ccN83XoA.s:658    .progmem.data:00000191 __c.2329
+     /tmp/ccN83XoA.s:654    .progmem.data:0000017d __c.2333
+     /tmp/ccN83XoA.s:650    .progmem.data:00000167 __c.2336
+     /tmp/ccN83XoA.s:646    .progmem.data:0000014c __c.2339
+     /tmp/ccN83XoA.s:642    .progmem.data:00000136 __c.2342
+     /tmp/ccN83XoA.s:638    .progmem.data:0000011e __c.2345
+     /tmp/ccN83XoA.s:634    .progmem.data:0000010b __c.2348
+     /tmp/ccN83XoA.s:630    .progmem.data:000000f8 __c.2351
+     /tmp/ccN83XoA.s:626    .progmem.data:000000da __c.2354
+     /tmp/ccN83XoA.s:622    .progmem.data:000000b5 __c.2357
+     /tmp/ccN83XoA.s:618    .progmem.data:000000a9 __c.2360
+     /tmp/ccN83XoA.s:614    .progmem.data:0000008e __c.2363
+     /tmp/ccN83XoA.s:610    .progmem.data:0000007f __c.2366
+     /tmp/ccN83XoA.s:606    .progmem.data:0000006e __c.2369
+     /tmp/ccN83XoA.s:602    .progmem.data:0000005a __c.2372
+     /tmp/ccN83XoA.s:598    .progmem.data:0000003a __c.2375
+     /tmp/ccN83XoA.s:594    .progmem.data:00000022 __c.2378
+     /tmp/ccN83XoA.s:590    .progmem.data:00000007 __c.2381
+     /tmp/ccN83XoA.s:586    .progmem.data:00000000 __c.2384
+     /tmp/ccN83XoA.s:528    .text:0000018a nrk_kernel_error_add
+     /tmp/ccN83XoA.s:556    .text:00000198 nrk_error_add
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000080 nrk_idle_task_stk
+                            *COM*:00000002 nrk_kernel_stk_ptr
+                            *COM*:00000001 _nrk_prev_timer_val
+                            *COM*:00000001 _nrk_time_trigger
+                            *COM*:00000002 app_timer0_callback
+                            *COM*:00000001 app_timer0_prescale
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+nrk_cur_task_TCB
+nrk_int_disable
+nrk_kprintf
+printf
+__iob
+fputc
+nrk_led_set
+nrk_led_clr
+nrk_spin_wait_us

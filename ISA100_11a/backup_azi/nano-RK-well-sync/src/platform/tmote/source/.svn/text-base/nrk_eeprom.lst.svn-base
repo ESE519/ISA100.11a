@@ -1,0 +1,72 @@
+   1               		.file	"nrk_eeprom.c"
+   2               		.arch msp430x1611
+   3               	
+   4               	/* Hardware multiplier registers: */
+   5               	__MPY=0x130
+   6               	__MPYS=0x132
+   7               	__MAC=0x134
+   8               	__MACS=0x136
+   9               	__OP2=0x138
+  10               	__RESLO=0x13a
+  11               	__RESHI=0x13c
+  12               	__SUMEXT=0x13e
+  13               	
+  16               		.text
+  17               	.Ltext0:
+ 208               		.p2align 1,0
+ 211               	.global	read_eeprom_mac_address
+ 213               	/***********************
+ 214               	 * Function `read_eeprom_mac_address' 
+ 215               	 ***********************/
+ 216               	read_eeprom_mac_address:
+   1:../../src/platform/tmote/source/nrk_eeprom.c **** #include <nrk_eeprom.h>
+   2:../../src/platform/tmote/source/nrk_eeprom.c **** #include <nrk_error.h>
+   3:../../src/platform/tmote/source/nrk_eeprom.c **** 
+   4:../../src/platform/tmote/source/nrk_eeprom.c **** 
+   5:../../src/platform/tmote/source/nrk_eeprom.c **** int8_t read_eeprom_mac_address(uint32_t *address)
+   6:../../src/platform/tmote/source/nrk_eeprom.c **** {
+ 218               	.LM1:
+ 219               		/* prologue: frame size = 0 */
+ 220               	.L__FrameSize_read_eeprom_mac_address=0x0
+ 221               	.L__FrameOffset_read_eeprom_mac_address=0x0
+ 222               		/* prologue end (size=0) */
+ 223               	
+   7:../../src/platform/tmote/source/nrk_eeprom.c **** )
+   8:../../src/platform/tmote/source/nrk_eeprom.c **** {
+ 225               	.LM2:
+ 226 0000 3F43      		mov	#llo(-1), r15 
+ 227 0002 3041      		ret
+ 228               	
+ 229               		/* epilogue: not required */
+ 230               		/* function read_eeprom_mac_address size 2 (1) */
+ 231               	.Lfe1:
+ 233               	/********* End of function ******/
+ 234               	
+ 235               	.Lscope0:
+ 237               		.comm _nrk_signal_list,4,2
+ 238               		.comm error_task,1
+ 239               		.comm error_num,1
+ 458               		.text
+ 460               	Letext:
+ 461               	
+ 462               	/*********************************************************************
+ 463               	 * File ../../src/platform/tmote/source/nrk_eeprom.c: code size: 2 words (0x2)
+ 464               	 * incl. words in prologues: 0, epilogues: 1
+ 465               	 *********************************************************************/
+DEFINED SYMBOLS
+                            *ABS*:00000000 nrk_eeprom.c
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:5      *ABS*:00000130 __MPY
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:6      *ABS*:00000132 __MPYS
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:7      *ABS*:00000134 __MAC
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:8      *ABS*:00000136 __MACS
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:9      *ABS*:00000138 __OP2
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:10     *ABS*:0000013a __RESLO
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:11     *ABS*:0000013c __RESHI
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:12     *ABS*:0000013e __SUMEXT
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:216    .text:00000000 read_eeprom_mac_address
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+C:\DOCUME~1\paja\LOCALS~1\Temp/ccOj3aX3.s:460    .text:00000004 Letext
+
+NO UNDEFINED SYMBOLS

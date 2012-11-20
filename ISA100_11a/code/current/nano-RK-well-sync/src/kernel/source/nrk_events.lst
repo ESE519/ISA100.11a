@@ -1396,29 +1396,29 @@
  1447               	/* File "../../../src/kernel/source/nrk_events.c": code  803 = 0x0323 ( 755), prologues  21, epilog
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_events.c
-     /tmp/ccKq2C7v.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccKq2C7v.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccKq2C7v.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccKq2C7v.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccKq2C7v.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccKq2C7v.s:128    .text:00000000 nrk_signal_create
+     /tmp/cclGkiAC.s:2      *ABS*:0000003f __SREG__
+     /tmp/cclGkiAC.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cclGkiAC.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cclGkiAC.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cclGkiAC.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cclGkiAC.s:128    .text:00000000 nrk_signal_create
                             *COM*:00000004 _nrk_signal_list
-     /tmp/ccKq2C7v.s:216    .text:0000007a nrk_signal_get_registered_mask
+     /tmp/cclGkiAC.s:216    .text:0000007a nrk_signal_get_registered_mask
                             *COM*:00000002 nrk_cur_task_TCB
-     /tmp/ccKq2C7v.s:241    .text:0000008c nrk_signal_unregister
-     /tmp/ccKq2C7v.s:339    .text:00000112 nrk_signal_register
-     /tmp/ccKq2C7v.s:419    .text:00000184 nrk_sem_create
+     /tmp/cclGkiAC.s:241    .text:0000008c nrk_signal_unregister
+     /tmp/cclGkiAC.s:339    .text:00000112 nrk_signal_register
+     /tmp/cclGkiAC.s:419    .text:00000184 nrk_sem_create
                             *COM*:00000001 _nrk_resource_cnt
                             *COM*:00000006 nrk_sem_list
-     /tmp/ccKq2C7v.s:502    .text:000001da nrk_get_resource_index
-     /tmp/ccKq2C7v.s:552    .text:000001fc nrk_sem_delete
-     /tmp/ccKq2C7v.s:626    .text:00000242 nrk_sem_query
-     /tmp/ccKq2C7v.s:689    .text:0000027a nrk_sem_post
+     /tmp/cclGkiAC.s:502    .text:000001da nrk_get_resource_index
+     /tmp/cclGkiAC.s:552    .text:000001fc nrk_sem_delete
+     /tmp/cclGkiAC.s:626    .text:00000242 nrk_sem_query
+     /tmp/cclGkiAC.s:689    .text:0000027a nrk_sem_post
                             *COM*:00000063 nrk_task_TCB
-     /tmp/ccKq2C7v.s:829    .text:00000322 nrk_event_signal
-     /tmp/ccKq2C7v.s:1003   .text:00000402 nrk_signal_delete
-     /tmp/ccKq2C7v.s:1187   .text:0000051e nrk_sem_pend
-     /tmp/ccKq2C7v.s:1311   .text:000005c6 nrk_event_wait
+     /tmp/cclGkiAC.s:829    .text:00000322 nrk_event_signal
+     /tmp/cclGkiAC.s:1003   .text:00000402 nrk_signal_delete
+     /tmp/cclGkiAC.s:1187   .text:0000051e nrk_sem_pend
+     /tmp/cclGkiAC.s:1311   .text:000005c6 nrk_event_wait
                             *COM*:00000001 nrk_wakeup_signal
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr

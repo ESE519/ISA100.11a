@@ -934,17 +934,17 @@
  873               	/* File "../../../src/drivers/platform/firefly2_2/source/ff_basic_sensor.c": code  450 = 0x01c2 ( 4
 DEFINED SYMBOLS
                             *ABS*:00000000 ff_basic_sensor.c
-     /tmp/ccL1sFzP.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccL1sFzP.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccL1sFzP.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccL1sFzP.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccL1sFzP.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccL1sFzP.s:139    .text:00000000 init_adc
+     /tmp/cc4UCBaT.s:2      *ABS*:0000003f __SREG__
+     /tmp/cc4UCBaT.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cc4UCBaT.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cc4UCBaT.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cc4UCBaT.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cc4UCBaT.s:139    .text:00000000 init_adc
                             *COM*:00000001 channel
-     /tmp/ccL1sFzP.s:185    .text:0000002c delay
-     /tmp/ccL1sFzP.s:208    .text:00000036 get_adc_val
-     /tmp/ccL1sFzP.s:255    .text:00000062 read_voltage_status
-     /tmp/ccL1sFzP.s:477    .text:00000190 dev_manager_ff_sensors
+     /tmp/cc4UCBaT.s:185    .text:0000002c delay
+     /tmp/cc4UCBaT.s:208    .text:00000036 get_adc_val
+     /tmp/cc4UCBaT.s:255    .text:00000062 read_voltage_status
+     /tmp/cc4UCBaT.s:477    .text:00000190 dev_manager_ff_sensors
                             *COM*:00000001 is_open
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000001 error_task

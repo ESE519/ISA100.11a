@@ -1693,29 +1693,29 @@
  1642               	/* File "../../../src/net/isa/dlmo.c": code  952 = 0x03b8 ( 773), prologues  87, epilogues  92 */
 DEFINED SYMBOLS
                             *ABS*:00000000 dlmo.c
-     /tmp/ccbtK6rL.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccbtK6rL.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccbtK6rL.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccbtK6rL.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccbtK6rL.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccbtK6rL.s:155    .text:00000000 dlmoInit
+     /tmp/ccFy5qlQ.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccFy5qlQ.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccFy5qlQ.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccFy5qlQ.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccFy5qlQ.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccFy5qlQ.s:155    .text:00000000 dlmoInit
                             *COM*:000000b4 dlmoLink
                             *COM*:000001a9 dlmoNeighbor
                             *COM*:00000001 isaTxQueueSize
-     /tmp/ccbtK6rL.s:203    .text:00000026 isTransmitLinkPresent
-     /tmp/ccbtK6rL.s:260    .text:00000066 isa_get_slots_until_next_wakeup
+     /tmp/ccFy5qlQ.s:203    .text:00000026 isTransmitLinkPresent
+     /tmp/ccFy5qlQ.s:260    .text:00000066 isa_get_slots_until_next_wakeup
                             *COM*:00000008 isa_slot
-     /tmp/ccbtK6rL.s:547    .text:0000024a getHighPriorityEntry
+     /tmp/ccFy5qlQ.s:547    .text:0000024a getHighPriorityEntry
                             *COM*:00000528 isaQueue
-     /tmp/ccbtK6rL.s:706    .text:00000322 isaFreePacket
-     /tmp/ccbtK6rL.s:738    .text:00000336 addLink
-     /tmp/ccbtK6rL.s:825    .text:00000386 enQueue
-     /tmp/ccbtK6rL.s:995    .text:00000450 dd_data_request
-     /tmp/ccbtK6rL.s:1059   .text:0000048c addNeighbor
-     /tmp/ccbtK6rL.s:1280   .text:000005b8 findLink
-     /tmp/ccbtK6rL.s:1360   .text:0000060a dd_data_indication
-     /tmp/ccbtK6rL.s:1385   .text:00000610 sendPacket
-     /tmp/ccbtK6rL.s:1446   .text:00000652 configureSlot
+     /tmp/ccFy5qlQ.s:706    .text:00000322 isaFreePacket
+     /tmp/ccFy5qlQ.s:738    .text:00000336 addLink
+     /tmp/ccFy5qlQ.s:825    .text:00000386 enQueue
+     /tmp/ccFy5qlQ.s:995    .text:00000450 dd_data_request
+     /tmp/ccFy5qlQ.s:1059   .text:0000048c addNeighbor
+     /tmp/ccFy5qlQ.s:1280   .text:000005b8 findLink
+     /tmp/ccFy5qlQ.s:1360   .text:0000060a dd_data_indication
+     /tmp/ccFy5qlQ.s:1385   .text:00000610 sendPacket
+     /tmp/ccFy5qlQ.s:1446   .text:00000652 configureSlot
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr

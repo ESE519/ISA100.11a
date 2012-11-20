@@ -1,0 +1,1142 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 136               		.data
+ 137               	.LC0:
+ 138 0000 2564 2000 		.string	"%d "
+ 139               	.LC1:
+ 140 0004 4469 6520 		.string	"Die Stack %d\r\n"
+ 140      5374 6163 
+ 140      6B20 2564 
+ 140      0D0A 00
+ 141               		.text
+ 144               	.global	kill_stack
+ 146               	kill_stack:
+ 147               		.stabd	46,0,0
+   1:main.c        **** /******************************************************************************
+   2:main.c        **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:main.c        **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:main.c        **** *  All rights reserved.
+   5:main.c        **** *
+   6:main.c        **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:main.c        **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:main.c        **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:main.c        **** *
+  10:main.c        **** *  This program is free software: you can redistribute it and/or modify
+  11:main.c        **** *  it under the terms of the GNU General Public License as published by
+  12:main.c        **** *  the Free Software Foundation, version 2.0 of the License.
+  13:main.c        **** *
+  14:main.c        **** *  This program is distributed in the hope that it will be useful,
+  15:main.c        **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:main.c        **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:main.c        **** *  GNU General Public License for more details.
+  18:main.c        **** *
+  19:main.c        **** *  You should have received a copy of the GNU General Public License
+  20:main.c        **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:main.c        **** *
+  22:main.c        **** *******************************************************************************/
+  23:main.c        **** 
+  24:main.c        **** #include <nrk.h>
+  25:main.c        **** #include <include.h>
+  26:main.c        **** #include <ulib.h>
+  27:main.c        **** #include <stdio.h>
+  28:main.c        **** #include <hal.h>
+  29:main.c        **** #include <nrk_error.h>
+  30:main.c        **** #include <nrk_timer.h>
+  31:main.c        **** #include <nrk_stack_check.h>
+  32:main.c        **** #include <nrk_stats.h>
+  33:main.c        **** 
+  34:main.c        **** 
+  35:main.c        **** NRK_STK Stack1[NRK_APP_STACKSIZE];
+  36:main.c        **** nrk_task_type TaskOne;
+  37:main.c        **** void Task1(void);
+  38:main.c        **** 
+  39:main.c        **** NRK_STK Stack2[NRK_APP_STACKSIZE];
+  40:main.c        **** nrk_task_type TaskTwo;
+  41:main.c        **** void Task2 (void);
+  42:main.c        **** 
+  43:main.c        **** NRK_STK Stack3[NRK_APP_STACKSIZE];
+  44:main.c        **** nrk_task_type TaskThree;
+  45:main.c        **** void Task3 (void);
+  46:main.c        **** 
+  47:main.c        **** 
+  48:main.c        **** NRK_STK Stack4[NRK_APP_STACKSIZE];
+  49:main.c        **** nrk_task_type TaskFour;
+  50:main.c        **** void Task4 (void);
+  51:main.c        **** 
+  52:main.c        **** void nrk_create_taskset();
+  53:main.c        **** uint8_t kill_stack(uint8_t val);
+  54:main.c        **** 
+  55:main.c        **** int
+  56:main.c        **** main ()
+  57:main.c        **** {
+  58:main.c        ****   nrk_setup_ports();
+  59:main.c        ****   nrk_setup_uart(UART_BAUDRATE_115K2);
+  60:main.c        **** 
+  61:main.c        ****   nrk_init();
+  62:main.c        **** 
+  63:main.c        ****   nrk_led_clr(ORANGE_LED);
+  64:main.c        ****   nrk_led_clr(BLUE_LED);
+  65:main.c        ****   nrk_led_clr(GREEN_LED);
+  66:main.c        ****   nrk_led_clr(RED_LED);
+  67:main.c        ****  
+  68:main.c        ****   nrk_time_set(0,0);
+  69:main.c        ****   nrk_create_taskset ();
+  70:main.c        ****   nrk_start();
+  71:main.c        ****   
+  72:main.c        ****   return 0;
+  73:main.c        **** }
+  74:main.c        **** 
+  75:main.c        **** void Task1()
+  76:main.c        **** {
+  77:main.c        **** nrk_time_t t;
+  78:main.c        **** uint16_t cnt;
+  79:main.c        **** uint16_t wait_high_time;
+  80:main.c        **** uint8_t cur_TCNT2;
+  81:main.c        **** cnt=0;
+  82:main.c        **** nrk_kprintf( PSTR("Nano-RK Version ") );
+  83:main.c        **** printf( "%d\r\n",NRK_VERSION );
+  84:main.c        **** 
+  85:main.c        **** printf( "My node's address is %u\r\n",NODE_ADDR );
+  86:main.c        ****   
+  87:main.c        **** printf( "Task1 PID=%u\r\n",nrk_get_pid());
+  88:main.c        **** //_nrk_high_speed_timer_start();
+  89:main.c        ****   while(1) {
+  90:main.c        **** 	//_nrk_high_speed_timer_reset();
+  91:main.c        **** 	nrk_led_toggle(ORANGE_LED);
+  92:main.c        **** 	nrk_gpio_set(NRK_DEBUG_0);
+  93:main.c        **** 	nrk_gpio_toggle(NRK_DEBUG_1);
+  94:main.c        **** 	//printf( "Task1 cnt=%u\r\n, %d.",cnt);
+  95:main.c        **** 	do{
+  96:main.c        **** 		cur_TCNT2 = _nrk_os_timer_get();		
+  97:main.c        **** 	}while(cur_TCNT2<=20);
+  98:main.c        **** 	//printf("Task1 cnt=%u, current TCNT2 is %d\n\r",cnt, cur_TCNT2);
+  99:main.c        **** 	
+ 100:main.c        **** 	//printf("current TCNT1 is %d.\n\r",_nrk_high_speed_timer_get());
+ 101:main.c        **** 	/*do{
+ 102:main.c        **** 		cur_TCNT2 = _nrk_os_timer_get();		
+ 103:main.c        **** 	}while(cur_TCNT2!=100);
+ 104:main.c        **** 	printf("Task1 cnt=%u, current TCNT2 is %d\n\r",cnt, cur_TCNT2);*/
+ 105:main.c        **** 	//_nrk_os_timer_set(40);// time escape 100ms
+ 106:main.c        **** 	/*while(cnt++<=10)
+ 107:main.c        **** 	{
+ 108:main.c        **** 		while(_nrk_high_speed_timer_get()<50000);
+ 109:main.c        **** 		_nrk_high_speed_timer_reset();
+ 110:main.c        **** 	}*/
+ 111:main.c        **** 	_nrk_high_speed_timer_reset();
+ 112:main.c        **** 	//_nrk_os_timer_reset();
+ 113:main.c        **** 	//printf("1st TCNT1 is %d.\n\r",_nrk_high_speed_timer_get());
+ 114:main.c        **** 	//wait_high_time = _nrk_high_speed_timer_get() + 2577;
+ 115:main.c        **** 	do{}while(TCNT1<2577);
+ 116:main.c        **** 	//nrk_high_speed_timer_wait(,2577);//time escape 0.5ms
+ 117:main.c        **** 	//printf("2nd TCNT1 is %d.\n\r",_nrk_high_speed_timer_get());
+ 118:main.c        **** 	//_nrk_high_speed_timer_reset();
+ 119:main.c        **** 	//printf("3rd TCNT1 is %d.\n\r",_nrk_high_speed_timer_get());
+ 120:main.c        **** 	_nrk_os_timer_set(20);
+ 121:main.c        **** 	//printf("TCNT1 is %d cnt is %d.\n\r",_nrk_high_speed_timer_get(),cnt);
+ 122:main.c        **** 	nrk_gpio_clr(NRK_DEBUG_0);
+ 123:main.c        **** 	nrk_wait_until_next_period();
+ 124:main.c        **** 	
+ 125:main.c        ****         // Uncomment this line to cause a stack overflow
+ 126:main.c        **** 	// if(cnt>20) kill_stack(10);
+ 127:main.c        **** 
+ 128:main.c        **** 	// At time 50, the OS will halt and print statistics
+ 129:main.c        **** 	// This requires the NRK_STATS_TRACKER #define in nrk_cfg.h
+ 130:main.c        **** 	// if(cnt==50)  {
+ 131:main.c        **** 	//	nrk_stats_display_all();
+ 132:main.c        **** 	//	nrk_halt();
+ 133:main.c        **** 	//	}
+ 134:main.c        **** 
+ 135:main.c        **** 	cnt=0;
+ 136:main.c        **** 	//cnt++;
+ 137:main.c        **** 	}
+ 138:main.c        **** }
+ 139:main.c        **** 
+ 140:main.c        **** void Task2()
+ 141:main.c        **** {
+ 142:main.c        ****   int16_t cnt;
+ 143:main.c        ****   printf( "Task2 PID=%u\r\n",nrk_get_pid());
+ 144:main.c        ****   cnt=0;
+ 145:main.c        ****   while(1) {
+ 146:main.c        **** 	nrk_led_toggle(BLUE_LED);
+ 147:main.c        **** 	nrk_gpio_toggle(NRK_DEBUG_1);
+ 148:main.c        **** 	printf( "Task2 signed cnt=%d\r\n",cnt );
+ 149:main.c        **** 	nrk_wait_until_next_period();
+ 150:main.c        **** 	//nrk_stats_display_pid(nrk_get_pid());
+ 151:main.c        **** 	cnt--;
+ 152:main.c        **** 	}
+ 153:main.c        **** }
+ 154:main.c        **** 
+ 155:main.c        **** void Task3()
+ 156:main.c        **** {
+ 157:main.c        **** uint16_t cnt;
+ 158:main.c        ****   printf( "Task3 PID=%u\r\n",nrk_get_pid());
+ 159:main.c        ****   cnt=0;
+ 160:main.c        ****   while(1) {
+ 161:main.c        **** 	nrk_led_toggle(GREEN_LED);
+ 162:main.c        **** 	nrk_gpio_toggle(NRK_DEBUG_2);
+ 163:main.c        **** 	printf( "Task3 cnt=%u\r\n",cnt );
+ 164:main.c        **** 	nrk_wait_until_next_period();
+ 165:main.c        **** 	cnt++;
+ 166:main.c        **** 	}
+ 167:main.c        **** }
+ 168:main.c        **** 
+ 169:main.c        **** void Task4()
+ 170:main.c        **** {
+ 171:main.c        **** uint16_t cnt;
+ 172:main.c        **** 
+ 173:main.c        ****   printf( "Task4 PID=%u\r\n",nrk_get_pid());
+ 174:main.c        ****   cnt=0;
+ 175:main.c        ****   while(1) {
+ 176:main.c        **** 	nrk_led_toggle(RED_LED);
+ 177:main.c        **** 	nrk_gpio_toggle(NRK_DEBUG_3);
+ 178:main.c        **** 	printf( "Task4 cnt=%u\r\n",cnt );
+ 179:main.c        **** 	nrk_wait_until_next_period();
+ 180:main.c        **** 	cnt++;
+ 181:main.c        **** 	}
+ 182:main.c        **** }
+ 183:main.c        **** 
+ 184:main.c        **** void
+ 185:main.c        **** nrk_create_taskset()
+ 186:main.c        **** {
+ 187:main.c        ****   nrk_task_set_entry_function( &TaskOne, Task1);
+ 188:main.c        ****   nrk_task_set_stk( &TaskOne, Stack1, NRK_APP_STACKSIZE);
+ 189:main.c        ****   TaskOne.prio = 1;
+ 190:main.c        ****   TaskOne.FirstActivation = TRUE;
+ 191:main.c        ****   TaskOne.Type = BASIC_TASK;
+ 192:main.c        ****   TaskOne.SchType = PREEMPTIVE;
+ 193:main.c        ****   TaskOne.period.secs = 0;
+ 194:main.c        ****   TaskOne.period.nano_secs = 50*NANOS_PER_MS;
+ 195:main.c        ****   TaskOne.cpu_reserve.secs = 0;
+ 196:main.c        ****   TaskOne.cpu_reserve.nano_secs = 50*NANOS_PER_MS;
+ 197:main.c        ****   TaskOne.offset.secs = 0;
+ 198:main.c        ****   TaskOne.offset.nano_secs= 0;
+ 199:main.c        ****   nrk_activate_task (&TaskOne);
+ 200:main.c        **** 
+ 201:main.c        ****   nrk_task_set_entry_function( &TaskTwo, Task2);
+ 202:main.c        ****   nrk_task_set_stk( &TaskTwo, Stack2, NRK_APP_STACKSIZE);
+ 203:main.c        ****   TaskTwo.prio = 2;
+ 204:main.c        ****   TaskTwo.FirstActivation = TRUE;
+ 205:main.c        ****   TaskTwo.Type = BASIC_TASK;
+ 206:main.c        ****   TaskTwo.SchType = PREEMPTIVE;
+ 207:main.c        ****   TaskTwo.period.secs = 0;
+ 208:main.c        ****   TaskTwo.period.nano_secs = 500*NANOS_PER_MS;
+ 209:main.c        ****   TaskTwo.cpu_reserve.secs = 0;
+ 210:main.c        ****   TaskTwo.cpu_reserve.nano_secs = 100*NANOS_PER_MS;
+ 211:main.c        ****   TaskTwo.offset.secs = 0;
+ 212:main.c        ****   TaskTwo.offset.nano_secs= 0;
+ 213:main.c        ****   //nrk_activate_task (&TaskTwo);
+ 214:main.c        **** 
+ 215:main.c        **** 
+ 216:main.c        ****   nrk_task_set_entry_function( &TaskThree, Task3);
+ 217:main.c        ****   nrk_task_set_stk( &TaskThree, Stack3, NRK_APP_STACKSIZE);
+ 218:main.c        ****   TaskThree.prio = 3;
+ 219:main.c        ****   TaskThree.FirstActivation = TRUE;
+ 220:main.c        ****   TaskThree.Type = BASIC_TASK;
+ 221:main.c        ****   TaskThree.SchType = PREEMPTIVE;
+ 222:main.c        ****   TaskThree.period.secs = 1;
+ 223:main.c        ****   TaskThree.period.nano_secs = 0;
+ 224:main.c        ****   TaskThree.cpu_reserve.secs = 0;
+ 225:main.c        ****   TaskThree.cpu_reserve.nano_secs = 100*NANOS_PER_MS;
+ 226:main.c        ****   TaskThree.offset.secs = 0;
+ 227:main.c        ****   TaskThree.offset.nano_secs= 0;
+ 228:main.c        ****   //nrk_activate_task (&TaskThree);
+ 229:main.c        **** 
+ 230:main.c        **** 
+ 231:main.c        ****   nrk_task_set_entry_function( &TaskFour, Task4);
+ 232:main.c        ****   nrk_task_set_stk( &TaskFour, Stack4, NRK_APP_STACKSIZE);
+ 233:main.c        ****   TaskFour.prio = 4;
+ 234:main.c        ****   TaskFour.FirstActivation = TRUE;
+ 235:main.c        ****   TaskFour.Type = BASIC_TASK;
+ 236:main.c        ****   TaskFour.SchType = PREEMPTIVE;
+ 237:main.c        ****   TaskFour.period.secs = 2;
+ 238:main.c        ****   TaskFour.period.nano_secs = 0;
+ 239:main.c        ****   TaskFour.cpu_reserve.secs = 0;
+ 240:main.c        ****   TaskFour.cpu_reserve.nano_secs = 100*NANOS_PER_MS;
+ 241:main.c        ****   TaskFour.offset.secs = 0;
+ 242:main.c        ****   TaskFour.offset.nano_secs= 0;
+ 243:main.c        ****   //nrk_activate_task (&TaskFour);
+ 244:main.c        **** 
+ 245:main.c        **** 
+ 246:main.c        **** }
+ 247:main.c        **** 
+ 248:main.c        **** uint8_t kill_stack(uint8_t val)
+ 249:main.c        **** {
+ 149               	.LM0:
+ 150               	.LFBB1:
+ 151               	/* prologue: frame size=10 */
+ 152 0000 AF92      		push r10
+ 153 0002 BF92      		push r11
+ 154 0004 DF92      		push r13
+ 155 0006 EF92      		push r14
+ 156 0008 FF92      		push r15
+ 157 000a 0F93      		push r16
+ 158 000c 1F93      		push r17
+ 159 000e CF93      		push r28
+ 160 0010 DF93      		push r29
+ 161 0012 CDB7      		in r28,__SP_L__
+ 162 0014 DEB7      		in r29,__SP_H__
+ 163 0016 2A97      		sbiw r28,10
+ 164 0018 0FB6      		in __tmp_reg__,__SREG__
+ 165 001a F894      		cli
+ 166 001c DEBF      		out __SP_H__,r29
+ 167 001e 0FBE      		out __SREG__,__tmp_reg__
+ 168 0020 CDBF      		out __SP_L__,r28
+ 169               	/* prologue end (size=17) */
+ 170 0022 D82E      		mov r13,r24
+ 171 0024 7E01      		movw r14,r28
+ 172 0026 0894      		sec
+ 173 0028 E11C      		adc r14,__zero_reg__
+ 174 002a F11C      		adc r15,__zero_reg__
+ 175 002c 8701      		movw r16,r14
+ 176 002e 9E2D      		mov r25,r14
+ 250:main.c        **** char bad_memory[10];
+ 251:main.c        **** uint8_t i;
+ 252:main.c        **** for(i=0; i<10; i++ ) bad_memory[i]=i;
+ 178               	.LM1:
+ 179 0030 9E01      		movw r18,r28
+ 180 0032 255F      		subi r18,lo8(-(11))
+ 181 0034 3F4F      		sbci r19,hi8(-(11))
+ 182               	.L2:
+ 184               	.LM2:
+ 185 0036 802F      		mov r24,r16
+ 186 0038 891B      		sub r24,r25
+ 187 003a F801      		movw r30,r16
+ 188 003c 8193      		st Z+,r24
+ 189 003e 8F01      		movw r16,r30
+ 190 0040 E217      		cp r30,r18
+ 191 0042 F307      		cpc r31,r19
+ 192 0044 01F4      		brne .L2
+ 253:main.c        **** for(i=0; i<10; i++ ) printf( "%d ", bad_memory[i]);
+ 194               	.LM3:
+ 195 0046 80E0      		ldi r24,lo8(.LC0)
+ 196 0048 A82E      		mov r10,r24
+ 197 004a 80E0      		ldi r24,hi8(.LC0)
+ 198 004c B82E      		mov r11,r24
+ 199               	.L8:
+ 200 004e F701      		movw r30,r14
+ 201 0050 8191      		ld r24,Z+
+ 202 0052 7F01      		movw r14,r30
+ 203 0054 9927      		clr r25
+ 204 0056 9F93      		push r25
+ 205 0058 8F93      		push r24
+ 206 005a BF92      		push r11
+ 207 005c AF92      		push r10
+ 208 005e 0E94 0000 		call printf
+ 209 0062 0F90      		pop __tmp_reg__
+ 210 0064 0F90      		pop __tmp_reg__
+ 211 0066 0F90      		pop __tmp_reg__
+ 212 0068 0F90      		pop __tmp_reg__
+ 213 006a E016      		cp r14,r16
+ 214 006c F106      		cpc r15,r17
+ 215 006e 01F4      		brne .L8
+ 254:main.c        ****    printf( "Die Stack %d\r\n",val );
+ 217               	.LM4:
+ 218 0070 8D2D      		mov r24,r13
+ 219 0072 9927      		clr r25
+ 220 0074 9F93      		push r25
+ 221 0076 8F93      		push r24
+ 222 0078 80E0      		ldi r24,lo8(.LC1)
+ 223 007a 90E0      		ldi r25,hi8(.LC1)
+ 224 007c 9F93      		push r25
+ 225 007e 8F93      		push r24
+ 226 0080 0E94 0000 		call printf
+ 255:main.c        **** if(val>1) kill_stack(val-1);
+ 228               	.LM5:
+ 229 0084 0F90      		pop __tmp_reg__
+ 230 0086 0F90      		pop __tmp_reg__
+ 231 0088 0F90      		pop __tmp_reg__
+ 232 008a 0F90      		pop __tmp_reg__
+ 233 008c F1E0      		ldi r31,lo8(1)
+ 234 008e FD15      		cp r31,r13
+ 235 0090 00F4      		brsh .L5
+ 236 0092 8D2D      		mov r24,r13
+ 237 0094 8150      		subi r24,lo8(-(-1))
+ 238 0096 0E94 0000 		call kill_stack
+ 239               	.L5:
+ 256:main.c        **** return 0;
+ 257:main.c        **** }
+ 241               	.LM6:
+ 242 009a 80E0      		ldi r24,lo8(0)
+ 243 009c 90E0      		ldi r25,hi8(0)
+ 244               	/* epilogue: frame size=10 */
+ 245 009e 2A96      		adiw r28,10
+ 246 00a0 0FB6      		in __tmp_reg__,__SREG__
+ 247 00a2 F894      		cli
+ 248 00a4 DEBF      		out __SP_H__,r29
+ 249 00a6 0FBE      		out __SREG__,__tmp_reg__
+ 250 00a8 CDBF      		out __SP_L__,r28
+ 251 00aa DF91      		pop r29
+ 252 00ac CF91      		pop r28
+ 253 00ae 1F91      		pop r17
+ 254 00b0 0F91      		pop r16
+ 255 00b2 FF90      		pop r15
+ 256 00b4 EF90      		pop r14
+ 257 00b6 DF90      		pop r13
+ 258 00b8 BF90      		pop r11
+ 259 00ba AF90      		pop r10
+ 260 00bc 0895      		ret
+ 261               	/* epilogue end (size=16) */
+ 262               	/* function kill_stack size 95 (62) */
+ 267               	.Lscope1:
+ 269               		.stabd	78,0,0
+ 271               	.global	nrk_create_taskset
+ 273               	nrk_create_taskset:
+ 274               		.stabd	46,0,0
+ 276               	.LM7:
+ 277               	.LFBB2:
+ 278               	/* prologue: frame size=0 */
+ 279 00be BF92      		push r11
+ 280 00c0 CF92      		push r12
+ 281 00c2 DF92      		push r13
+ 282 00c4 EF92      		push r14
+ 283 00c6 FF92      		push r15
+ 284 00c8 0F93      		push r16
+ 285 00ca 1F93      		push r17
+ 286               	/* prologue end (size=7) */
+ 288               	.LM8:
+ 289 00cc 00E0      		ldi r16,lo8(TaskOne)
+ 290 00ce 10E0      		ldi r17,hi8(TaskOne)
+ 291 00d0 60E0      		ldi r22,lo8(pm(Task1))
+ 292 00d2 70E0      		ldi r23,hi8(pm(Task1))
+ 293 00d4 C801      		movw r24,r16
+ 294 00d6 0E94 0000 		call nrk_task_set_entry_function
+ 296               	.LM9:
+ 297 00da 40E8      		ldi r20,lo8(128)
+ 298 00dc 50E0      		ldi r21,hi8(128)
+ 299 00de 60E0      		ldi r22,lo8(Stack1)
+ 300 00e0 70E0      		ldi r23,hi8(Stack1)
+ 301 00e2 C801      		movw r24,r16
+ 302 00e4 0E94 0000 		call nrk_task_set_stk
+ 304               	.LM10:
+ 305 00e8 BB24      		clr r11
+ 306 00ea B394      		inc r11
+ 307 00ec B092 0000 		sts TaskOne+8,r11
+ 309               	.LM11:
+ 310 00f0 B092 0000 		sts TaskOne+7,r11
+ 312               	.LM12:
+ 313 00f4 B092 0000 		sts TaskOne+9,r11
+ 315               	.LM13:
+ 316 00f8 B092 0000 		sts TaskOne+10,r11
+ 318               	.LM14:
+ 319 00fc 1092 0000 		sts TaskOne+11,__zero_reg__
+ 320 0100 1092 0000 		sts (TaskOne+11)+1,__zero_reg__
+ 321 0104 1092 0000 		sts (TaskOne+11)+2,__zero_reg__
+ 322 0108 1092 0000 		sts (TaskOne+11)+3,__zero_reg__
+ 324               	.LM15:
+ 325 010c 80E8      		ldi r24,lo8(50000000)
+ 326 010e 90EF      		ldi r25,hi8(50000000)
+ 327 0110 AAEF      		ldi r26,hlo8(50000000)
+ 328 0112 B2E0      		ldi r27,hhi8(50000000)
+ 329 0114 8093 0000 		sts TaskOne+15,r24
+ 330 0118 9093 0000 		sts (TaskOne+15)+1,r25
+ 331 011c A093 0000 		sts (TaskOne+15)+2,r26
+ 332 0120 B093 0000 		sts (TaskOne+15)+3,r27
+ 334               	.LM16:
+ 335 0124 1092 0000 		sts TaskOne+19,__zero_reg__
+ 336 0128 1092 0000 		sts (TaskOne+19)+1,__zero_reg__
+ 337 012c 1092 0000 		sts (TaskOne+19)+2,__zero_reg__
+ 338 0130 1092 0000 		sts (TaskOne+19)+3,__zero_reg__
+ 340               	.LM17:
+ 341 0134 8093 0000 		sts TaskOne+23,r24
+ 342 0138 9093 0000 		sts (TaskOne+23)+1,r25
+ 343 013c A093 0000 		sts (TaskOne+23)+2,r26
+ 344 0140 B093 0000 		sts (TaskOne+23)+3,r27
+ 346               	.LM18:
+ 347 0144 1092 0000 		sts TaskOne+27,__zero_reg__
+ 348 0148 1092 0000 		sts (TaskOne+27)+1,__zero_reg__
+ 349 014c 1092 0000 		sts (TaskOne+27)+2,__zero_reg__
+ 350 0150 1092 0000 		sts (TaskOne+27)+3,__zero_reg__
+ 352               	.LM19:
+ 353 0154 1092 0000 		sts TaskOne+31,__zero_reg__
+ 354 0158 1092 0000 		sts (TaskOne+31)+1,__zero_reg__
+ 355 015c 1092 0000 		sts (TaskOne+31)+2,__zero_reg__
+ 356 0160 1092 0000 		sts (TaskOne+31)+3,__zero_reg__
+ 358               	.LM20:
+ 359 0164 C801      		movw r24,r16
+ 360 0166 0E94 0000 		call nrk_activate_task
+ 362               	.LM21:
+ 363 016a 00E0      		ldi r16,lo8(TaskTwo)
+ 364 016c 10E0      		ldi r17,hi8(TaskTwo)
+ 365 016e 60E0      		ldi r22,lo8(pm(Task2))
+ 366 0170 70E0      		ldi r23,hi8(pm(Task2))
+ 367 0172 C801      		movw r24,r16
+ 368 0174 0E94 0000 		call nrk_task_set_entry_function
+ 370               	.LM22:
+ 371 0178 40E8      		ldi r20,lo8(128)
+ 372 017a 50E0      		ldi r21,hi8(128)
+ 373 017c 60E0      		ldi r22,lo8(Stack2)
+ 374 017e 70E0      		ldi r23,hi8(Stack2)
+ 375 0180 C801      		movw r24,r16
+ 376 0182 0E94 0000 		call nrk_task_set_stk
+ 378               	.LM23:
+ 379 0186 82E0      		ldi r24,lo8(2)
+ 380 0188 8093 0000 		sts TaskTwo+8,r24
+ 382               	.LM24:
+ 383 018c B092 0000 		sts TaskTwo+7,r11
+ 385               	.LM25:
+ 386 0190 B092 0000 		sts TaskTwo+9,r11
+ 388               	.LM26:
+ 389 0194 B092 0000 		sts TaskTwo+10,r11
+ 391               	.LM27:
+ 392 0198 1092 0000 		sts TaskTwo+11,__zero_reg__
+ 393 019c 1092 0000 		sts (TaskTwo+11)+1,__zero_reg__
+ 394 01a0 1092 0000 		sts (TaskTwo+11)+2,__zero_reg__
+ 395 01a4 1092 0000 		sts (TaskTwo+11)+3,__zero_reg__
+ 397               	.LM28:
+ 398 01a8 80E0      		ldi r24,lo8(500000000)
+ 399 01aa 95E6      		ldi r25,hi8(500000000)
+ 400 01ac ADEC      		ldi r26,hlo8(500000000)
+ 401 01ae BDE1      		ldi r27,hhi8(500000000)
+ 402 01b0 8093 0000 		sts TaskTwo+15,r24
+ 403 01b4 9093 0000 		sts (TaskTwo+15)+1,r25
+ 404 01b8 A093 0000 		sts (TaskTwo+15)+2,r26
+ 405 01bc B093 0000 		sts (TaskTwo+15)+3,r27
+ 407               	.LM29:
+ 408 01c0 1092 0000 		sts TaskTwo+19,__zero_reg__
+ 409 01c4 1092 0000 		sts (TaskTwo+19)+1,__zero_reg__
+ 410 01c8 1092 0000 		sts (TaskTwo+19)+2,__zero_reg__
+ 411 01cc 1092 0000 		sts (TaskTwo+19)+3,__zero_reg__
+ 413               	.LM30:
+ 414 01d0 C12C      		mov r12,__zero_reg__
+ 415 01d2 91EE      		ldi r25,hi8(100000000)
+ 416 01d4 D92E      		mov r13,r25
+ 417 01d6 95EF      		ldi r25,hlo8(100000000)
+ 418 01d8 E92E      		mov r14,r25
+ 419 01da 95E0      		ldi r25,hhi8(100000000)
+ 420 01dc F92E      		mov r15,r25
+ 421 01de C092 0000 		sts TaskTwo+23,r12
+ 422 01e2 D092 0000 		sts (TaskTwo+23)+1,r13
+ 423 01e6 E092 0000 		sts (TaskTwo+23)+2,r14
+ 424 01ea F092 0000 		sts (TaskTwo+23)+3,r15
+ 426               	.LM31:
+ 427 01ee 1092 0000 		sts TaskTwo+27,__zero_reg__
+ 428 01f2 1092 0000 		sts (TaskTwo+27)+1,__zero_reg__
+ 429 01f6 1092 0000 		sts (TaskTwo+27)+2,__zero_reg__
+ 430 01fa 1092 0000 		sts (TaskTwo+27)+3,__zero_reg__
+ 432               	.LM32:
+ 433 01fe 1092 0000 		sts TaskTwo+31,__zero_reg__
+ 434 0202 1092 0000 		sts (TaskTwo+31)+1,__zero_reg__
+ 435 0206 1092 0000 		sts (TaskTwo+31)+2,__zero_reg__
+ 436 020a 1092 0000 		sts (TaskTwo+31)+3,__zero_reg__
+ 438               	.LM33:
+ 439 020e 00E0      		ldi r16,lo8(TaskThree)
+ 440 0210 10E0      		ldi r17,hi8(TaskThree)
+ 441 0212 60E0      		ldi r22,lo8(pm(Task3))
+ 442 0214 70E0      		ldi r23,hi8(pm(Task3))
+ 443 0216 C801      		movw r24,r16
+ 444 0218 0E94 0000 		call nrk_task_set_entry_function
+ 446               	.LM34:
+ 447 021c 40E8      		ldi r20,lo8(128)
+ 448 021e 50E0      		ldi r21,hi8(128)
+ 449 0220 60E0      		ldi r22,lo8(Stack3)
+ 450 0222 70E0      		ldi r23,hi8(Stack3)
+ 451 0224 C801      		movw r24,r16
+ 452 0226 0E94 0000 		call nrk_task_set_stk
+ 454               	.LM35:
+ 455 022a 83E0      		ldi r24,lo8(3)
+ 456 022c 8093 0000 		sts TaskThree+8,r24
+ 458               	.LM36:
+ 459 0230 B092 0000 		sts TaskThree+7,r11
+ 461               	.LM37:
+ 462 0234 B092 0000 		sts TaskThree+9,r11
+ 464               	.LM38:
+ 465 0238 B092 0000 		sts TaskThree+10,r11
+ 467               	.LM39:
+ 468 023c 81E0      		ldi r24,lo8(1)
+ 469 023e 90E0      		ldi r25,hi8(1)
+ 470 0240 A0E0      		ldi r26,hlo8(1)
+ 471 0242 B0E0      		ldi r27,hhi8(1)
+ 472 0244 8093 0000 		sts TaskThree+11,r24
+ 473 0248 9093 0000 		sts (TaskThree+11)+1,r25
+ 474 024c A093 0000 		sts (TaskThree+11)+2,r26
+ 475 0250 B093 0000 		sts (TaskThree+11)+3,r27
+ 477               	.LM40:
+ 478 0254 1092 0000 		sts TaskThree+15,__zero_reg__
+ 479 0258 1092 0000 		sts (TaskThree+15)+1,__zero_reg__
+ 480 025c 1092 0000 		sts (TaskThree+15)+2,__zero_reg__
+ 481 0260 1092 0000 		sts (TaskThree+15)+3,__zero_reg__
+ 483               	.LM41:
+ 484 0264 1092 0000 		sts TaskThree+19,__zero_reg__
+ 485 0268 1092 0000 		sts (TaskThree+19)+1,__zero_reg__
+ 486 026c 1092 0000 		sts (TaskThree+19)+2,__zero_reg__
+ 487 0270 1092 0000 		sts (TaskThree+19)+3,__zero_reg__
+ 489               	.LM42:
+ 490 0274 C092 0000 		sts TaskThree+23,r12
+ 491 0278 D092 0000 		sts (TaskThree+23)+1,r13
+ 492 027c E092 0000 		sts (TaskThree+23)+2,r14
+ 493 0280 F092 0000 		sts (TaskThree+23)+3,r15
+ 495               	.LM43:
+ 496 0284 1092 0000 		sts TaskThree+27,__zero_reg__
+ 497 0288 1092 0000 		sts (TaskThree+27)+1,__zero_reg__
+ 498 028c 1092 0000 		sts (TaskThree+27)+2,__zero_reg__
+ 499 0290 1092 0000 		sts (TaskThree+27)+3,__zero_reg__
+ 501               	.LM44:
+ 502 0294 1092 0000 		sts TaskThree+31,__zero_reg__
+ 503 0298 1092 0000 		sts (TaskThree+31)+1,__zero_reg__
+ 504 029c 1092 0000 		sts (TaskThree+31)+2,__zero_reg__
+ 505 02a0 1092 0000 		sts (TaskThree+31)+3,__zero_reg__
+ 507               	.LM45:
+ 508 02a4 00E0      		ldi r16,lo8(TaskFour)
+ 509 02a6 10E0      		ldi r17,hi8(TaskFour)
+ 510 02a8 60E0      		ldi r22,lo8(pm(Task4))
+ 511 02aa 70E0      		ldi r23,hi8(pm(Task4))
+ 512 02ac C801      		movw r24,r16
+ 513 02ae 0E94 0000 		call nrk_task_set_entry_function
+ 515               	.LM46:
+ 516 02b2 40E8      		ldi r20,lo8(128)
+ 517 02b4 50E0      		ldi r21,hi8(128)
+ 518 02b6 60E0      		ldi r22,lo8(Stack4)
+ 519 02b8 70E0      		ldi r23,hi8(Stack4)
+ 520 02ba C801      		movw r24,r16
+ 521 02bc 0E94 0000 		call nrk_task_set_stk
+ 523               	.LM47:
+ 524 02c0 84E0      		ldi r24,lo8(4)
+ 525 02c2 8093 0000 		sts TaskFour+8,r24
+ 527               	.LM48:
+ 528 02c6 B092 0000 		sts TaskFour+7,r11
+ 530               	.LM49:
+ 531 02ca B092 0000 		sts TaskFour+9,r11
+ 533               	.LM50:
+ 534 02ce B092 0000 		sts TaskFour+10,r11
+ 536               	.LM51:
+ 537 02d2 82E0      		ldi r24,lo8(2)
+ 538 02d4 90E0      		ldi r25,hi8(2)
+ 539 02d6 A0E0      		ldi r26,hlo8(2)
+ 540 02d8 B0E0      		ldi r27,hhi8(2)
+ 541 02da 8093 0000 		sts TaskFour+11,r24
+ 542 02de 9093 0000 		sts (TaskFour+11)+1,r25
+ 543 02e2 A093 0000 		sts (TaskFour+11)+2,r26
+ 544 02e6 B093 0000 		sts (TaskFour+11)+3,r27
+ 546               	.LM52:
+ 547 02ea 1092 0000 		sts TaskFour+15,__zero_reg__
+ 548 02ee 1092 0000 		sts (TaskFour+15)+1,__zero_reg__
+ 549 02f2 1092 0000 		sts (TaskFour+15)+2,__zero_reg__
+ 550 02f6 1092 0000 		sts (TaskFour+15)+3,__zero_reg__
+ 552               	.LM53:
+ 553 02fa 1092 0000 		sts TaskFour+19,__zero_reg__
+ 554 02fe 1092 0000 		sts (TaskFour+19)+1,__zero_reg__
+ 555 0302 1092 0000 		sts (TaskFour+19)+2,__zero_reg__
+ 556 0306 1092 0000 		sts (TaskFour+19)+3,__zero_reg__
+ 558               	.LM54:
+ 559 030a C092 0000 		sts TaskFour+23,r12
+ 560 030e D092 0000 		sts (TaskFour+23)+1,r13
+ 561 0312 E092 0000 		sts (TaskFour+23)+2,r14
+ 562 0316 F092 0000 		sts (TaskFour+23)+3,r15
+ 564               	.LM55:
+ 565 031a 1092 0000 		sts TaskFour+27,__zero_reg__
+ 566 031e 1092 0000 		sts (TaskFour+27)+1,__zero_reg__
+ 567 0322 1092 0000 		sts (TaskFour+27)+2,__zero_reg__
+ 568 0326 1092 0000 		sts (TaskFour+27)+3,__zero_reg__
+ 570               	.LM56:
+ 571 032a 1092 0000 		sts TaskFour+31,__zero_reg__
+ 572 032e 1092 0000 		sts (TaskFour+31)+1,__zero_reg__
+ 573 0332 1092 0000 		sts (TaskFour+31)+2,__zero_reg__
+ 574 0336 1092 0000 		sts (TaskFour+31)+3,__zero_reg__
+ 575               	/* epilogue: frame size=0 */
+ 576 033a 1F91      		pop r17
+ 577 033c 0F91      		pop r16
+ 578 033e FF90      		pop r15
+ 579 0340 EF90      		pop r14
+ 580 0342 DF90      		pop r13
+ 581 0344 CF90      		pop r12
+ 582 0346 BF90      		pop r11
+ 583 0348 0895      		ret
+ 584               	/* epilogue end (size=8) */
+ 585               	/* function nrk_create_taskset size 326 (311) */
+ 587               	.Lscope2:
+ 589               		.stabd	78,0,0
+ 590               		.data
+ 591               	.LC2:
+ 592 0013 5461 736B 		.string	"Task4 PID=%u\r\n"
+ 592      3420 5049 
+ 592      443D 2575 
+ 592      0D0A 00
+ 593               	.LC3:
+ 594 0022 5461 736B 		.string	"Task4 cnt=%u\r\n"
+ 594      3420 636E 
+ 594      743D 2575 
+ 594      0D0A 00
+ 595               		.text
+ 597               	.global	Task4
+ 599               	Task4:
+ 600               		.stabd	46,0,0
+ 602               	.LM57:
+ 603               	.LFBB3:
+ 604               	/* prologue: frame size=0 */
+ 605 034a FF92      		push r15
+ 606 034c 0F93      		push r16
+ 607 034e 1F93      		push r17
+ 608 0350 CF93      		push r28
+ 609 0352 DF93      		push r29
+ 610               	/* prologue end (size=5) */
+ 612               	.LM58:
+ 613 0354 0E94 0000 		call nrk_get_pid
+ 614 0358 9927      		clr r25
+ 615 035a 9F93      		push r25
+ 616 035c 8F93      		push r24
+ 617 035e 80E0      		ldi r24,lo8(.LC2)
+ 618 0360 90E0      		ldi r25,hi8(.LC2)
+ 619 0362 9F93      		push r25
+ 620 0364 8F93      		push r24
+ 621 0366 0E94 0000 		call printf
+ 623               	.LM59:
+ 624 036a F090 0000 		lds r15,NRK_DEBUG_3
+ 625 036e C0E0      		ldi r28,lo8(0)
+ 626 0370 D0E0      		ldi r29,hi8(0)
+ 627 0372 0F90      		pop __tmp_reg__
+ 628 0374 0F90      		pop __tmp_reg__
+ 629 0376 0F90      		pop __tmp_reg__
+ 630 0378 0F90      		pop __tmp_reg__
+ 632               	.LM60:
+ 633 037a 00E0      		ldi r16,lo8(.LC3)
+ 634 037c 10E0      		ldi r17,hi8(.LC3)
+ 635               	.L15:
+ 637               	.LM61:
+ 638 037e 83E0      		ldi r24,lo8(3)
+ 639 0380 90E0      		ldi r25,hi8(3)
+ 640 0382 0E94 0000 		call nrk_led_toggle
+ 642               	.LM62:
+ 643 0386 8F2D      		mov r24,r15
+ 644 0388 0E94 0000 		call nrk_gpio_toggle
+ 646               	.LM63:
+ 647 038c DF93      		push r29
+ 648 038e CF93      		push r28
+ 649 0390 1F93      		push r17
+ 650 0392 0F93      		push r16
+ 651 0394 0E94 0000 		call printf
+ 653               	.LM64:
+ 654 0398 0E94 0000 		call nrk_wait_until_next_period
+ 656               	.LM65:
+ 657 039c 2196      		adiw r28,1
+ 659               	.LM66:
+ 660 039e 0F90      		pop __tmp_reg__
+ 661 03a0 0F90      		pop __tmp_reg__
+ 662 03a2 0F90      		pop __tmp_reg__
+ 663 03a4 0F90      		pop __tmp_reg__
+ 664 03a6 00C0      		rjmp .L15
+ 665               	/* epilogue: frame size=0 */
+ 666               	/* epilogue: noreturn */
+ 667               	/* epilogue end (size=0) */
+ 668               	/* function Task4 size 47 (42) */
+ 673               	.Lscope3:
+ 675               		.stabd	78,0,0
+ 676               		.data
+ 677               	.LC4:
+ 678 0031 5461 736B 		.string	"Task3 PID=%u\r\n"
+ 678      3320 5049 
+ 678      443D 2575 
+ 678      0D0A 00
+ 679               	.LC5:
+ 680 0040 5461 736B 		.string	"Task3 cnt=%u\r\n"
+ 680      3320 636E 
+ 680      743D 2575 
+ 680      0D0A 00
+ 681               		.text
+ 683               	.global	Task3
+ 685               	Task3:
+ 686               		.stabd	46,0,0
+ 688               	.LM67:
+ 689               	.LFBB4:
+ 690               	/* prologue: frame size=0 */
+ 691 03a8 FF92      		push r15
+ 692 03aa 0F93      		push r16
+ 693 03ac 1F93      		push r17
+ 694 03ae CF93      		push r28
+ 695 03b0 DF93      		push r29
+ 696               	/* prologue end (size=5) */
+ 698               	.LM68:
+ 699 03b2 0E94 0000 		call nrk_get_pid
+ 700 03b6 9927      		clr r25
+ 701 03b8 9F93      		push r25
+ 702 03ba 8F93      		push r24
+ 703 03bc 80E0      		ldi r24,lo8(.LC4)
+ 704 03be 90E0      		ldi r25,hi8(.LC4)
+ 705 03c0 9F93      		push r25
+ 706 03c2 8F93      		push r24
+ 707 03c4 0E94 0000 		call printf
+ 709               	.LM69:
+ 710 03c8 F090 0000 		lds r15,NRK_DEBUG_2
+ 711 03cc C0E0      		ldi r28,lo8(0)
+ 712 03ce D0E0      		ldi r29,hi8(0)
+ 713 03d0 0F90      		pop __tmp_reg__
+ 714 03d2 0F90      		pop __tmp_reg__
+ 715 03d4 0F90      		pop __tmp_reg__
+ 716 03d6 0F90      		pop __tmp_reg__
+ 718               	.LM70:
+ 719 03d8 00E0      		ldi r16,lo8(.LC5)
+ 720 03da 10E0      		ldi r17,hi8(.LC5)
+ 721               	.L18:
+ 723               	.LM71:
+ 724 03dc 82E0      		ldi r24,lo8(2)
+ 725 03de 90E0      		ldi r25,hi8(2)
+ 726 03e0 0E94 0000 		call nrk_led_toggle
+ 728               	.LM72:
+ 729 03e4 8F2D      		mov r24,r15
+ 730 03e6 0E94 0000 		call nrk_gpio_toggle
+ 732               	.LM73:
+ 733 03ea DF93      		push r29
+ 734 03ec CF93      		push r28
+ 735 03ee 1F93      		push r17
+ 736 03f0 0F93      		push r16
+ 737 03f2 0E94 0000 		call printf
+ 739               	.LM74:
+ 740 03f6 0E94 0000 		call nrk_wait_until_next_period
+ 742               	.LM75:
+ 743 03fa 2196      		adiw r28,1
+ 745               	.LM76:
+ 746 03fc 0F90      		pop __tmp_reg__
+ 747 03fe 0F90      		pop __tmp_reg__
+ 748 0400 0F90      		pop __tmp_reg__
+ 749 0402 0F90      		pop __tmp_reg__
+ 750 0404 00C0      		rjmp .L18
+ 751               	/* epilogue: frame size=0 */
+ 752               	/* epilogue: noreturn */
+ 753               	/* epilogue end (size=0) */
+ 754               	/* function Task3 size 47 (42) */
+ 759               	.Lscope4:
+ 761               		.stabd	78,0,0
+ 762               		.data
+ 763               	.LC6:
+ 764 004f 5461 736B 		.string	"Task2 PID=%u\r\n"
+ 764      3220 5049 
+ 764      443D 2575 
+ 764      0D0A 00
+ 765               	.LC7:
+ 766 005e 5461 736B 		.string	"Task2 signed cnt=%d\r\n"
+ 766      3220 7369 
+ 766      676E 6564 
+ 766      2063 6E74 
+ 766      3D25 640D 
+ 767               		.text
+ 769               	.global	Task2
+ 771               	Task2:
+ 772               		.stabd	46,0,0
+ 774               	.LM77:
+ 775               	.LFBB5:
+ 776               	/* prologue: frame size=0 */
+ 777 0406 FF92      		push r15
+ 778 0408 0F93      		push r16
+ 779 040a 1F93      		push r17
+ 780 040c CF93      		push r28
+ 781 040e DF93      		push r29
+ 782               	/* prologue end (size=5) */
+ 784               	.LM78:
+ 785 0410 0E94 0000 		call nrk_get_pid
+ 786 0414 9927      		clr r25
+ 787 0416 9F93      		push r25
+ 788 0418 8F93      		push r24
+ 789 041a 80E0      		ldi r24,lo8(.LC6)
+ 790 041c 90E0      		ldi r25,hi8(.LC6)
+ 791 041e 9F93      		push r25
+ 792 0420 8F93      		push r24
+ 793 0422 0E94 0000 		call printf
+ 795               	.LM79:
+ 796 0426 F090 0000 		lds r15,NRK_DEBUG_1
+ 797 042a C0E0      		ldi r28,lo8(0)
+ 798 042c D0E0      		ldi r29,hi8(0)
+ 799 042e 0F90      		pop __tmp_reg__
+ 800 0430 0F90      		pop __tmp_reg__
+ 801 0432 0F90      		pop __tmp_reg__
+ 802 0434 0F90      		pop __tmp_reg__
+ 804               	.LM80:
+ 805 0436 00E0      		ldi r16,lo8(.LC7)
+ 806 0438 10E0      		ldi r17,hi8(.LC7)
+ 807               	.L21:
+ 809               	.LM81:
+ 810 043a 81E0      		ldi r24,lo8(1)
+ 811 043c 90E0      		ldi r25,hi8(1)
+ 812 043e 0E94 0000 		call nrk_led_toggle
+ 814               	.LM82:
+ 815 0442 8F2D      		mov r24,r15
+ 816 0444 0E94 0000 		call nrk_gpio_toggle
+ 818               	.LM83:
+ 819 0448 DF93      		push r29
+ 820 044a CF93      		push r28
+ 821 044c 1F93      		push r17
+ 822 044e 0F93      		push r16
+ 823 0450 0E94 0000 		call printf
+ 825               	.LM84:
+ 826 0454 0E94 0000 		call nrk_wait_until_next_period
+ 828               	.LM85:
+ 829 0458 2197      		sbiw r28,1
+ 831               	.LM86:
+ 832 045a 0F90      		pop __tmp_reg__
+ 833 045c 0F90      		pop __tmp_reg__
+ 834 045e 0F90      		pop __tmp_reg__
+ 835 0460 0F90      		pop __tmp_reg__
+ 836 0462 00C0      		rjmp .L21
+ 837               	/* epilogue: frame size=0 */
+ 838               	/* epilogue: noreturn */
+ 839               	/* epilogue end (size=0) */
+ 840               	/* function Task2 size 47 (42) */
+ 845               	.Lscope5:
+ 847               		.stabd	78,0,0
+ 848               		.data
+ 849               	.LC8:
+ 850 0074 2564 0D0A 		.string	"%d\r\n"
+ 850      00
+ 851               	.LC9:
+ 852 0079 4D79 206E 		.string	"My node's address is %u\r\n"
+ 852      6F64 6527 
+ 852      7320 6164 
+ 852      6472 6573 
+ 852      7320 6973 
+ 853               	.LC10:
+ 854 0093 5461 736B 		.string	"Task1 PID=%u\r\n"
+ 854      3120 5049 
+ 854      443D 2575 
+ 854      0D0A 00
+ 855               		.text
+ 857               	.global	Task1
+ 859               	Task1:
+ 860               		.stabd	46,0,0
+ 862               	.LM87:
+ 863               	.LFBB6:
+ 864               	/* prologue: frame size=0 */
+ 865 0464 0F93      		push r16
+ 866 0466 1F93      		push r17
+ 867               	/* prologue end (size=2) */
+ 869               	.LM88:
+ 870 0468 80E0      		ldi r24,lo8(__c.2358)
+ 871 046a 90E0      		ldi r25,hi8(__c.2358)
+ 872 046c 0E94 0000 		call nrk_kprintf
+ 874               	.LM89:
+ 875 0470 85E6      		ldi r24,lo8(101)
+ 876 0472 90E0      		ldi r25,hi8(101)
+ 877 0474 9F93      		push r25
+ 878 0476 8F93      		push r24
+ 879 0478 80E0      		ldi r24,lo8(.LC8)
+ 880 047a 90E0      		ldi r25,hi8(.LC8)
+ 881 047c 9F93      		push r25
+ 882 047e 8F93      		push r24
+ 883 0480 0E94 0000 		call printf
+ 885               	.LM90:
+ 886 0484 1F92      		push __zero_reg__
+ 887 0486 1F92      		push __zero_reg__
+ 888 0488 80E0      		ldi r24,lo8(.LC9)
+ 889 048a 90E0      		ldi r25,hi8(.LC9)
+ 890 048c 9F93      		push r25
+ 891 048e 8F93      		push r24
+ 892 0490 0E94 0000 		call printf
+ 894               	.LM91:
+ 895 0494 0E94 0000 		call nrk_get_pid
+ 896 0498 9927      		clr r25
+ 897 049a 9F93      		push r25
+ 898 049c 8F93      		push r24
+ 899 049e 80E0      		ldi r24,lo8(.LC10)
+ 900 04a0 90E0      		ldi r25,hi8(.LC10)
+ 901 04a2 9F93      		push r25
+ 902 04a4 8F93      		push r24
+ 903 04a6 0E94 0000 		call printf
+ 905               	.LM92:
+ 906 04aa 1091 0000 		lds r17,NRK_DEBUG_0
+ 908               	.LM93:
+ 909 04ae 0091 0000 		lds r16,NRK_DEBUG_1
+ 910 04b2 8DB7      		in r24,__SP_L__
+ 911 04b4 9EB7      		in r25,__SP_H__
+ 912 04b6 0C96      		adiw r24,12
+ 913 04b8 0FB6      		in __tmp_reg__,__SREG__
+ 914 04ba F894      		cli
+ 915 04bc 9EBF      		out __SP_H__,r25
+ 916 04be 0FBE      		out __SREG__,__tmp_reg__
+ 917 04c0 8DBF      		out __SP_L__,r24
+ 918               	.L24:
+ 920               	.LM94:
+ 921 04c2 80E0      		ldi r24,lo8(0)
+ 922 04c4 90E0      		ldi r25,hi8(0)
+ 923 04c6 0E94 0000 		call nrk_led_toggle
+ 925               	.LM95:
+ 926 04ca 812F      		mov r24,r17
+ 927 04cc 0E94 0000 		call nrk_gpio_set
+ 929               	.LM96:
+ 930 04d0 802F      		mov r24,r16
+ 931 04d2 0E94 0000 		call nrk_gpio_toggle
+ 932               	.L25:
+ 934               	.LM97:
+ 935 04d6 0E94 0000 		call _nrk_os_timer_get
+ 937               	.LM98:
+ 938 04da 8531      		cpi r24,lo8(21)
+ 939 04dc 00F0      		brlo .L25
+ 941               	.LM99:
+ 942 04de 0E94 0000 		call _nrk_high_speed_timer_reset
+ 943               	.L27:
+ 945               	.LM100:
+ 946 04e2 8091 8400 		lds r24,132
+ 947 04e6 9091 8500 		lds r25,(132)+1
+ 948 04ea 8151      		subi r24,lo8(2577)
+ 949 04ec 9A40      		sbci r25,hi8(2577)
+ 950 04ee 00F0      		brlo .L27
+ 952               	.LM101:
+ 953 04f0 84E1      		ldi r24,lo8(20)
+ 954 04f2 0E94 0000 		call _nrk_os_timer_set
+ 956               	.LM102:
+ 957 04f6 812F      		mov r24,r17
+ 958 04f8 0E94 0000 		call nrk_gpio_clr
+ 960               	.LM103:
+ 961 04fc 0E94 0000 		call nrk_wait_until_next_period
+ 962 0500 00C0      		rjmp .L24
+ 963               	/* epilogue: frame size=0 */
+ 964               	/* epilogue: noreturn */
+ 965               	/* epilogue end (size=0) */
+ 966               	/* function Task1 size 80 (78) */
+ 968               	.Lscope6:
+ 970               		.stabd	78,0,0
+ 972               	.global	main
+ 974               	main:
+ 975               		.stabd	46,0,0
+ 977               	.LM104:
+ 978               	.LFBB7:
+ 979               	/* prologue: frame size=0 */
+ 980 0502 C0E0      		ldi r28,lo8(__stack - 0)
+ 981 0504 D0E0      		ldi r29,hi8(__stack - 0)
+ 982 0506 DEBF      		out __SP_H__,r29
+ 983 0508 CDBF      		out __SP_L__,r28
+ 984               	/* prologue end (size=4) */
+ 986               	.LM105:
+ 987 050a 0E94 0000 		call nrk_setup_ports
+ 989               	.LM106:
+ 990 050e 87E0      		ldi r24,lo8(7)
+ 991 0510 90E0      		ldi r25,hi8(7)
+ 992 0512 0E94 0000 		call nrk_setup_uart
+ 994               	.LM107:
+ 995 0516 0E94 0000 		call nrk_init
+ 997               	.LM108:
+ 998 051a 80E0      		ldi r24,lo8(0)
+ 999 051c 90E0      		ldi r25,hi8(0)
+ 1000 051e 0E94 0000 		call nrk_led_clr
+ 1002               	.LM109:
+ 1003 0522 81E0      		ldi r24,lo8(1)
+ 1004 0524 90E0      		ldi r25,hi8(1)
+ 1005 0526 0E94 0000 		call nrk_led_clr
+ 1007               	.LM110:
+ 1008 052a 82E0      		ldi r24,lo8(2)
+ 1009 052c 90E0      		ldi r25,hi8(2)
+ 1010 052e 0E94 0000 		call nrk_led_clr
+ 1012               	.LM111:
+ 1013 0532 83E0      		ldi r24,lo8(3)
+ 1014 0534 90E0      		ldi r25,hi8(3)
+ 1015 0536 0E94 0000 		call nrk_led_clr
+ 1017               	.LM112:
+ 1018 053a 20E0      		ldi r18,lo8(0)
+ 1019 053c 30E0      		ldi r19,hi8(0)
+ 1020 053e 40E0      		ldi r20,hlo8(0)
+ 1021 0540 50E0      		ldi r21,hhi8(0)
+ 1022 0542 60E0      		ldi r22,lo8(0)
+ 1023 0544 70E0      		ldi r23,hi8(0)
+ 1024 0546 80E0      		ldi r24,hlo8(0)
+ 1025 0548 90E0      		ldi r25,hhi8(0)
+ 1026 054a 0E94 0000 		call nrk_time_set
+ 1028               	.LM113:
+ 1029 054e 0E94 0000 		call nrk_create_taskset
+ 1031               	.LM114:
+ 1032 0552 0E94 0000 		call nrk_start
+ 1034               	.LM115:
+ 1035 0556 80E0      		ldi r24,lo8(0)
+ 1036 0558 90E0      		ldi r25,hi8(0)
+ 1037               	/* epilogue: frame size=0 */
+ 1038 055a 0C94 0000 		jmp exit
+ 1039               	/* epilogue end (size=2) */
+ 1040               	/* function main size 46 (40) */
+ 1042               	.Lscope7:
+ 1044               		.stabd	78,0,0
+ 1045               		.section	.progmem.data,"a",@progbits
+ 1048               	__c.2358:
+ 1049 0000 4E61 6E6F 		.string	"Nano-RK Version "
+ 1049      2D52 4B20 
+ 1049      5665 7273 
+ 1049      696F 6E20 
+ 1049      00
+ 1050               		.comm _nrk_signal_list,4,1
+ 1051               		.comm nrk_idle_task_stk,128,1
+ 1052               		.comm nrk_kernel_stk_ptr,2,1
+ 1053               		.comm error_task,1,1
+ 1054               		.comm error_num,1,1
+ 1055               		.comm _nrk_prev_timer_val,1,1
+ 1056               		.comm _nrk_time_trigger,1,1
+ 1057               		.comm app_timer0_callback,2,1
+ 1058               		.comm app_timer0_prescale,1,1
+ 1059               		.comm cur_task_stats,150,1
+ 1060               		.comm _nrk_stats_sleep_time,8,1
+ 1061               		.comm Stack1,128,1
+ 1062               		.comm TaskOne,35,1
+ 1063               		.comm Stack2,128,1
+ 1064               		.comm TaskTwo,35,1
+ 1065               		.comm Stack3,128,1
+ 1066               		.comm TaskThree,35,1
+ 1067               		.comm Stack4,128,1
+ 1068               		.comm TaskFour,35,1
+ 1089               		.text
+ 1091               	.Letext0:
+ 1092               	/* File "main.c": code  688 = 0x02b0 ( 617), prologues  45, epilogues  26 */
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+     /tmp/ccgZftkx.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccgZftkx.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccgZftkx.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccgZftkx.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccgZftkx.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccgZftkx.s:146    .text:00000000 kill_stack
+     /tmp/ccgZftkx.s:273    .text:000000be nrk_create_taskset
+                            *COM*:00000023 TaskOne
+     /tmp/ccgZftkx.s:859    .text:00000464 Task1
+                            *COM*:00000080 Stack1
+                            *COM*:00000023 TaskTwo
+     /tmp/ccgZftkx.s:771    .text:00000406 Task2
+                            *COM*:00000080 Stack2
+                            *COM*:00000023 TaskThree
+     /tmp/ccgZftkx.s:685    .text:000003a8 Task3
+                            *COM*:00000080 Stack3
+                            *COM*:00000023 TaskFour
+     /tmp/ccgZftkx.s:599    .text:0000034a Task4
+                            *COM*:00000080 Stack4
+     /tmp/ccgZftkx.s:1048   .progmem.data:00000000 __c.2358
+     /tmp/ccgZftkx.s:974    .text:00000502 main
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000080 nrk_idle_task_stk
+                            *COM*:00000002 nrk_kernel_stk_ptr
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+                            *COM*:00000001 _nrk_prev_timer_val
+                            *COM*:00000001 _nrk_time_trigger
+                            *COM*:00000002 app_timer0_callback
+                            *COM*:00000001 app_timer0_prescale
+                            *COM*:00000096 cur_task_stats
+                            *COM*:00000008 _nrk_stats_sleep_time
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+printf
+nrk_task_set_entry_function
+nrk_task_set_stk
+nrk_activate_task
+nrk_get_pid
+NRK_DEBUG_3
+nrk_led_toggle
+nrk_gpio_toggle
+nrk_wait_until_next_period
+NRK_DEBUG_2
+NRK_DEBUG_1
+nrk_kprintf
+NRK_DEBUG_0
+nrk_gpio_set
+_nrk_os_timer_get
+_nrk_high_speed_timer_reset
+_nrk_os_timer_set
+nrk_gpio_clr
+__stack
+nrk_setup_ports
+nrk_setup_uart
+nrk_init
+nrk_led_clr
+nrk_time_set
+nrk_start
+exit

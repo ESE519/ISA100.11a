@@ -1,0 +1,64 @@
+   1               	# 1 "../../../src/kernel/hal/atmega1281/atmel_hw_specific.S"
+   1               	#define __SREG__ 0x3f
+   1               	...
+   0               	
+   0               	
+   2               	#define __SP_H__ 0x3e
+   3               	#define __SP_L__ 0x3d
+   4               	
+   5               	
+   6               	.global nrk_start_high_ready_task 
+   7               	
+   8               	nrk_start_high_ready_task:
+   9               	
+  10:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	lds r26,nrk_high_ready_TCB		
+  11:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	lds r27,nrk_high_ready_TCB+1
+  12               	
+  13               	    	;x points to &OSTCB[x]
+  14               	    
+  15:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	ld r28,x+
+  16:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	out __SP_L__, r28
+  17:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	ld r29,x+
+  18:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	out __SP_H__, r29
+  19               	  
+  20:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r31	
+  21:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r30
+  22:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r29
+  23:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r28
+  24:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r27
+  25:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r26
+  26:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r25
+  27:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r24			
+  28:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r23
+  29:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r22
+  30:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r21
+  31:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r20	
+  32:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r19
+  33:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r18	
+  34:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r17
+  35:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r16
+  36:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r15
+  37:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r14
+  38:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r13
+  39:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r12
+  40:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r11
+  41:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r10
+  42:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r9
+  43:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r8
+  44:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r7
+  45:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r6
+  46:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r5
+  47:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r4
+  48:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r3
+  49:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r2
+  50:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r1
+  51:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r0
+  52:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	out __SREG__, r0
+  53:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S **** 	pop r0	
+  54               		   
+  55:../../../src/kernel/hal/atmega1281/atmel_hw_specific.S ****     	reti 
+DEFINED SYMBOLS
+../../../src/kernel/hal/atmega1281/atmel_hw_specific.S:8      .text:00000000 nrk_start_high_ready_task
+
+UNDEFINED SYMBOLS
+nrk_high_ready_TCB

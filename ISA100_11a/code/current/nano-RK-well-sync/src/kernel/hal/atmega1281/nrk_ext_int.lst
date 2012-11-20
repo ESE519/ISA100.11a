@@ -631,19 +631,19 @@
  702               	/* File "../../../src/kernel/hal/atmega1281/nrk_ext_int.c": code  377 = 0x0179 ( 309), prologues  3
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_ext_int.c
-     /tmp/cccu9Ji1.s:2      *ABS*:0000003f __SREG__
-     /tmp/cccu9Ji1.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cccu9Ji1.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cccu9Ji1.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cccu9Ji1.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cccu9Ji1.s:113    .text:00000000 nrk_ext_int_enable
-     /tmp/cccu9Ji1.s:232    .text:0000008e nrk_ext_int_disable
-     /tmp/cccu9Ji1.s:351    .text:00000118 nrk_ext_int_configure
+     /tmp/ccTbGOU5.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccTbGOU5.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccTbGOU5.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccTbGOU5.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccTbGOU5.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccTbGOU5.s:113    .text:00000000 nrk_ext_int_enable
+     /tmp/ccTbGOU5.s:232    .text:0000008e nrk_ext_int_disable
+     /tmp/ccTbGOU5.s:351    .text:00000118 nrk_ext_int_configure
                             *COM*:00000002 ext_int0_callback
                             *COM*:00000002 ext_int1_callback
                             *COM*:00000002 pc_int0_callback
-     /tmp/cccu9Ji1.s:553    .text:0000023a __vector_1
-     /tmp/cccu9Ji1.s:621    .text:00000296 __vector_9
+     /tmp/ccTbGOU5.s:553    .text:0000023a __vector_1
+     /tmp/ccTbGOU5.s:621    .text:00000296 __vector_9
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000002 ext_int2_callback
                             *COM*:00000001 error_task

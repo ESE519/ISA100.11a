@@ -1,0 +1,3629 @@
+   1               		.file	"isa.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 157               	.global	config_child_list
+ 159               	config_child_list:
+ 160               		.stabd	46,0,0
+   1:../../../src/net/isa/isa.c **** /******************************************************************************
+   2:../../../src/net/isa/isa.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/net/isa/isa.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/net/isa/isa.c **** *  All rights reserved.
+   5:../../../src/net/isa/isa.c **** *
+   6:../../../src/net/isa/isa.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/net/isa/isa.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/net/isa/isa.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/net/isa/isa.c **** *
+  10:../../../src/net/isa/isa.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/net/isa/isa.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/net/isa/isa.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/net/isa/isa.c **** *
+  14:../../../src/net/isa/isa.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/net/isa/isa.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/net/isa/isa.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/net/isa/isa.c **** *  GNU General Public License for more details.
+  18:../../../src/net/isa/isa.c **** *
+  19:../../../src/net/isa/isa.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/net/isa/isa.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/net/isa/isa.c **** *
+  22:../../../src/net/isa/isa.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/net/isa/isa.c **** *  Anthony Rowe
+  24:../../../src/net/isa/isa.c **** *******************************************************************************/
+  25:../../../src/net/isa/isa.c **** 
+  26:../../../src/net/isa/isa.c **** //#include <rtl_debug.h>
+  27:../../../src/net/isa/isa.c **** #include <include.h>
+  28:../../../src/net/isa/isa.c **** #include <ulib.h>
+  29:../../../src/net/isa/isa.c **** #include <avr/sleep.h>
+  30:../../../src/net/isa/isa.c **** #include <avr/wdt.h>
+  31:../../../src/net/isa/isa.c **** #include <avr/eeprom.h>
+  32:../../../src/net/isa/isa.c **** #include <stdio.h>
+  33:../../../src/net/isa/isa.c **** #include <avr/interrupt.h>
+  34:../../../src/net/isa/isa.c **** #include <nrk.h>
+  35:../../../src/net/isa/isa.c **** #include <nrk_events.h>
+  36:../../../src/net/isa/isa.c **** #include <nrk_timer.h>
+  37:../../../src/net/isa/isa.c **** #include <nrk_error.h>
+  38:../../../src/net/isa/isa.c **** //#include <rtl_defs.h>
+  39:../../../src/net/isa/isa.c **** #include <stdlib.h>
+  40:../../../src/net/isa/isa.c **** //#include <isa_scheduler.h>
+  41:../../../src/net/isa/isa.c **** //#include <dlmo.h>
+  42:../../../src/net/isa/isa.c **** #include <isa.h>
+  43:../../../src/net/isa/isa.c **** #include <isa_defs.h>
+  44:../../../src/net/isa/isa.c **** #include <isa_error.h>
+  45:../../../src/net/isa/isa.c **** 
+  46:../../../src/net/isa/isa.c **** 
+  47:../../../src/net/isa/isa.c **** #define CHANNEL_HOPPING 
+  48:../../../src/net/isa/isa.c **** //#define CORRECTION
+  49:../../../src/net/isa/isa.c **** //#define INIT_SYNC
+  50:../../../src/net/isa/isa.c **** #define LED_SLOT_DEBUG
+  51:../../../src/net/isa/isa.c **** //#define HIGH_TIMER_DEBUG
+  52:../../../src/net/isa/isa.c **** #define TX_RX_DEBUG
+  53:../../../src/net/isa/isa.c **** #define ACK_DEBUG
+  54:../../../src/net/isa/isa.c **** #define RX_DEBUG
+  55:../../../src/net/isa/isa.c **** #define TX_DEBUG
+  56:../../../src/net/isa/isa.c **** //#define JOIN_PROCESS
+  57:../../../src/net/isa/isa.c **** 
+  58:../../../src/net/isa/isa.c **** #ifdef JOIN_PROCESS
+  59:../../../src/net/isa/isa.c ****  uint8_t join_pkt_buf[RF_MAX_PAYLOAD_SIZE];
+  60:../../../src/net/isa/isa.c **** #endif
+  61:../../../src/net/isa/isa.c **** 
+  62:../../../src/net/isa/isa.c **** /* slot related declaration */
+  63:../../../src/net/isa/isa.c **** volatile uint16_t global_slot;
+  64:../../../src/net/isa/isa.c **** volatile uint16_t current_global_slot;
+  65:../../../src/net/isa/isa.c **** volatile uint16_t global_cycle;
+  66:../../../src/net/isa/isa.c **** uint16_t last_sync_slot;
+  67:../../../src/net/isa/isa.c **** 
+  68:../../../src/net/isa/isa.c **** /* channel hopping related declaration */
+  69:../../../src/net/isa/isa.c **** uint8_t slottedPattern[16];
+  70:../../../src/net/isa/isa.c **** uint8_t slowPattern[3];
+  71:../../../src/net/isa/isa.c **** uint8_t currentChannel;
+  72:../../../src/net/isa/isa.c **** uint8_t channelIndex;
+  73:../../../src/net/isa/isa.c **** uint8_t slowIndex;
+  74:../../../src/net/isa/isa.c **** 
+  75:../../../src/net/isa/isa.c **** /*used for calculating offset*/
+  76:../../../src/net/isa/isa.c **** uint16_t slot_start_time;
+  77:../../../src/net/isa/isa.c **** uint16_t tx_start_time; // actual transmission starting time
+  78:../../../src/net/isa/isa.c **** uint16_t rx_start_time; 
+  79:../../../src/net/isa/isa.c **** uint16_t offsetY;
+  80:../../../src/net/isa/isa.c **** uint16_t offsetX;
+  81:../../../src/net/isa/isa.c **** 
+  82:../../../src/net/isa/isa.c **** /* SYNC related declaration */
+  83:../../../src/net/isa/isa.c **** uint8_t _isa_sync_ok;
+  84:../../../src/net/isa/isa.c **** uint8_t AFTER_FIRST_SYNC;
+  85:../../../src/net/isa/isa.c **** uint16_t EXPIRATION = 200;// each slot lasts for 10ms, so 100 slots last for 1s
+  86:../../../src/net/isa/isa.c **** uint16_t slot_expired;
+  87:../../../src/net/isa/isa.c **** uint8_t previous_tx_slot;
+  88:../../../src/net/isa/isa.c **** 
+  89:../../../src/net/isa/isa.c **** /* signal related declaration */
+  90:../../../src/net/isa/isa.c **** int8_t isa_tx_done_signal;
+  91:../../../src/net/isa/isa.c **** int8_t isa_rx_pkt_signal;
+  92:../../../src/net/isa/isa.c **** 
+  93:../../../src/net/isa/isa.c **** /* header type */
+  94:../../../src/net/isa/isa.c **** 
+  95:../../../src/net/isa/isa.c **** //uint8_t DMXHR[4]; //Data link layer media access control extension sub header, mainly used for se
+  96:../../../src/net/isa/isa.c **** uint8_t DAUX[29]; //Data link layer auxiliary sub-header, currently used for join process
+  97:../../../src/net/isa/isa.c **** //uint8_t DROUT[3]; //Routing sub-header, compressed variant
+  98:../../../src/net/isa/isa.c **** //uint8_t DADDR[5]; //Addressing sub-header
+  99:../../../src/net/isa/isa.c **** uint8_t DHR;   // ACK's data link layer header
+ 100:../../../src/net/isa/isa.c **** 
+ 101:../../../src/net/isa/isa.c **** /* Test variable */
+ 102:../../../src/net/isa/isa.c **** uint8_t tmp_curSec;
+ 103:../../../src/net/isa/isa.c **** uint8_t tmp_offsetSec;
+ 104:../../../src/net/isa/isa.c **** int16_t tmp_offsetNanoSec;
+ 105:../../../src/net/isa/isa.c **** uint16_t tmp_count=0;
+ 106:../../../src/net/isa/isa.c **** uint16_t DHDRcount = 0;
+ 107:../../../src/net/isa/isa.c **** uint16_t txCount = 0;		//Holds the number of packets transmitted successfully
+ 108:../../../src/net/isa/isa.c **** uint16_t rxCount = 0;		// Holds the number of packets received successfully
+ 109:../../../src/net/isa/isa.c **** uint16_t packetsLost = 0; //Holds packets lost (receive  + ACK )
+ 110:../../../src/net/isa/isa.c **** 
+ 111:../../../src/net/isa/isa.c **** 
+ 112:../../../src/net/isa/isa.c **** void config_child_list (uint8_t node_id)
+ 113:../../../src/net/isa/isa.c **** {
+ 162               	.LM0:
+ 163               	.LFBB1:
+ 164               	/* prologue: frame size=0 */
+ 165               	/* prologue end (size=0) */
+ 114:../../../src/net/isa/isa.c ****     child_list |= ((uint32_t) 1) << node_id;
+ 167               	.LM1:
+ 168 0000 21E0      		ldi r18,lo8(1)
+ 169 0002 30E0      		ldi r19,hi8(1)
+ 170 0004 40E0      		ldi r20,hlo8(1)
+ 171 0006 50E0      		ldi r21,hhi8(1)
+ 172 0008 00C0      		rjmp 2f
+ 173 000a 220F      	1:	lsl r18
+ 174 000c 331F      		rol r19
+ 175 000e 441F      		rol r20
+ 176 0010 551F      		rol r21
+ 177 0012 8A95      	2:	dec r24
+ 178 0014 02F4      		brpl 1b
+ 179 0016 8091 0000 		lds r24,child_list
+ 180 001a 9091 0000 		lds r25,(child_list)+1
+ 181 001e A091 0000 		lds r26,(child_list)+2
+ 182 0022 B091 0000 		lds r27,(child_list)+3
+ 183 0026 822B      		or r24,r18
+ 184 0028 932B      		or r25,r19
+ 185 002a A42B      		or r26,r20
+ 186 002c B52B      		or r27,r21
+ 187 002e 8093 0000 		sts child_list,r24
+ 188 0032 9093 0000 		sts (child_list)+1,r25
+ 189 0036 A093 0000 		sts (child_list)+2,r26
+ 190 003a B093 0000 		sts (child_list)+3,r27
+ 191               	/* epilogue: frame size=0 */
+ 192 003e 0895      		ret
+ 193               	/* epilogue end (size=1) */
+ 194               	/* function config_child_list size 33 (32) */
+ 196               	.Lscope1:
+ 198               		.stabd	78,0,0
+ 200               	.global	isa_get_channel
+ 202               	isa_get_channel:
+ 203               		.stabd	46,0,0
+ 115:../../../src/net/isa/isa.c **** }
+ 116:../../../src/net/isa/isa.c **** 
+ 117:../../../src/net/isa/isa.c **** /**
+ 118:../../../src/net/isa/isa.c ****  * isa_set_channel()
+ 119:../../../src/net/isa/isa.c ****  *
+ 120:../../../src/net/isa/isa.c ****  * This function set channel and is used for channel hopping.
+ 121:../../../src/net/isa/isa.c ****  *
+ 122:../../../src/net/isa/isa.c ****  */
+ 123:../../../src/net/isa/isa.c **** void isa_set_channel (uint8_t chan)
+ 124:../../../src/net/isa/isa.c **** {
+ 125:../../../src/net/isa/isa.c ****     isa_param.channel = chan;
+ 126:../../../src/net/isa/isa.c ****     rf_set_channel (chan);
+ 127:../../../src/net/isa/isa.c **** }
+ 128:../../../src/net/isa/isa.c **** 
+ 129:../../../src/net/isa/isa.c **** uint8_t isa_get_channel()
+ 130:../../../src/net/isa/isa.c **** {
+ 205               	.LM2:
+ 206               	.LFBB2:
+ 207               	/* prologue: frame size=0 */
+ 208               	/* prologue end (size=0) */
+ 209 0040 8091 0000 		lds r24,isa_param+2
+ 131:../../../src/net/isa/isa.c ****     return isa_param.channel;
+ 132:../../../src/net/isa/isa.c **** }
+ 211               	.LM3:
+ 212 0044 9927      		clr r25
+ 213               	/* epilogue: frame size=0 */
+ 214 0046 0895      		ret
+ 215               	/* epilogue end (size=1) */
+ 216               	/* function isa_get_channel size 4 (3) */
+ 218               	.Lscope2:
+ 220               		.stabd	78,0,0
+ 223               	.global	isa_set_channel_pattern
+ 225               	isa_set_channel_pattern:
+ 226               		.stabd	46,0,0
+ 133:../../../src/net/isa/isa.c **** 
+ 134:../../../src/net/isa/isa.c **** void isa_set_channel_pattern(uint8_t pattern)
+ 135:../../../src/net/isa/isa.c **** {
+ 228               	.LM4:
+ 229               	.LFBB3:
+ 230               	/* prologue: frame size=0 */
+ 231               	/* prologue end (size=0) */
+ 136:../../../src/net/isa/isa.c ****     switch (pattern)
+ 233               	.LM5:
+ 234 0048 8130      		cpi r24,lo8(1)
+ 235 004a 01F0      		breq .L7
+ 237               	.LM6:
+ 238 004c 8330      		cpi r24,lo8(3)
+ 239 004e 01F4      		brne .L9
+ 240 0050 00C0      		rjmp .L8
+ 241               	.L7:
+ 137:../../../src/net/isa/isa.c ****     {
+ 138:../../../src/net/isa/isa.c **** 	case 1:
+ 139:../../../src/net/isa/isa.c **** 	    slottedPattern[0] = 19;
+ 243               	.LM7:
+ 244 0052 83E1      		ldi r24,lo8(19)
+ 245 0054 8093 0000 		sts slottedPattern,r24
+ 140:../../../src/net/isa/isa.c **** 	    slottedPattern[1] = 12;
+ 247               	.LM8:
+ 248 0058 8CE0      		ldi r24,lo8(12)
+ 249 005a 8093 0000 		sts slottedPattern+1,r24
+ 141:../../../src/net/isa/isa.c **** 	    slottedPattern[2] = 20;
+ 251               	.LM9:
+ 252 005e 84E1      		ldi r24,lo8(20)
+ 253 0060 8093 0000 		sts slottedPattern+2,r24
+ 142:../../../src/net/isa/isa.c **** 	    slottedPattern[3] = 24;
+ 255               	.LM10:
+ 256 0064 88E1      		ldi r24,lo8(24)
+ 257 0066 8093 0000 		sts slottedPattern+3,r24
+ 143:../../../src/net/isa/isa.c **** 	    slottedPattern[4] = 16;
+ 259               	.LM11:
+ 260 006a 80E1      		ldi r24,lo8(16)
+ 261 006c 8093 0000 		sts slottedPattern+4,r24
+ 144:../../../src/net/isa/isa.c **** 	    slottedPattern[5] = 23;
+ 263               	.LM12:
+ 264 0070 87E1      		ldi r24,lo8(23)
+ 265 0072 8093 0000 		sts slottedPattern+5,r24
+ 145:../../../src/net/isa/isa.c **** 	    slottedPattern[6] = 18;
+ 267               	.LM13:
+ 268 0076 82E1      		ldi r24,lo8(18)
+ 269 0078 8093 0000 		sts slottedPattern+6,r24
+ 146:../../../src/net/isa/isa.c **** 	    slottedPattern[7] = 25;
+ 271               	.LM14:
+ 272 007c 89E1      		ldi r24,lo8(25)
+ 273 007e 8093 0000 		sts slottedPattern+7,r24
+ 147:../../../src/net/isa/isa.c **** 	    slottedPattern[8] = 14;
+ 275               	.LM15:
+ 276 0082 8EE0      		ldi r24,lo8(14)
+ 277 0084 8093 0000 		sts slottedPattern+8,r24
+ 148:../../../src/net/isa/isa.c **** 	    slottedPattern[9] = 21;
+ 279               	.LM16:
+ 280 0088 85E1      		ldi r24,lo8(21)
+ 281 008a 8093 0000 		sts slottedPattern+9,r24
+ 149:../../../src/net/isa/isa.c **** 	    slottedPattern[10] = 11;
+ 283               	.LM17:
+ 284 008e 8BE0      		ldi r24,lo8(11)
+ 285 0090 8093 0000 		sts slottedPattern+10,r24
+ 150:../../../src/net/isa/isa.c **** 	    slottedPattern[11] = 15;
+ 287               	.LM18:
+ 288 0094 8FE0      		ldi r24,lo8(15)
+ 289 0096 8093 0000 		sts slottedPattern+11,r24
+ 151:../../../src/net/isa/isa.c **** 	    slottedPattern[12] = 22;
+ 291               	.LM19:
+ 292 009a 86E1      		ldi r24,lo8(22)
+ 293 009c 8093 0000 		sts slottedPattern+12,r24
+ 152:../../../src/net/isa/isa.c **** 	    slottedPattern[13] = 17;
+ 295               	.LM20:
+ 296 00a0 81E1      		ldi r24,lo8(17)
+ 297 00a2 8093 0000 		sts slottedPattern+13,r24
+ 153:../../../src/net/isa/isa.c **** 	    slottedPattern[14] = 13;
+ 299               	.LM21:
+ 300 00a6 8DE0      		ldi r24,lo8(13)
+ 301 00a8 8093 0000 		sts slottedPattern+14,r24
+ 154:../../../src/net/isa/isa.c **** 	    slottedPattern[15] = 26;
+ 303               	.LM22:
+ 304 00ac 8AE1      		ldi r24,lo8(26)
+ 305 00ae 8093 0000 		sts slottedPattern+15,r24
+ 306 00b2 0895      		ret
+ 307               	.L8:
+ 155:../../../src/net/isa/isa.c **** 	    break;
+ 156:../../../src/net/isa/isa.c **** 	case 3:
+ 157:../../../src/net/isa/isa.c **** 	    slowPattern[0]=15;
+ 309               	.LM23:
+ 310 00b4 8FE0      		ldi r24,lo8(15)
+ 311 00b6 8093 0000 		sts slowPattern,r24
+ 158:../../../src/net/isa/isa.c **** 	    slowPattern[1]=20;
+ 313               	.LM24:
+ 314 00ba 84E1      		ldi r24,lo8(20)
+ 315 00bc 8093 0000 		sts slowPattern+1,r24
+ 159:../../../src/net/isa/isa.c **** 	    slowPattern[2]=25;
+ 317               	.LM25:
+ 318 00c0 89E1      		ldi r24,lo8(25)
+ 319 00c2 8093 0000 		sts slowPattern+2,r24
+ 320               	.L9:
+ 321 00c6 0895      		ret
+ 322               	/* epilogue: frame size=0 */
+ 323               	/* epilogue: noreturn */
+ 324               	/* epilogue end (size=0) */
+ 325               	/* function isa_set_channel_pattern size 64 (64) */
+ 327               	.Lscope3:
+ 329               		.stabd	78,0,0
+ 331               	.global	isa_ready
+ 333               	isa_ready:
+ 334               		.stabd	46,0,0
+ 160:../../../src/net/isa/isa.c **** 	    break;
+ 161:../../../src/net/isa/isa.c **** 	default:
+ 162:../../../src/net/isa/isa.c **** 	    break;
+ 163:../../../src/net/isa/isa.c ****     }
+ 164:../../../src/net/isa/isa.c **** }
+ 165:../../../src/net/isa/isa.c **** 
+ 166:../../../src/net/isa/isa.c **** int8_t isa_ready()
+ 167:../../../src/net/isa/isa.c **** {
+ 336               	.LM26:
+ 337               	.LFBB4:
+ 338               	/* prologue: frame size=0 */
+ 339               	/* prologue end (size=0) */
+ 168:../../../src/net/isa/isa.c ****     if (_isa_ready ==  1)
+ 341               	.LM27:
+ 342 00c8 8091 0000 		lds r24,_isa_ready
+ 343 00cc 8130      		cpi r24,lo8(1)
+ 344 00ce 01F4      		brne .L11
+ 346               	.LM28:
+ 347 00d0 81E0      		ldi r24,lo8(1)
+ 348 00d2 90E0      		ldi r25,hi8(1)
+ 349 00d4 0895      		ret
+ 350               	.L11:
+ 351 00d6 8FEF      		ldi r24,lo8(-1)
+ 352 00d8 9FEF      		ldi r25,hi8(-1)
+ 169:../../../src/net/isa/isa.c ****         return NRK_OK;
+ 170:../../../src/net/isa/isa.c ****     else
+ 171:../../../src/net/isa/isa.c ****         return NRK_ERROR;
+ 172:../../../src/net/isa/isa.c **** }
+ 354               	.LM29:
+ 355 00da 0895      		ret
+ 356               	/* epilogue: frame size=0 */
+ 357               	/* epilogue: noreturn */
+ 358               	/* epilogue end (size=0) */
+ 359               	/* function isa_ready size 10 (10) */
+ 361               	.Lscope4:
+ 363               		.stabd	78,0,0
+ 367               	.global	isa_rx_pkt_set_buffer
+ 369               	isa_rx_pkt_set_buffer:
+ 370               		.stabd	46,0,0
+ 173:../../../src/net/isa/isa.c **** 
+ 174:../../../src/net/isa/isa.c **** int8_t isa_rx_pkt_set_buffer(uint8_t *buf, uint8_t size)
+ 175:../../../src/net/isa/isa.c **** {
+ 372               	.LM30:
+ 373               	.LFBB5:
+ 374               	/* prologue: frame size=0 */
+ 375               	/* prologue end (size=0) */
+ 176:../../../src/net/isa/isa.c **** 
+ 177:../../../src/net/isa/isa.c ****     if(size==0 || buf==NULL) return NRK_ERROR;
+ 377               	.LM31:
+ 378 00dc 6623      		tst r22
+ 379 00de 01F0      		breq .L16
+ 381               	.LM32:
+ 382 00e0 0097      		sbiw r24,0
+ 383 00e2 01F0      		breq .L16
+ 178:../../../src/net/isa/isa.c ****     isa_rfRxInfo.pPayload = buf;
+ 385               	.LM33:
+ 386 00e4 9093 0000 		sts (isa_rfRxInfo+5)+1,r25
+ 387 00e8 8093 0000 		sts isa_rfRxInfo+5,r24
+ 179:../../../src/net/isa/isa.c ****     isa_rfRxInfo.max_length = size;
+ 389               	.LM34:
+ 390 00ec 6093 0000 		sts isa_rfRxInfo+4,r22
+ 391 00f0 81E0      		ldi r24,lo8(1)
+ 392 00f2 90E0      		ldi r25,hi8(1)
+ 393 00f4 0895      		ret
+ 394               	.L16:
+ 180:../../../src/net/isa/isa.c **** 
+ 181:../../../src/net/isa/isa.c **** return NRK_OK;
+ 396               	.LM35:
+ 397 00f6 8FEF      		ldi r24,lo8(-1)
+ 398 00f8 9FEF      		ldi r25,hi8(-1)
+ 182:../../../src/net/isa/isa.c **** }
+ 400               	.LM36:
+ 401 00fa 0895      		ret
+ 402               	/* epilogue: frame size=0 */
+ 403               	/* epilogue: noreturn */
+ 404               	/* epilogue end (size=0) */
+ 405               	/* function isa_rx_pkt_set_buffer size 16 (16) */
+ 407               	.Lscope5:
+ 409               		.stabd	78,0,0
+ 411               	.global	isa_start
+ 413               	isa_start:
+ 414               		.stabd	46,0,0
+ 183:../../../src/net/isa/isa.c **** 
+ 184:../../../src/net/isa/isa.c **** int8_t isa_wait_until_rx_pkt()
+ 185:../../../src/net/isa/isa.c **** {
+ 186:../../../src/net/isa/isa.c ****     nrk_signal_register(isa_rx_pkt_signal);
+ 187:../../../src/net/isa/isa.c ****     if (isa_rx_pkt_check() != 0)
+ 188:../../../src/net/isa/isa.c ****         return NRK_OK;
+ 189:../../../src/net/isa/isa.c ****     nrk_event_wait (SIG(isa_rx_pkt_signal));
+ 190:../../../src/net/isa/isa.c ****     return NRK_OK;
+ 191:../../../src/net/isa/isa.c **** }
+ 192:../../../src/net/isa/isa.c **** 
+ 193:../../../src/net/isa/isa.c **** int8_t isa_wait_until_rx_or_tx ()
+ 194:../../../src/net/isa/isa.c **** {
+ 195:../../../src/net/isa/isa.c ****     nrk_signal_register(isa_rx_pkt_signal);
+ 196:../../../src/net/isa/isa.c ****     nrk_signal_register(isa_tx_done_signal);
+ 197:../../../src/net/isa/isa.c ****     nrk_event_wait (SIG(isa_rx_pkt_signal) | SIG(isa_tx_done_signal));
+ 198:../../../src/net/isa/isa.c ****     return NRK_OK;
+ 199:../../../src/net/isa/isa.c **** }
+ 200:../../../src/net/isa/isa.c **** 
+ 201:../../../src/net/isa/isa.c **** /**
+ 202:../../../src/net/isa/isa.c ****  * isa_init()
+ 203:../../../src/net/isa/isa.c ****  *
+ 204:../../../src/net/isa/isa.c ****  * This function sets up the low level link layer parameters.
+ 205:../../../src/net/isa/isa.c ****  * This starts the main timer routine that will then automatically
+ 206:../../../src/net/isa/isa.c ****  * trigger whenever a packet might be sent or received.
+ 207:../../../src/net/isa/isa.c ****  * This should be called before ANY scheduling information is set
+ 208:../../../src/net/isa/isa.c ****  * since it will clear some default values.
+ 209:../../../src/net/isa/isa.c ****  *
+ 210:../../../src/net/isa/isa.c ****  */
+ 211:../../../src/net/isa/isa.c **** uint8_t isa_init (isa_node_mode_t mode, uint8_t id, uint8_t src_id)
+ 212:../../../src/net/isa/isa.c **** {
+ 213:../../../src/net/isa/isa.c ****     uint8_t i;
+ 214:../../../src/net/isa/isa.c **** 
+ 215:../../../src/net/isa/isa.c ****     /* Generate signals */
+ 216:../../../src/net/isa/isa.c ****     isa_rx_pkt_signal=nrk_signal_create();
+ 217:../../../src/net/isa/isa.c ****     if(isa_rx_pkt_signal==NRK_ERROR){
+ 218:../../../src/net/isa/isa.c **** 	nrk_kprintf(PSTR("ISA ERROR: creating rx signal failed\r\n"));
+ 219:../../../src/net/isa/isa.c **** 	nrk_kernel_error_add(NRK_SIGNAL_CREATE_ERROR,nrk_cur_task_TCB->task_ID);
+ 220:../../../src/net/isa/isa.c **** 	return NRK_ERROR;
+ 221:../../../src/net/isa/isa.c ****     }
+ 222:../../../src/net/isa/isa.c ****     isa_tx_done_signal=nrk_signal_create();
+ 223:../../../src/net/isa/isa.c ****     if(isa_tx_done_signal==NRK_ERROR){
+ 224:../../../src/net/isa/isa.c **** 	nrk_kprintf(PSTR("ISA ERROR: creating tx signal failed\r\n"));
+ 225:../../../src/net/isa/isa.c **** 	nrk_kernel_error_add(NRK_SIGNAL_CREATE_ERROR,nrk_cur_task_TCB->task_ID);
+ 226:../../../src/net/isa/isa.c **** 	return NRK_ERROR;
+ 227:../../../src/net/isa/isa.c ****     }
+ 228:../../../src/net/isa/isa.c **** 
+ 229:../../../src/net/isa/isa.c ****     // No buffer to start with
+ 230:../../../src/net/isa/isa.c ****     isa_rfRxInfo.pPayload = NULL;
+ 231:../../../src/net/isa/isa.c ****     isa_rfRxInfo.max_length = 0;
+ 232:../../../src/net/isa/isa.c **** 
+ 233:../../../src/net/isa/isa.c ****     /*FIXME Actually we dont need to always run the high speed timer */
+ 234:../../../src/net/isa/isa.c ****     _nrk_high_speed_timer_start();  
+ 235:../../../src/net/isa/isa.c **** 
+ 236:../../../src/net/isa/isa.c ****     /* clear everything out */
+ 237:../../../src/net/isa/isa.c ****     global_cycle = 0;
+ 238:../../../src/net/isa/isa.c ****     global_slot = MAX_ISA_GLOBAL_SLOTS;
+ 239:../../../src/net/isa/isa.c ****     _isa_sync_ok = 0;
+ 240:../../../src/net/isa/isa.c ****     _isa_join_ok = 0;
+ 241:../../../src/net/isa/isa.c ****     slot_expired = 0;
+ 242:../../../src/net/isa/isa.c ****     isa_node_mode = mode;
+ 243:../../../src/net/isa/isa.c ****     isa_id = id;//change
+ 244:../../../src/net/isa/isa.c ****     isa_clk_src_id=src_id; //change
+ 245:../../../src/net/isa/isa.c ****     isa_rx_data_ready = 0;
+ 246:../../../src/net/isa/isa.c **** 
+ 247:../../../src/net/isa/isa.c ****     isa_param.mobile_sync_timeout = 100;
+ 248:../../../src/net/isa/isa.c ****     isa_param.rx_timeout = 8000;   // 8000 *.125us = 1ms
+ 249:../../../src/net/isa/isa.c ****     isa_param.tx_guard_time = TX_GUARD_TIME;
+ 250:../../../src/net/isa/isa.c ****     isa_param.channel = 15;
+ 251:../../../src/net/isa/isa.c ****     isa_param.mac_addr = 0x1981;
+ 252:../../../src/net/isa/isa.c **** /*
+ 253:../../../src/net/isa/isa.c **** for (i = 0; i < ISA_SLOTS_PER_FRAME; i++) {
+ 254:../../../src/net/isa/isa.c ****         isa_sched[i] = 0;
+ 255:../../../src/net/isa/isa.c ****     }
+ 256:../../../src/net/isa/isa.c ****     isa_tdma_rx_mask = 0;
+ 257:../../../src/net/isa/isa.c ****     isa_tdma_tx_mask = 0;
+ 258:../../../src/net/isa/isa.c **** */
+ 259:../../../src/net/isa/isa.c ****     /* Setup the cc2420 chip */
+ 260:../../../src/net/isa/isa.c ****     rf_init (&isa_rfRxInfo, isa_param.channel, 0x2421, isa_param.mac_addr);
+ 261:../../../src/net/isa/isa.c **** 
+ 262:../../../src/net/isa/isa.c ****     AFTER_FIRST_SYNC = 1;
+ 263:../../../src/net/isa/isa.c **** 
+ 264:../../../src/net/isa/isa.c ****     /* Setup fisrt hopping channel */
+ 265:../../../src/net/isa/isa.c ****     #ifdef CHANNEL_HOPPING
+ 266:../../../src/net/isa/isa.c **** 	slowIndex=0; 
+ 267:../../../src/net/isa/isa.c **** 	if(id!=0){
+ 268:../../../src/net/isa/isa.c **** 	    channelIndex = src_id;
+ 269:../../../src/net/isa/isa.c **** 	    currentChannel = slottedPattern[channelIndex];   
+ 270:../../../src/net/isa/isa.c **** 	}else{
+ 271:../../../src/net/isa/isa.c **** 	    channelIndex = 0;
+ 272:../../../src/net/isa/isa.c **** 	    currentChannel = slottedPattern[channelIndex];
+ 273:../../../src/net/isa/isa.c **** 	}
+ 274:../../../src/net/isa/isa.c **** 	isa_set_channel(currentChannel);
+ 275:../../../src/net/isa/isa.c ****     #endif
+ 276:../../../src/net/isa/isa.c **** 
+ 277:../../../src/net/isa/isa.c ****     #ifdef JOIN_PROCESS
+ 278:../../../src/net/isa/isa.c **** 	if(mode==ISA_GATEWAY){
+ 279:../../../src/net/isa/isa.c **** 	   for(i=22;i<=24;i++){
+ 280:../../../src/net/isa/isa.c **** 		isa_tx_info[i].pPayload = join_pkt_buf;
+ 281:../../../src/net/isa/isa.c ****     		isa_tx_info[i].length = PKT_DATA_START+1;    // pass le pointer
+ 282:../../../src/net/isa/isa.c ****     		isa_tx_info[i].DHDR = configDHDR();
+ 283:../../../src/net/isa/isa.c ****     		isa_tx_data_ready |= ((uint32_t) 1 << i);        // set the flag
+ 284:../../../src/net/isa/isa.c **** 	   }
+ 285:../../../src/net/isa/isa.c ****         }
+ 286:../../../src/net/isa/isa.c ****     #endif
+ 287:../../../src/net/isa/isa.c **** 
+ 288:../../../src/net/isa/isa.c ****     resync_times=0;
+ 289:../../../src/net/isa/isa.c **** 
+ 290:../../../src/net/isa/isa.c ****     dlmoInit();	//Initialize the  dlmo data structure
+ 291:../../../src/net/isa/isa.c ****     return NRK_OK;
+ 292:../../../src/net/isa/isa.c **** }
+ 293:../../../src/net/isa/isa.c **** 
+ 294:../../../src/net/isa/isa.c **** void isa_start ()
+ 295:../../../src/net/isa/isa.c **** {
+ 416               	.LM37:
+ 417               	.LFBB6:
+ 418               	/* prologue: frame size=0 */
+ 419               	/* prologue end (size=0) */
+ 296:../../../src/net/isa/isa.c ****     //_isa_clear_sched_cache ();
+ 297:../../../src/net/isa/isa.c ****     _isa_ready = 2;
+ 421               	.LM38:
+ 422 00fc 82E0      		ldi r24,lo8(2)
+ 423 00fe 8093 0000 		sts _isa_ready,r24
+ 424               	/* epilogue: frame size=0 */
+ 425 0102 0895      		ret
+ 426               	/* epilogue end (size=1) */
+ 427               	/* function isa_start size 4 (3) */
+ 429               	.Lscope6:
+ 431               		.stabd	78,0,0
+ 434               	.global	configDHDR
+ 436               	configDHDR:
+ 437               		.stabd	46,0,0
+ 298:../../../src/net/isa/isa.c **** }
+ 299:../../../src/net/isa/isa.c **** 
+ 300:../../../src/net/isa/isa.c **** /**
+ 301:../../../src/net/isa/isa.c ****  * configDHDR()
+ 302:../../../src/net/isa/isa.c ****  *
+ 303:../../../src/net/isa/isa.c ****  * Gateway could config the DHDR by informing the nodes.
+ 304:../../../src/net/isa/isa.c ****  * DHDR contains control information that should be loaded
+ 305:../../../src/net/isa/isa.c ****  * into the PDU header.
+ 306:../../../src/net/isa/isa.c ****  *
+ 307:../../../src/net/isa/isa.c ****  */
+ 308:../../../src/net/isa/isa.c **** int8_t configDHDR(DLMO_LINK * link)
+ 309:../../../src/net/isa/isa.c **** {
+ 439               	.LM39:
+ 440               	.LFBB7:
+ 441               	/* prologue: frame size=0 */
+ 442 0104 CF93      		push r28
+ 443 0106 DF93      		push r29
+ 444               	/* prologue end (size=2) */
+ 310:../../../src/net/isa/isa.c **** 
+ 311:../../../src/net/isa/isa.c **** 	//lookup neighbor information to deciede whether to request clock
+ 312:../../../src/net/isa/isa.c ****     int8_t DHDR = 1;
+ 313:../../../src/net/isa/isa.c ****     if(1){//request ACK - always for multicast device
+ 314:../../../src/net/isa/isa.c **** 	DHDR |= 1<<7;
+ 315:../../../src/net/isa/isa.c ****     }
+ 316:../../../src/net/isa/isa.c ****     if(1){//request signal quality in ACK
+ 317:../../../src/net/isa/isa.c **** 	DHDR |= 1<<6;
+ 318:../../../src/net/isa/isa.c ****     }
+ 319:../../../src/net/isa/isa.c ****     if(1){//request EUI
+ 320:../../../src/net/isa/isa.c **** 	DHDR |= 1<<5;
+ 321:../../../src/net/isa/isa.c ****     }
+ 322:../../../src/net/isa/isa.c ****     if(0){//include DAUX
+ 323:../../../src/net/isa/isa.c **** 	DHDR |= 1<<4;
+ 324:../../../src/net/isa/isa.c ****     }
+ 325:../../../src/net/isa/isa.c ****     if(0){//include slow hopping offset
+ 326:../../../src/net/isa/isa.c **** 	DHDR |= 1<<3;
+ 327:../../../src/net/isa/isa.c ****     }
+ 328:../../../src/net/isa/isa.c ****     if(ISAMASK(link->neighbor->typeInfo, CLOCK_PREFERRED) == CLOCK_PREFERRED ){//is clock recipient
+ 446               	.LM40:
+ 447 0108 EC01      		movw r28,r24
+ 448 010a E885      		ldd r30,Y+8
+ 449 010c F985      		ldd r31,Y+9
+ 450 010e 8585      		ldd r24,Z+13
+ 451 0110 87FF      		sbrs r24,7
+ 452 0112 00C0      		rjmp .L24
+ 454               	.LM41:
+ 455 0114 85EE      		ldi r24,lo8(-27)
+ 456 0116 00C0      		rjmp .L26
+ 457               	.L24:
+ 458 0118 81EE      		ldi r24,lo8(-31)
+ 459               	.L26:
+ 329:../../../src/net/isa/isa.c **** 	DHDR |= 1<<2;
+ 330:../../../src/net/isa/isa.c **** 
+ 331:../../../src/net/isa/isa.c ****     }
+ 332:../../../src/net/isa/isa.c ****     return DHDR;
+ 333:../../../src/net/isa/isa.c **** }
+ 461               	.LM42:
+ 462 011a 9927      		clr r25
+ 463 011c 87FD      		sbrc r24,7
+ 464 011e 9095      		com r25
+ 465               	/* epilogue: frame size=0 */
+ 466 0120 DF91      		pop r29
+ 467 0122 CF91      		pop r28
+ 468 0124 0895      		ret
+ 469               	/* epilogue end (size=3) */
+ 470               	/* function configDHDR size 17 (12) */
+ 475               	.Lscope7:
+ 477               		.stabd	78,0,0
+ 480               	.global	configDHR
+ 482               	configDHR:
+ 483               		.stabd	46,0,0
+ 334:../../../src/net/isa/isa.c **** 
+ 335:../../../src/net/isa/isa.c **** /**
+ 336:../../../src/net/isa/isa.c ****  * configDHR()
+ 337:../../../src/net/isa/isa.c ****  *
+ 338:../../../src/net/isa/isa.c ****  * Gateway could config the DHR by informing the nodes.
+ 339:../../../src/net/isa/isa.c ****  * DHR contains control information that should be loaded
+ 340:../../../src/net/isa/isa.c ****  * into the ACK reply header.
+ 341:../../../src/net/isa/isa.c ****  *
+ 342:../../../src/net/isa/isa.c ****  */
+ 343:../../../src/net/isa/isa.c **** int8_t configDHR(uint8_t clockCorrection)
+ 344:../../../src/net/isa/isa.c **** {
+ 485               	.LM43:
+ 486               	.LFBB8:
+ 487               	/* prologue: frame size=0 */
+ 488               	/* prologue end (size=0) */
+ 345:../../../src/net/isa/isa.c ****     int8_t DHR = 3;
+ 346:../../../src/net/isa/isa.c ****     if(clockCorrection){//include clock correction change
+ 490               	.LM44:
+ 491 0126 8823      		tst r24
+ 492 0128 01F0      		breq .L29
+ 494               	.LM45:
+ 495 012a 83E8      		ldi r24,lo8(-125)
+ 496 012c 00C0      		rjmp .L31
+ 497               	.L29:
+ 498 012e 83E0      		ldi r24,lo8(3)
+ 499               	.L31:
+ 347:../../../src/net/isa/isa.c **** 	DHR |= 1<<7;
+ 348:../../../src/net/isa/isa.c ****     }
+ 349:../../../src/net/isa/isa.c ****     if(0){//including slow-hopping timeslot offset
+ 350:../../../src/net/isa/isa.c **** 	DHR |= 1<<6;
+ 351:../../../src/net/isa/isa.c ****     }
+ 352:../../../src/net/isa/isa.c ****     if(0){//request EUI
+ 353:../../../src/net/isa/isa.c **** 	DHR |= 1<<5;
+ 354:../../../src/net/isa/isa.c ****     }
+ 355:../../../src/net/isa/isa.c ****     if(0){//include DAUX
+ 356:../../../src/net/isa/isa.c **** 	DHR |= 1<<4;
+ 357:../../../src/net/isa/isa.c ****     }
+ 358:../../../src/net/isa/isa.c ****     if(0){//include slow hopping offset
+ 359:../../../src/net/isa/isa.c **** 	DHR |= 1<<3;
+ 360:../../../src/net/isa/isa.c ****     }
+ 361:../../../src/net/isa/isa.c ****    
+ 362:../../../src/net/isa/isa.c ****     return DHR;
+ 363:../../../src/net/isa/isa.c **** }
+ 501               	.LM46:
+ 502 0130 9927      		clr r25
+ 503 0132 87FD      		sbrc r24,7
+ 504 0134 9095      		com r25
+ 505               	/* epilogue: frame size=0 */
+ 506 0136 0895      		ret
+ 507               	/* epilogue end (size=1) */
+ 508               	/* function configDHR size 9 (8) */
+ 513               	.Lscope8:
+ 515               		.stabd	78,0,0
+ 528               	.global	configAdvDAUX
+ 530               	configAdvDAUX:
+ 531               		.stabd	46,0,0
+ 364:../../../src/net/isa/isa.c **** 
+ 365:../../../src/net/isa/isa.c **** /**
+ 366:../../../src/net/isa/isa.c ****  * configAdvDAUX()
+ 367:../../../src/net/isa/isa.c ****  *
+ 368:../../../src/net/isa/isa.c ****  * Gateway could config the DAUX 
+ 369:../../../src/net/isa/isa.c ****  * DAUX contains superframe and join information 
+ 370:../../../src/net/isa/isa.c ****  *
+ 371:../../../src/net/isa/isa.c ****  */
+ 372:../../../src/net/isa/isa.c **** void configAdvDAUX(uint8_t chPattern, uint8_t chIndex, uint8_t sp_period, uint8_t tx_slot1, uint8_t
+ 373:../../../src/net/isa/isa.c **** {	
+ 533               	.LM47:
+ 534               	.LFBB9:
+ 535               	/* prologue: frame size=0 */
+ 536 0138 8F92      		push r8
+ 537 013a AF92      		push r10
+ 538 013c CF92      		push r12
+ 539 013e EF92      		push r14
+ 540 0140 0F93      		push r16
+ 541 0142 CF93      		push r28
+ 542 0144 DF93      		push r29
+ 543 0146 CDB7      		in r28,__SP_L__
+ 544 0148 DEB7      		in r29,__SP_H__
+ 545               	/* prologue end (size=9) */
+ 374:../../../src/net/isa/isa.c ****     /*ADVERTISEMENT SELECTION*/
+ 375:../../../src/net/isa/isa.c ****     DAUX[0]=0; // Advertisement selection, 0 indicates advertisement DAUX
+ 547               	.LM48:
+ 548 014a 1092 0000 		sts DAUX,__zero_reg__
+ 376:../../../src/net/isa/isa.c ****     
+ 377:../../../src/net/isa/isa.c ****     /*TIME SYNCHRONIZATION*/
+ 378:../../../src/net/isa/isa.c ****     /* 1-6 bytes are reserved for time synchronization */ 
+ 379:../../../src/net/isa/isa.c ****   
+ 380:../../../src/net/isa/isa.c ****     /*SUPERFRAME INFORMATION*/
+ 381:../../../src/net/isa/isa.c ****     DAUX[7]=10; // timeslot duration, currently not used.
+ 550               	.LM49:
+ 551 014e 9AE0      		ldi r25,lo8(10)
+ 552 0150 9093 0000 		sts DAUX+7,r25
+ 382:../../../src/net/isa/isa.c ****     DAUX[8]=0; // reserved for long timeslot duration
+ 554               	.LM50:
+ 555 0154 1092 0000 		sts DAUX+8,__zero_reg__
+ 383:../../../src/net/isa/isa.c ****     DAUX[9]=chPattern; // channel pattern selection
+ 557               	.LM51:
+ 558 0158 8093 0000 		sts DAUX+9,r24
+ 384:../../../src/net/isa/isa.c ****     DAUX[10]=chIndex; // channel index selection
+ 560               	.LM52:
+ 561 015c 6093 0000 		sts DAUX+10,r22
+ 385:../../../src/net/isa/isa.c ****     DAUX[11]=sp_period; // superframe period
+ 563               	.LM53:
+ 564 0160 4093 0000 		sts DAUX+11,r20
+ 386:../../../src/net/isa/isa.c ****     DAUX[12]=0; // reserved for long period situation  
+ 566               	.LM54:
+ 567 0164 1092 0000 		sts DAUX+12,__zero_reg__
+ 387:../../../src/net/isa/isa.c ****     /* 13 reserved for superframe cycle starting point
+ 388:../../../src/net/isa/isa.c ****        14 reserved of the length of slow hopping period
+ 389:../../../src/net/isa/isa.c ****        15 and 16 reserved for channel hopping channel map for spectrum management
+ 390:../../../src/net/isa/isa.c ****     */
+ 391:../../../src/net/isa/isa.c **** 
+ 392:../../../src/net/isa/isa.c ****     /*JOIN INFORMATION*/
+ 393:../../../src/net/isa/isa.c ****     /* 17 reserved for Join backoff and timeout
+ 394:../../../src/net/isa/isa.c ****        18 reserved for Indicates fields that are transmitted
+ 395:../../../src/net/isa/isa.c ****     */
+ 396:../../../src/net/isa/isa.c ****     DAUX[19]=tx_slot1;  //TX slot 1
+ 569               	.LM55:
+ 570 0168 2093 0000 		sts DAUX+19,r18
+ 397:../../../src/net/isa/isa.c ****     DAUX[20]=tx_slot2;  //TX slot 2
+ 572               	.LM56:
+ 573 016c 0093 0000 		sts DAUX+20,r16
+ 398:../../../src/net/isa/isa.c ****     DAUX[21]=tx_slot3;  //TX slot 3
+ 575               	.LM57:
+ 576 0170 E092 0000 		sts DAUX+21,r14
+ 399:../../../src/net/isa/isa.c ****     DAUX[22]=tx_slot4;  //TX slot 4
+ 578               	.LM58:
+ 579 0174 C092 0000 		sts DAUX+22,r12
+ 400:../../../src/net/isa/isa.c ****     DAUX[23]=rx_slot1;  //RX slot 1
+ 581               	.LM59:
+ 582 0178 A092 0000 		sts DAUX+23,r10
+ 401:../../../src/net/isa/isa.c ****     DAUX[24]=rx_slot2;  //RX slot 2
+ 584               	.LM60:
+ 585 017c 8092 0000 		sts DAUX+24,r8
+ 402:../../../src/net/isa/isa.c ****     DAUX[25]=rx_slot3;  //RX slot 3
+ 587               	.LM61:
+ 588 0180 8A85      		ldd r24,Y+10
+ 589 0182 8093 0000 		sts DAUX+25,r24
+ 403:../../../src/net/isa/isa.c ****     DAUX[26]=rx_slot4;  //RX slot 4
+ 591               	.LM62:
+ 592 0186 8B85      		ldd r24,Y+11
+ 593 0188 8093 0000 		sts DAUX+26,r24
+ 594               	/* epilogue: frame size=0 */
+ 595 018c DF91      		pop r29
+ 596 018e CF91      		pop r28
+ 597 0190 0F91      		pop r16
+ 598 0192 EF90      		pop r14
+ 599 0194 CF90      		pop r12
+ 600 0196 AF90      		pop r10
+ 601 0198 8F90      		pop r8
+ 602 019a 0895      		ret
+ 603               	/* epilogue end (size=8) */
+ 604               	/* function configAdvDAUX size 50 (33) */
+ 608               	.Lscope9:
+ 610               		.stabd	78,0,0
+ 612               	.global	isa_rx_pkt_check
+ 614               	isa_rx_pkt_check:
+ 615               		.stabd	46,0,0
+ 404:../../../src/net/isa/isa.c **** 
+ 405:../../../src/net/isa/isa.c ****     /*INTEGRETY CHECK*/
+ 406:../../../src/net/isa/isa.c ****     /* 27 and 28 are reserved for Integrety check*/
+ 407:../../../src/net/isa/isa.c **** }
+ 408:../../../src/net/isa/isa.c **** 
+ 409:../../../src/net/isa/isa.c **** /**
+ 410:../../../src/net/isa/isa.c ****  * isa_check_rx_status()
+ 411:../../../src/net/isa/isa.c ****  *
+ 412:../../../src/net/isa/isa.c ****  * This function returns if there is a packet in the link layer
+ 413:../../../src/net/isa/isa.c ****  * rx buffer.  Once a packet has been received, it should be quickly
+ 414:../../../src/net/isa/isa.c ****  * processed or moved and then rtl_release_rx_packet() should be called. 
+ 415:../../../src/net/isa/isa.c ****  * rtl_release_rx_packet() then resets the value of rtl_check_rx_status()
+ 416:../../../src/net/isa/isa.c ****  *
+ 417:../../../src/net/isa/isa.c ****  * Returns: 1 if a new packet was received, 0 otherwise
+ 418:../../../src/net/isa/isa.c ****  */
+ 419:../../../src/net/isa/isa.c **** int8_t isa_rx_pkt_check()
+ 420:../../../src/net/isa/isa.c **** {
+ 617               	.LM63:
+ 618               	.LFBB10:
+ 619               	/* prologue: frame size=0 */
+ 620               	/* prologue end (size=0) */
+ 621 019c 8091 0000 		lds r24,isa_rx_data_ready
+ 421:../../../src/net/isa/isa.c ****     return isa_rx_data_ready;
+ 422:../../../src/net/isa/isa.c **** }
+ 623               	.LM64:
+ 624 01a0 9927      		clr r25
+ 625 01a2 87FD      		sbrc r24,7
+ 626 01a4 9095      		com r25
+ 627               	/* epilogue: frame size=0 */
+ 628 01a6 0895      		ret
+ 629               	/* epilogue end (size=1) */
+ 630               	/* function isa_rx_pkt_check size 6 (5) */
+ 632               	.Lscope10:
+ 634               		.stabd	78,0,0
+ 636               	.global	isa_rx_pkt_release
+ 638               	isa_rx_pkt_release:
+ 639               		.stabd	46,0,0
+ 423:../../../src/net/isa/isa.c **** 
+ 424:../../../src/net/isa/isa.c **** /**
+ 425:../../../src/net/isa/isa.c ****  * isa_rx_pkt_get()
+ 426:../../../src/net/isa/isa.c ****  *
+ 427:../../../src/net/isa/isa.c ****  * This function returns the rx buffer point. It should be called
+ 428:../../../src/net/isa/isa.c ****  * once a packet is received and must be followed by isa_release_rx_packet().
+ 429:../../../src/net/isa/isa.c ****  * isa_release_rx_packet() then resets the value of isa_check_rx_status().
+ 430:../../../src/net/isa/isa.c ****  * 
+ 431:../../../src/net/isa/isa.c ****  * Returns: rx buffer point
+ 432:../../../src/net/isa/isa.c ****  */
+ 433:../../../src/net/isa/isa.c **** uint8_t* isa_rx_pkt_get (uint8_t *len, int8_t *rssi)
+ 434:../../../src/net/isa/isa.c **** {
+ 435:../../../src/net/isa/isa.c ****     if(isa_rx_pkt_check()==0){
+ 436:../../../src/net/isa/isa.c **** 	*len=0;
+ 437:../../../src/net/isa/isa.c **** 	*rssi=0;
+ 438:../../../src/net/isa/isa.c **** 	return NULL;
+ 439:../../../src/net/isa/isa.c ****     }
+ 440:../../../src/net/isa/isa.c ****     *len=isa_rfRxInfo.length;
+ 441:../../../src/net/isa/isa.c ****     *rssi=isa_rfRxInfo.rssi;
+ 442:../../../src/net/isa/isa.c **** 
+ 443:../../../src/net/isa/isa.c **** 
+ 444:../../../src/net/isa/isa.c ****     return isa_rfRxInfo.pPayload;
+ 445:../../../src/net/isa/isa.c **** }
+ 446:../../../src/net/isa/isa.c **** 
+ 447:../../../src/net/isa/isa.c **** /**
+ 448:../../../src/net/isa/isa.c ****  * _isa_rx()
+ 449:../../../src/net/isa/isa.c ****  *
+ 450:../../../src/net/isa/isa.c ****  * This is the low level RX packet function.  It will read in
+ 451:../../../src/net/isa/isa.c ****  * a packet and buffer it in the link layer's single RX buffer.
+ 452:../../../src/net/isa/isa.c ****  * This buffer can be checked with rtl_check_rx_status() and 
+ 453:../../../src/net/isa/isa.c ****  * released with rtl_release_rx_packet().  If the buffer has not
+ 454:../../../src/net/isa/isa.c ****  * been released and a new packet arrives, the packet will be lost.
+ 455:../../../src/net/isa/isa.c ****  * This function is only called from the timer interrupt routine.
+ 456:../../../src/net/isa/isa.c ****  *
+ 457:../../../src/net/isa/isa.c ****  * Arguments: slot is the current slot that is actively in RX mode.
+ 458:../../../src/net/isa/isa.c ****  */
+ 459:../../../src/net/isa/isa.c **** 
+ 460:../../../src/net/isa/isa.c **** void _isa_rx (uint8_t slot)
+ 461:../../../src/net/isa/isa.c **** {
+ 462:../../../src/net/isa/isa.c **** 	uint8_t DHDR;  // Data link layer header sub-header, currently used as ACK control
+ 463:../../../src/net/isa/isa.c **** //putchar('R');
+ 464:../../../src/net/isa/isa.c ****     uint8_t n;
+ 465:../../../src/net/isa/isa.c ****     uint32_t node_mask;
+ 466:../../../src/net/isa/isa.c ****     volatile uint8_t timeout;
+ 467:../../../src/net/isa/isa.c **** 
+ 468:../../../src/net/isa/isa.c ****     #ifdef LED_DEBUG
+ 469:../../../src/net/isa/isa.c **** 	nrk_led_set(1);
+ 470:../../../src/net/isa/isa.c ****     #endif
+ 471:../../../src/net/isa/isa.c ****     rf_set_rx (&isa_rfRxInfo, isa_param.channel);       // sets rx buffer and channel 
+ 472:../../../src/net/isa/isa.c ****     rf_polling_rx_on ();
+ 473:../../../src/net/isa/isa.c ****     nrk_gpio_set(NRK_DEBUG_2);
+ 474:../../../src/net/isa/isa.c ****     // Timing for waiting for sfd
+ 475:../../../src/net/isa/isa.c ****     timeout = _nrk_os_timer_get();
+ 476:../../../src/net/isa/isa.c ****     timeout+=4;  // 4ms
+ 477:../../../src/net/isa/isa.c ****     n = 0;
+ 478:../../../src/net/isa/isa.c ****     //nrk_gpio_set(NRK_DEBUG_3);
+ 479:../../../src/net/isa/isa.c ****     while ((n = rf_rx_check_sfd()) == 0) {
+ 480:../../../src/net/isa/isa.c ****         if (_nrk_os_timer_get() > timeout) {
+ 481:../../../src/net/isa/isa.c **** 	    //spend too much time on waiting for a pkt's arrival
+ 482:../../../src/net/isa/isa.c ****         	nrk_gpio_clr(NRK_DEBUG_2);
+ 483:../../../src/net/isa/isa.c **** 
+ 484:../../../src/net/isa/isa.c **** 	    rf_rx_off ();
+ 485:../../../src/net/isa/isa.c **** 	    #ifdef LED_DEBUG
+ 486:../../../src/net/isa/isa.c **** 		nrk_led_clr(1);
+ 487:../../../src/net/isa/isa.c **** 	    #endif
+ 488:../../../src/net/isa/isa.c **** 	    #ifdef RX_DEBUG
+ 489:../../../src/net/isa/isa.c **** 		 nrk_gpio_set(NRK_DEBUG_2);
+ 490:../../../src/net/isa/isa.c **** 				 nrk_gpio_clr(NRK_DEBUG_2);
+ 491:../../../src/net/isa/isa.c **** 		putchar('v');
+ 492:../../../src/net/isa/isa.c **** 		//printf("%d", slot);
+ 493:../../../src/net/isa/isa.c **** 		//printf("sfd times out.\n\r");
+ 494:../../../src/net/isa/isa.c **** 	    #endif
+ 495:../../../src/net/isa/isa.c **** 		packetsLost++;
+ 496:../../../src/net/isa/isa.c **** 		return;
+ 497:../../../src/net/isa/isa.c ****         }
+ 498:../../../src/net/isa/isa.c ****     }
+ 499:../../../src/net/isa/isa.c **** //printf("%d\n\r",_nrk_high_speed_timer_get());
+ 500:../../../src/net/isa/isa.c ****     // sfd received, start receiving packet and record start time
+ 501:../../../src/net/isa/isa.c ****     rx_start_time = _nrk_high_speed_timer_get();
+ 502:../../../src/net/isa/isa.c **** 
+ 503:../../../src/net/isa/isa.c ****     // Timing for waiting for finishing packet receiving
+ 504:../../../src/net/isa/isa.c ****     timeout = _nrk_os_timer_get(); 
+ 505:../../../src/net/isa/isa.c ****     timeout += 5;               // 5ms
+ 506:../../../src/net/isa/isa.c ****     if (n != 0) {
+ 507:../../../src/net/isa/isa.c ****         n = 0;
+ 508:../../../src/net/isa/isa.c ****        // printf("Packet on its way\n\r");
+ 509:../../../src/net/isa/isa.c ****         while ((n = rf_polling_rx_packet (false,128)) == 0) {
+ 510:../../../src/net/isa/isa.c **** 	    //printf("%d\n\r",_nrk_os_timer_get());
+ 511:../../../src/net/isa/isa.c ****             if (_nrk_os_timer_get () > timeout) {
+ 512:../../../src/net/isa/isa.c **** 		#ifdef RX_DEBUG
+ 513:../../../src/net/isa/isa.c **** 		    printf("packet is too long, times out.\n\r");
+ 514:../../../src/net/isa/isa.c **** 		#endif
+ 515:../../../src/net/isa/isa.c **** 		    packetsLost++;
+ 516:../../../src/net/isa/isa.c **** 		    // spend too much time on receiving pkt.
+ 517:../../../src/net/isa/isa.c ****                 return;          // huge timeout as fail safe
+ 518:../../../src/net/isa/isa.c ****             }
+ 519:../../../src/net/isa/isa.c ****         }
+ 520:../../../src/net/isa/isa.c ****     }
+ 521:../../../src/net/isa/isa.c ****     nrk_gpio_clr(NRK_DEBUG_2);
+ 522:../../../src/net/isa/isa.c ****    // printf("%d", currentChannel);
+ 523:../../../src/net/isa/isa.c ****     rf_rx_off ();
+ 524:../../../src/net/isa/isa.c **** 
+ 525:../../../src/net/isa/isa.c ****     if  (n !=1){	//size of packet must have been wrong
+ 526:../../../src/net/isa/isa.c **** 	putchar('b');
+ 527:../../../src/net/isa/isa.c **** 	packetsLost++;
+ 528:../../../src/net/isa/isa.c **** }
+ 529:../../../src/net/isa/isa.c **** 
+ 530:../../../src/net/isa/isa.c ****     if (n == 1) {// successfully received packet
+ 531:../../../src/net/isa/isa.c ****     	rxCount++;
+ 532:../../../src/net/isa/isa.c ****     	nrk_led_toggle(BLUE_LED);
+ 533:../../../src/net/isa/isa.c ****     	//putchar ('r');
+ 534:../../../src/net/isa/isa.c **** 	//potential problem: if repeater or recipient receives noise, the DHDR would be changed. And it is
+ 535:../../../src/net/isa/isa.c **** 	//if(isa_node_mode != ISA_GATEWAY)
+ 536:../../../src/net/isa/isa.c **** 	    DHDR = isa_rfRxInfo.pPayload[DHDR_INDEX];
+ 537:../../../src/net/isa/isa.c **** 	#ifdef RX_DEBUG
+ 538:../../../src/net/isa/isa.c **** 	   // printf("Repeater slot = %d, local slot is %d.\n\r", isa_rfRxInfo.pPayload[SLOT_INDEX],global
+ 539:../../../src/net/isa/isa.c **** 	#endif RX_DEBUG	
+ 540:../../../src/net/isa/isa.c **** 	nrk_event_signal(isa_rx_pkt_signal);	
+ 541:../../../src/net/isa/isa.c **** 
+ 542:../../../src/net/isa/isa.c **** 	node_mask = ((uint32_t) 1) << isa_rfRxInfo.pPayload[SRC_INDEX];
+ 543:../../../src/net/isa/isa.c **** 	
+ 544:../../../src/net/isa/isa.c **** 	if(DHDR & (1<<7)){
+ 545:../../../src/net/isa/isa.c **** 		txCount++;
+ 546:../../../src/net/isa/isa.c **** 	    // Transmit ACK packet
+ 547:../../../src/net/isa/isa.c **** 	    DHR = configDHR(DHDR & (1<<2));
+ 548:../../../src/net/isa/isa.c **** 	  //  printf("%d", DHR);
+ 549:../../../src/net/isa/isa.c **** 	    isa_ack_buf[DHR_INDEX]= DHR;
+ 550:../../../src/net/isa/isa.c **** 	    #ifdef ACK_DEBUG
+ 551:../../../src/net/isa/isa.c **** 		//printf("DHDR is %x.\n\r",DHDR);
+ 552:../../../src/net/isa/isa.c **** 	    #endif
+ 553:../../../src/net/isa/isa.c **** 	    isa_ack_tx.pPayload = isa_ack_buf;
+ 554:../../../src/net/isa/isa.c **** 	    if (DHDR & (1<<2)) { //reply ACK with time offsetX
+ 555:../../../src/net/isa/isa.c **** 	    	    	putchar ('K');
+ 556:../../../src/net/isa/isa.c **** 	    		offsetX = rx_start_time - slot_start_time;
+ 557:../../../src/net/isa/isa.c **** 	    		//printf("slot_start_time is %d,rx_start_time is %d.\n\r",slot_start_time,rx_start_time);
+ 558:../../../src/net/isa/isa.c **** 	    		uint8_t temp1,temp2;
+ 559:../../../src/net/isa/isa.c **** 	    		temp1 = (offsetX & 0xFF00)>>8;
+ 560:../../../src/net/isa/isa.c **** 	    		isa_ack_buf[OFFSET_HIGH]=temp1;
+ 561:../../../src/net/isa/isa.c **** 	    		temp2 = (offsetX & 0x00FF);
+ 562:../../../src/net/isa/isa.c **** 	     		isa_ack_buf[OFFSET_LOW]=temp2;
+ 563:../../../src/net/isa/isa.c **** 	    		#ifdef ACK_DEBUG
+ 564:../../../src/net/isa/isa.c **** 	    		  //  printf("offsetX is %d\n\r", offsetX);
+ 565:../../../src/net/isa/isa.c **** 	    		#endif
+ 566:../../../src/net/isa/isa.c **** 	    		//isa_ack_tx.length = PKT_DATA_START + 1;
+ 567:../../../src/net/isa/isa.c **** 	    		isa_ack_tx.length = 4;
+ 568:../../../src/net/isa/isa.c **** 	    	    }
+ 569:../../../src/net/isa/isa.c **** 
+ 570:../../../src/net/isa/isa.c **** 	    else
+ 571:../../../src/net/isa/isa.c **** 	    { // recipient , only reply explicit ACK
+ 572:../../../src/net/isa/isa.c **** 	        //isa_ack_tx.length = PKT_DATA_START-1;
+ 573:../../../src/net/isa/isa.c **** 		isa_ack_tx.length = 2;
+ 574:../../../src/net/isa/isa.c **** 		//putchar ('C');
+ 575:../../../src/net/isa/isa.c **** 		//putchar('\n');
+ 576:../../../src/net/isa/isa.c ****             }
+ 577:../../../src/net/isa/isa.c **** 	   nrk_gpio_set(NRK_DEBUG_2);
+ 578:../../../src/net/isa/isa.c **** 	    rf_tx_tdma_packet (&isa_ack_tx,slot_start_time,isa_param.tx_guard_time,&tx_start_time);	
+ 579:../../../src/net/isa/isa.c **** 	    nrk_gpio_clr(NRK_DEBUG_2);
+ 580:../../../src/net/isa/isa.c **** 	}	
+ 581:../../../src/net/isa/isa.c **** //nrk_gpio_clr(NRK_DEBUG_3);
+ 582:../../../src/net/isa/isa.c ****     }        
+ 583:../../../src/net/isa/isa.c ****     #ifdef LED_DEBUG
+ 584:../../../src/net/isa/isa.c **** 	nrk_led_clr (1);
+ 585:../../../src/net/isa/isa.c ****     #endif
+ 586:../../../src/net/isa/isa.c **** }
+ 587:../../../src/net/isa/isa.c **** 
+ 588:../../../src/net/isa/isa.c **** /**
+ 589:../../../src/net/isa/isa.c ****  * isa_release_rx_packet()
+ 590:../../../src/net/isa/isa.c ****  *
+ 591:../../../src/net/isa/isa.c ****  * This function releases the link layer's hold on the rx buffer.
+ 592:../../../src/net/isa/isa.c ****  * This must be called after a packet is received before a new
+ 593:../../../src/net/isa/isa.c ****  * packet can be buffered!  This should ideally be done by the
+ 594:../../../src/net/isa/isa.c ****  * network layer.
+ 595:../../../src/net/isa/isa.c ****  *
+ 596:../../../src/net/isa/isa.c ****  */
+ 597:../../../src/net/isa/isa.c **** 
+ 598:../../../src/net/isa/isa.c **** void isa_rx_pkt_release()
+ 599:../../../src/net/isa/isa.c **** {
+ 641               	.LM65:
+ 642               	.LFBB11:
+ 643               	/* prologue: frame size=0 */
+ 644               	/* prologue end (size=0) */
+ 600:../../../src/net/isa/isa.c ****     isa_rx_data_ready = 0;
+ 646               	.LM66:
+ 647 01a8 1092 0000 		sts isa_rx_data_ready,__zero_reg__
+ 648 01ac 1092 0000 		sts (isa_rx_data_ready)+1,__zero_reg__
+ 649 01b0 1092 0000 		sts (isa_rx_data_ready)+2,__zero_reg__
+ 650 01b4 1092 0000 		sts (isa_rx_data_ready)+3,__zero_reg__
+ 651               	/* epilogue: frame size=0 */
+ 652 01b8 0895      		ret
+ 653               	/* epilogue end (size=1) */
+ 654               	/* function isa_rx_pkt_release size 9 (8) */
+ 656               	.Lscope11:
+ 658               		.stabd	78,0,0
+ 660               	.global	isa_join_ready
+ 662               	isa_join_ready:
+ 663               		.stabd	46,0,0
+ 601:../../../src/net/isa/isa.c **** }
+ 602:../../../src/net/isa/isa.c **** 
+ 603:../../../src/net/isa/isa.c **** /**
+ 604:../../../src/net/isa/isa.c ****  * rtl_tx_packet()
+ 605:../../../src/net/isa/isa.c ****  *
+ 606:../../../src/net/isa/isa.c ****  * This function associates a slot with a particular packet that needs
+ 607:../../../src/net/isa/isa.c ****  * to be sent. 
+ 608:../../../src/net/isa/isa.c ****  * 
+ 609:../../../src/net/isa/isa.c ****  * Arguments: RF_TX_INFO *tx is a pointer to a transmit structure, this structure
+ 610:../../../src/net/isa/isa.c ****  *            must have a valid pPayload pointer to the real packet.
+ 611:../../../src/net/isa/isa.c ****  *            uint8_t slot is the value of the tx slot (starting from 0)
+ 612:../../../src/net/isa/isa.c ****  *
+ 613:../../../src/net/isa/isa.c ****  * Return:  currently always returns 1
+ 614:../../../src/net/isa/isa.c ****  */
+ 615:../../../src/net/isa/isa.c **** /*
+ 616:../../../src/net/isa/isa.c **** int8_t isa_tx_pkt (uint8_t *tx_buf, uint8_t len, uint8_t DHDR, uint8_t slot)
+ 617:../../../src/net/isa/isa.c **** {
+ 618:../../../src/net/isa/isa.c ****     isa_tx_info[slot].pPayload = tx_buf; 
+ 619:../../../src/net/isa/isa.c ****     isa_tx_info[slot].length = len;    // pass le pointer
+ 620:../../../src/net/isa/isa.c ****     isa_tx_info[slot].DHDR = DHDR;
+ 621:../../../src/net/isa/isa.c **** 
+ 622:../../../src/net/isa/isa.c ****     isa_tx_data_ready |= ((uint32_t) 1 << slot);        // set the flag
+ 623:../../../src/net/isa/isa.c ****     return 1;
+ 624:../../../src/net/isa/isa.c **** }
+ 625:../../../src/net/isa/isa.c **** */
+ 626:../../../src/net/isa/isa.c **** 
+ 627:../../../src/net/isa/isa.c **** /**
+ 628:../../../src/net/isa/isa.c ****  * isa_tx_pkt_check()
+ 629:../../../src/net/isa/isa.c ****  *
+ 630:../../../src/net/isa/isa.c ****  * This function allows an upper layer to check if a TX packet
+ 631:../../../src/net/isa/isa.c ****  * has been sent.  For instance, you would first send a packet 
+ 632:../../../src/net/isa/isa.c ****  * and then you could sleep or do more work, and eventually check
+ 633:../../../src/net/isa/isa.c ****  * done = isa_tx_pkt_check(8);
+ 634:../../../src/net/isa/isa.c ****  * to see if the packet had been sent by the interrupt routine.
+ 635:../../../src/net/isa/isa.c ****  *
+ 636:../../../src/net/isa/isa.c ****  * Returns: 1 if the packet was sent, 0 otherwise
+ 637:../../../src/net/isa/isa.c ****  */
+ 638:../../../src/net/isa/isa.c **** /*
+ 639:../../../src/net/isa/isa.c **** int8_t isa_tx_pkt_check(uint8_t slot)
+ 640:../../../src/net/isa/isa.c **** {
+ 641:../../../src/net/isa/isa.c ****     if ((isa_tx_data_ready & ((uint32_t) 1 << slot)) != 0)
+ 642:../../../src/net/isa/isa.c ****         return 1;
+ 643:../../../src/net/isa/isa.c ****     return 0;
+ 644:../../../src/net/isa/isa.c **** }
+ 645:../../../src/net/isa/isa.c **** */
+ 646:../../../src/net/isa/isa.c **** /**
+ 647:../../../src/net/isa/isa.c ****  * _isa_tx()
+ 648:../../../src/net/isa/isa.c ****  *
+ 649:../../../src/net/isa/isa.c ****  * This function is the low level TX function.
+ 650:../../../src/net/isa/isa.c ****  * It is only called from the timer interrupt and fetches any
+ 651:../../../src/net/isa/isa.c ****  * packets that were set for a particular slot by rtl_tx_packet().
+ 652:../../../src/net/isa/isa.c ****  *
+ 653:../../../src/net/isa/isa.c ****  * Arguments: slot is the active slot set by the interrupt timer.
+ 654:../../../src/net/isa/isa.c ****  */
+ 655:../../../src/net/isa/isa.c **** void _isa_tx (DLMO_LINK * link, uint16_t slot)
+ 656:../../../src/net/isa/isa.c **** {
+ 657:../../../src/net/isa/isa.c **** 	uint8_t DHDR;  // Data link layer header sub-header, currently used as ACK control
+ 658:../../../src/net/isa/isa.c **** 	uint8_t c;
+ 659:../../../src/net/isa/isa.c ****     uint8_t n;
+ 660:../../../src/net/isa/isa.c ****     uint8_t i;
+ 661:../../../src/net/isa/isa.c ****     int8_t tmp;
+ 662:../../../src/net/isa/isa.c ****     volatile uint8_t timeout;
+ 663:../../../src/net/isa/isa.c ****     uint8_t offsetSec, curSec;
+ 664:../../../src/net/isa/isa.c ****     uint16_t offsetNanoSec;
+ 665:../../../src/net/isa/isa.c ****     int16_t time_correction;
+ 666:../../../src/net/isa/isa.c ****     uint8_t tmp_nrk_prev_timer_val;
+ 667:../../../src/net/isa/isa.c ****     ISA_QUEUE *transmitEntry;
+ 668:../../../src/net/isa/isa.c ****     // load header
+ 669:../../../src/net/isa/isa.c ****     isa_rfTxInfo.cca = true;
+ 670:../../../src/net/isa/isa.c ****     //find if there is anything in the Queue to be transmitted
+ 671:../../../src/net/isa/isa.c ****     transmitEntry = getHighPriorityEntry(link->neighbor->index)	;//This holds the neighbor id
+ 672:../../../src/net/isa/isa.c ****     if (transmitEntry == NULL){
+ 673:../../../src/net/isa/isa.c ****     	printf("No link for this slot");
+ 674:../../../src/net/isa/isa.c ****     	return;
+ 675:../../../src/net/isa/isa.c ****     }
+ 676:../../../src/net/isa/isa.c ****     previous_tx_slot = slot;
+ 677:../../../src/net/isa/isa.c ****     isa_rfTxInfo.pPayload= transmitEntry->tx_buf;
+ 678:../../../src/net/isa/isa.c ****     #ifdef TX_DEBUG
+ 679:../../../src/net/isa/isa.c **** 	//printf("TX Payload is: %s.\n\r", isa_rfTxInfo.pPayload);
+ 680:../../../src/net/isa/isa.c ****     #endif
+ 681:../../../src/net/isa/isa.c ****     isa_rfTxInfo.length=transmitEntry->length;
+ 682:../../../src/net/isa/isa.c ****     DHDR = configDHDR(link);
+ 683:../../../src/net/isa/isa.c ****     isa_rfTxInfo.pPayload[DHDR_INDEX] = DHDR;
+ 684:../../../src/net/isa/isa.c ****     isa_rfTxInfo.pPayload[SLOT_INDEX] = (global_slot & 0xFF); 
+ 685:../../../src/net/isa/isa.c ****     isa_rfTxInfo.pPayload[SRC_INDEX] = isa_id;//change
+ 686:../../../src/net/isa/isa.c ****     #ifdef JOIN_PROCESS
+ 687:../../../src/net/isa/isa.c ****     if(slot>=22 && isa_node_mode == ISA_GATEWAY){
+ 688:../../../src/net/isa/isa.c **** 	for(i=0;i<29;i++){
+ 689:../../../src/net/isa/isa.c **** 	 isa_rfTxInfo.pPayload[DAUX_INDEX+i]=DAUX[i];
+ 690:../../../src/net/isa/isa.c **** 	 //printf("DAUX[%d]=%d\r\n",i,isa_rfTxInfo.pPayload[DAUX_INDEX+i]);
+ 691:../../../src/net/isa/isa.c ****         }
+ 692:../../../src/net/isa/isa.c ****     } 
+ 693:../../../src/net/isa/isa.c ****     #endif
+ 694:../../../src/net/isa/isa.c ****     // FIXME a small bug. should not happen and should be fixed in _isa_init_sync()
+ 695:../../../src/net/isa/isa.c ****     //if(AFTER_FIRST_SYNC == 1){    
+ 696:../../../src/net/isa/isa.c **** 	_nrk_high_speed_timer_reset();
+ 697:../../../src/net/isa/isa.c **** 	nrk_high_speed_timer_wait(0,WAIT_TIME_BEFORE_TX);
+ 698:../../../src/net/isa/isa.c **** 	//AFTER_FIRST_SYNC = 0;
+ 699:../../../src/net/isa/isa.c ****     //}
+ 700:../../../src/net/isa/isa.c **** 	    #ifdef TX_RX_DEBUG
+ 701:../../../src/net/isa/isa.c **** 		nrk_gpio_set(NRK_DEBUG_1);
+ 702:../../../src/net/isa/isa.c ****    		//printf("T\r\n");
+ 703:../../../src/net/isa/isa.c **** 	    #endif
+ 704:../../../src/net/isa/isa.c ****     if(rf_tx_tdma_packet (&isa_rfTxInfo,slot_start_time,isa_param.tx_guard_time,&tx_start_time))
+ 705:../../../src/net/isa/isa.c ****     {	transmitEntry->transmitPending = false;
+ 706:../../../src/net/isa/isa.c ****     	txCount++;
+ 707:../../../src/net/isa/isa.c ****     	nrk_gpio_clr(NRK_DEBUG_1);
+ 708:../../../src/net/isa/isa.c ****     	nrk_led_toggle(RED_LED);
+ 709:../../../src/net/isa/isa.c ****     //	putchar ('t');
+ 710:../../../src/net/isa/isa.c ****     		//("rx_start_time is %d.\n\r",_nrk_high_speed_timer_get());
+ 711:../../../src/net/isa/isa.c **** 	offsetY = tx_start_time - slot_start_time;
+ 712:../../../src/net/isa/isa.c **** 	//printf("offset Y is %d.\n\r",offsetY);
+ 713:../../../src/net/isa/isa.c **** 	#ifdef HIGH_TIMER_DEBUG
+ 714:../../../src/net/isa/isa.c **** 	    //printf("In isa.c _isa_tx(): offsetY is %d, tx_start_time is %d\n\r",offsetY,tx_start_time);
+ 715:../../../src/net/isa/isa.c **** 	#endif
+ 716:../../../src/net/isa/isa.c ****     }
+ 717:../../../src/net/isa/isa.c ****     nrk_event_signal (isa_tx_done_signal);
+ 718:../../../src/net/isa/isa.c ****     // ACK required
+ 719:../../../src/net/isa/isa.c ****     if(DHDR & (1<<7)) {  //&& isa_node_mode!=ISA_GATEWAY){ //Azriel
+ 720:../../../src/net/isa/isa.c **** 
+ 721:../../../src/net/isa/isa.c ****     	//putchar('b');
+ 722:../../../src/net/isa/isa.c ****     	rf_polling_rx_on ();
+ 723:../../../src/net/isa/isa.c ****     	nrk_gpio_set(NRK_DEBUG_1);
+ 724:../../../src/net/isa/isa.c **** 	_nrk_high_speed_timer_reset();
+ 725:../../../src/net/isa/isa.c **** 	nrk_high_speed_timer_wait(0,CPU_PROCESS_TIME);
+ 726:../../../src/net/isa/isa.c **** //nrk_gpio_set(NRK_DEBUG_1);
+ 727:../../../src/net/isa/isa.c **** 	// Timing for waiting for receiving ACK
+ 728:../../../src/net/isa/isa.c **** 	timeout = _nrk_os_timer_get();
+ 729:../../../src/net/isa/isa.c **** 	timeout+=2;  // 2ms
+ 730:../../../src/net/isa/isa.c **** 	n = 0;
+ 731:../../../src/net/isa/isa.c **** 	while ((n = rf_rx_check_sfd()) == 0) {
+ 732:../../../src/net/isa/isa.c **** 	    if (_nrk_os_timer_get() > timeout) {
+ 733:../../../src/net/isa/isa.c **** 		tmp = slot - previous_tx_slot;
+ 734:../../../src/net/isa/isa.c **** 		if(slot == previous_tx_slot)
+ 735:../../../src/net/isa/isa.c **** 		    slot_expired += 25;
+ 736:../../../src/net/isa/isa.c **** 		else{
+ 737:../../../src/net/isa/isa.c **** 		    tmp = slot - previous_tx_slot;
+ 738:../../../src/net/isa/isa.c **** 		    if(tmp>0)
+ 739:../../../src/net/isa/isa.c **** 			slot_expired += tmp;
+ 740:../../../src/net/isa/isa.c **** 		    else
+ 741:../../../src/net/isa/isa.c **** 			slot_expired += 25+tmp;
+ 742:../../../src/net/isa/isa.c **** 		}
+ 743:../../../src/net/isa/isa.c **** 		//printf("%d,%d,%d,%d,%d\n\r",slot_expired,tmp_curSec,tmp_offsetSec,tmp_offsetNanoSec,++tmp_count
+ 744:../../../src/net/isa/isa.c **** 		//printf("%d,%d\n\r",slot_expired,isa_param.channel);
+ 745:../../../src/net/isa/isa.c **** 		//printf("%d,%d,%d\n\r",slot_expired,slot,previous_tx_slot);
+ 746:../../../src/net/isa/isa.c **** 	    //spend too much time on waiting for a pkt's arrival
+ 747:../../../src/net/isa/isa.c **** 		rf_rx_off ();
+ 748:../../../src/net/isa/isa.c **** 		nrk_gpio_clr(NRK_DEBUG_1);
+ 749:../../../src/net/isa/isa.c **** 		#ifdef LED_DEBUG
+ 750:../../../src/net/isa/isa.c **** 		    nrk_led_clr(1);
+ 751:../../../src/net/isa/isa.c **** 		#endif
+ 752:../../../src/net/isa/isa.c **** 		#ifdef RX_DEBUG
+ 753:../../../src/net/isa/isa.c **** 		 putchar('s');
+ 754:../../../src/net/isa/isa.c **** 		// printf("%d", slot);
+ 755:../../../src/net/isa/isa.c **** 
+ 756:../../../src/net/isa/isa.c **** 		 //   printf("sfd times out.\n\r");
+ 757:../../../src/net/isa/isa.c **** 		    #endif
+ 758:../../../src/net/isa/isa.c **** 		//nrk_gpio_clr(NRK_DEBUG_1);
+ 759:../../../src/net/isa/isa.c **** 		 packetsLost++;
+ 760:../../../src/net/isa/isa.c **** 		 transmitEntry-> slot_callback(transmitEntry);
+ 761:../../../src/net/isa/isa.c **** 		 return;
+ 762:../../../src/net/isa/isa.c **** 	    }
+ 763:../../../src/net/isa/isa.c **** 	}
+ 764:../../../src/net/isa/isa.c **** 	//nrk_gpio_clr(NRK_DEBUG_1);
+ 765:../../../src/net/isa/isa.c **** 	timeout = _nrk_os_timer_get(); 
+ 766:../../../src/net/isa/isa.c **** 	timeout += 2;               // 5ms
+ 767:../../../src/net/isa/isa.c **** 	if (n != 0) {
+ 768:../../../src/net/isa/isa.c **** 	    n = 0;
+ 769:../../../src/net/isa/isa.c **** 	    //printf("Packet on its way\n\r");
+ 770:../../../src/net/isa/isa.c **** 	    if (ISAMASK(link->neighbor->typeInfo, CLOCK_PREFERRED) == CLOCK_PREFERRED ) c = 4 ;
+ 771:../../../src/net/isa/isa.c **** 	    else c = 2;
+ 772:../../../src/net/isa/isa.c **** 	    while ((n = rf_polling_rx_packet (true, c)) == 0)		 {	//changed to 2 by Azriel for gateway
+ 773:../../../src/net/isa/isa.c **** 		if (_nrk_os_timer_get () > timeout) {
+ 774:../../../src/net/isa/isa.c **** 		#ifdef RX_DEBUG
+ 775:../../../src/net/isa/isa.c **** 		    printf("packet is too long, times out.\n\r");
+ 776:../../../src/net/isa/isa.c **** 		#endif	
+ 777:../../../src/net/isa/isa.c **** 		    packetsLost++;
+ 778:../../../src/net/isa/isa.c **** 		    tmp_curSec = _nrk_os_timer_get();
+ 779:../../../src/net/isa/isa.c **** 		    transmitEntry-> slot_callback(transmitEntry);
+ 780:../../../src/net/isa/isa.c **** 		    // spend too much time on receiving pkt.
+ 781:../../../src/net/isa/isa.c ****                     return;          // huge timeout as fail safe
+ 782:../../../src/net/isa/isa.c **** 		}
+ 783:../../../src/net/isa/isa.c **** 
+ 784:../../../src/net/isa/isa.c **** 		//if(n==-6)		
+ 785:../../../src/net/isa/isa.c **** 		  //  printf("%d\n\r",_nrk_os_timer_get());	
+ 786:../../../src/net/isa/isa.c **** 	    }
+ 787:../../../src/net/isa/isa.c **** 	}
+ 788:../../../src/net/isa/isa.c **** 
+ 789:../../../src/net/isa/isa.c **** 	if  (n !=1){	//size of packet must have been wrong
+ 790:../../../src/net/isa/isa.c **** 		putchar('f');
+ 791:../../../src/net/isa/isa.c **** 		packetsLost++;
+ 792:../../../src/net/isa/isa.c **** 		printf("DHDRcount:%d", DHDRcount);
+ 793:../../../src/net/isa/isa.c **** 	}
+ 794:../../../src/net/isa/isa.c **** 	if (n==1)
+ 795:../../../src/net/isa/isa.c **** 	rf_rx_off ();
+ 796:../../../src/net/isa/isa.c **** 	nrk_gpio_clr(NRK_DEBUG_1);
+ 797:../../../src/net/isa/isa.c **** 	if (n == 1) {// successfully received ACK
+ 798:../../../src/net/isa/isa.c **** 	   rxCount++;
+ 799:../../../src/net/isa/isa.c **** 		slot_expired = 0;
+ 800:../../../src/net/isa/isa.c **** 	    //isa_rx_data_ready = 1;
+ 801:../../../src/net/isa/isa.c **** 	    DHR = isa_rfRxInfo.pPayload[DHR_INDEX];
+ 802:../../../src/net/isa/isa.c **** 	    #ifdef ACK_DEBUG
+ 803:../../../src/net/isa/isa.c **** 
+ 804:../../../src/net/isa/isa.c **** 	    #endif ACK_DEBUG
+ 805:../../../src/net/isa/isa.c **** 	    if((DHDR & (1<<7))) {  //  &&isa_node_mode!=ISA_GATEWAY){
+ 806:../../../src/net/isa/isa.c **** #ifdef TIME
+ 807:../../../src/net/isa/isa.c **** 		if(DHR & (1<<7)){
+ 808:../../../src/net/isa/isa.c **** 			offsetX = ((0x0000|isa_rfRxInfo.pPayload[OFFSET_HIGH])<<8)&0xff00 + 0x0000|isa_rfRxInfo.pPayload
+ 809:../../../src/net/isa/isa.c **** 		    #ifdef ACK_DEBUG
+ 810:../../../src/net/isa/isa.c **** 		//	printf("offset X is %d.\n\r", offsetX);
+ 811:../../../src/net/isa/isa.c **** 		//	printf("offset Y is %d.\n\r", offsetY);
+ 812:../../../src/net/isa/isa.c **** 		    nrk_led_toggle(ORANGE_LED);
+ 813:../../../src/net/isa/isa.c **** 		    putchar('a');
+ 814:../../../src/net/isa/isa.c **** 		    #endif ACK_DEBUG
+ 815:../../../src/net/isa/isa.c **** 
+ 816:../../../src/net/isa/isa.c **** //printf("%d,%d\n\r",offsetX,offsetY);
+ 817:../../../src/net/isa/isa.c **** 		    time_correction = offsetX - offsetY;
+ 818:../../../src/net/isa/isa.c **** 		    #ifdef HIGH_TIMER_DEBUG
+ 819:../../../src/net/isa/isa.c **** 			printf("time correction is %d.\n\r", time_correction);
+ 820:../../../src/net/isa/isa.c **** 		    #endif
+ 821:../../../src/net/isa/isa.c **** 		    printf("time correction is %d.\n\r", time_correction);
+ 822:../../../src/net/isa/isa.c **** 		    // SYNC as a by-product of communication.
+ 823:../../../src/net/isa/isa.c **** 		    //tmp_nrk_prev_timer_val = _nrk_prev_timer_val;
+ 824:../../../src/net/isa/isa.c **** //printf("%d\n\r",time_correction);
+ 825:../../../src/net/isa/isa.c **** //printf("%d\n\r",HIGH_TIMER_TICKES_PER_MILISEC-time_correction%HIGH_TIMER_TICKES_PER_MILISEC);
+ 826:../../../src/net/isa/isa.c **** 		    timeout=50;
+ 827:../../../src/net/isa/isa.c **** 		    curSec = _nrk_os_timer_get();
+ 828:../../../src/net/isa/isa.c **** 		    nrk_gpio_set(NRK_DEBUG_2);
+ 829:../../../src/net/isa/isa.c **** 		    if(time_correction >= 0&&curSec<7){
+ 830:../../../src/net/isa/isa.c **** 			tmp_curSec = curSec;
+ 831:../../../src/net/isa/isa.c **** 			/*do{
+ 832:../../../src/net/isa/isa.c **** 			    curSec = _nrk_os_timer_get();
+ 833:../../../src/net/isa/isa.c **** 			}while(curSec<=7);*/
+ 834:../../../src/net/isa/isa.c **** 			_nrk_os_timer_stop();
+ 835:../../../src/net/isa/isa.c **** 
+ 836:../../../src/net/isa/isa.c **** 			//_nrk_os_timer_reset();
+ 837:../../../src/net/isa/isa.c **** 
+ 838:../../../src/net/isa/isa.c **** 			//Basically speed up by offsetSec ticks of OS timer - offsetNanoSeconds
+ 839:../../../src/net/isa/isa.c **** 			offsetSec = time_correction/HIGH_TIMER_TICKES_PER_MILISEC+1; //This should be called offSetMilli
+ 840:../../../src/net/isa/isa.c **** 			tmp_offsetSec = offsetSec;
+ 841:../../../src/net/isa/isa.c **** 			offsetNanoSec = HIGH_TIMER_TICKES_PER_MILISEC-time_correction%HIGH_TIMER_TICKES_PER_MILISEC;	//T
+ 842:../../../src/net/isa/isa.c **** 			tmp_offsetNanoSec = offsetNanoSec;																//This is the high speed timer ticks that we s
+ 843:../../../src/net/isa/isa.c **** //printf("%d,%d\n\r",curSec,offsetSec);
+ 844:../../../src/net/isa/isa.c **** 			    //if(curSec+offsetSec>=10)
+ 845:../../../src/net/isa/isa.c **** 			    	//printf("%d,%d\n\r",curSec,offsetSec);
+ 846:../../../src/net/isa/isa.c **** 			/*if(curSec+offsetSec>=9){
+ 847:../../../src/net/isa/isa.c **** 			    _nrk_set_next_wakeup(curSec+offsetSec+2);
+ 848:../../../src/net/isa/isa.c **** 			    if(curSec+offsetSec>=10)
+ 849:../../../src/net/isa/isa.c **** 			    	printf("%d,%d\n\r",curSec,offsetSec);
+ 850:../../../src/net/isa/isa.c **** 			}
+ 851:../../../src/net/isa/isa.c **** 			else
+ 852:../../../src/net/isa/isa.c **** 			    _nrk_set_next_wakeup(10);*/
+ 853:../../../src/net/isa/isa.c **** 			_nrk_high_speed_timer_reset();
+ 854:../../../src/net/isa/isa.c **** 			nrk_spin_wait_us(50);
+ 855:../../../src/net/isa/isa.c **** 			//printf("%d,%d,%d\n\r",curSec,offsetSec,offsetNanoSec);
+ 856:../../../src/net/isa/isa.c **** 		//	nrk_gpio_set(NRK_DEBUG_2);
+ 857:../../../src/net/isa/isa.c **** 			do{}while(_nrk_high_speed_timer_get()<offsetNanoSec);	//Why not use high_speed_timer_wait here??
+ 858:../../../src/net/isa/isa.c **** 		//	nrk_gpio_clr(NRK_DEBUG_2);
+ 859:../../../src/net/isa/isa.c **** 			//nrk_high_speed_timer_wait(0,offsetNanoSec);
+ 860:../../../src/net/isa/isa.c **** 			//nrk_high_speed_timer_wait(0,4912);
+ 861:../../../src/net/isa/isa.c **** 
+ 862:../../../src/net/isa/isa.c **** 			_nrk_os_timer_set(curSec+offsetSec);
+ 863:../../../src/net/isa/isa.c **** 			nrk_spin_wait_us(100);
+ 864:../../../src/net/isa/isa.c **** 			#ifdef CORRECTION
+ 865:../../../src/net/isa/isa.c **** 			    nrk_gpio_set(NRK_DEBUG_1);
+ 866:../../../src/net/isa/isa.c **** 			    nrk_gpio_clr(NRK_DEBUG_1);
+ 867:../../../src/net/isa/isa.c **** 			#endif
+ 868:../../../src/net/isa/isa.c **** //printf("p\n\r");	
+ 869:../../../src/net/isa/isa.c **** 			_nrk_os_timer_start();
+ 870:../../../src/net/isa/isa.c **** 		    }else if(-time_correction>8000&&curSec<7){
+ 871:../../../src/net/isa/isa.c **** 		    	putchar('!');
+ 872:../../../src/net/isa/isa.c **** 			_nrk_os_timer_stop();
+ 873:../../../src/net/isa/isa.c **** 			//_nrk_os_timer_reset();
+ 874:../../../src/net/isa/isa.c **** 			_nrk_high_speed_timer_reset();
+ 875:../../../src/net/isa/isa.c **** 			do{
+ 876:../../../src/net/isa/isa.c **** 			    NOP();
+ 877:../../../src/net/isa/isa.c **** 			    NOP();
+ 878:../../../src/net/isa/isa.c **** 			    NOP();
+ 879:../../../src/net/isa/isa.c **** 			    NOP();
+ 880:../../../src/net/isa/isa.c **** 			}while(timeout--);
+ 881:../../../src/net/isa/isa.c **** 			//_nrk_set_next_wakeup(10);
+ 882:../../../src/net/isa/isa.c **** 			#ifdef CORRECTION
+ 883:../../../src/net/isa/isa.c **** 			nrk_gpio_set(NRK_DEBUG_2);
+ 884:../../../src/net/isa/isa.c **** 			//nrk_high_speed_timer_wait(0,22800); // for test
+ 885:../../../src/net/isa/isa.c **** 			nrk_gpio_clr(NRK_DEBUG_2);
+ 886:../../../src/net/isa/isa.c **** 			#endif
+ 887:../../../src/net/isa/isa.c **** 			//printf("%d\n\r",-time_correction);
+ 888:../../../src/net/isa/isa.c **** 			nrk_high_speed_timer_wait(0,-time_correction);
+ 889:../../../src/net/isa/isa.c **** 			_nrk_os_timer_set(curSec);
+ 890:../../../src/net/isa/isa.c **** 			timeout = 100;
+ 891:../../../src/net/isa/isa.c **** 			do{
+ 892:../../../src/net/isa/isa.c **** 			    NOP();
+ 893:../../../src/net/isa/isa.c **** 			    NOP();
+ 894:../../../src/net/isa/isa.c **** 			    NOP();
+ 895:../../../src/net/isa/isa.c **** 			    NOP();
+ 896:../../../src/net/isa/isa.c **** 			}while(timeout--);
+ 897:../../../src/net/isa/isa.c **** 			_nrk_os_timer_start();
+ 898:../../../src/net/isa/isa.c **** 		    }
+ 899:../../../src/net/isa/isa.c **** 		    //_nrk_prev_timer_val=tmp_nrk_prev_timer_val;
+ 900:../../../src/net/isa/isa.c **** //nrk_cur_task_TCB->next_wakeup = 10;
+ 901:../../../src/net/isa/isa.c **** 		    _nrk_high_speed_timer_reset();
+ 902:../../../src/net/isa/isa.c **** 		    nrk_spin_wait_us(50);
+ 903:../../../src/net/isa/isa.c **** 		    nrk_gpio_clr(NRK_DEBUG_2);
+ 904:../../../src/net/isa/isa.c **** 		}
+ 905:../../../src/net/isa/isa.c **** #endif
+ 906:../../../src/net/isa/isa.c **** 
+ 907:../../../src/net/isa/isa.c **** 	//	************************* Trying time correction
+ 908:../../../src/net/isa/isa.c **** 		if(DHR & (1<<7)){
+ 909:../../../src/net/isa/isa.c **** 					offsetX = ((0x0000|isa_rfRxInfo.pPayload[OFFSET_HIGH])<<8)&0xff00 + 0x0000|isa_rfRxInfo.pPaylo
+ 910:../../../src/net/isa/isa.c **** 				    #ifdef ACK_DEBUG
+ 911:../../../src/net/isa/isa.c **** 				    nrk_led_toggle(ORANGE_LED);
+ 912:../../../src/net/isa/isa.c **** 				    putchar('a');
+ 913:../../../src/net/isa/isa.c **** 				    #endif ACK_DEBUG
+ 914:../../../src/net/isa/isa.c **** 
+ 915:../../../src/net/isa/isa.c **** 
+ 916:../../../src/net/isa/isa.c **** 				    time_correction = offsetX - offsetY;
+ 917:../../../src/net/isa/isa.c **** 				    #ifdef HIGH_TIMER_DEBUG
+ 918:../../../src/net/isa/isa.c **** 					printf("time correction is %d.\n\r", time_correction);
+ 919:../../../src/net/isa/isa.c **** 				    #endif
+ 920:../../../src/net/isa/isa.c **** 
+ 921:../../../src/net/isa/isa.c **** 				    timeout=50;
+ 922:../../../src/net/isa/isa.c **** 				    curSec = _nrk_os_timer_get();
+ 923:../../../src/net/isa/isa.c **** 				    nrk_gpio_set(NRK_DEBUG_2);
+ 924:../../../src/net/isa/isa.c **** 				    if(time_correction >= 0){
+ 925:../../../src/net/isa/isa.c **** 					tmp_curSec = curSec;
+ 926:../../../src/net/isa/isa.c **** 
+ 927:../../../src/net/isa/isa.c **** 					_nrk_os_timer_stop();
+ 928:../../../src/net/isa/isa.c **** 
+ 929:../../../src/net/isa/isa.c **** 					offsetSec = time_correction/HIGH_TIMER_TICKES_PER_MILISEC+1; //This should be called offSetMil
+ 930:../../../src/net/isa/isa.c **** 					tmp_offsetSec = offsetSec;
+ 931:../../../src/net/isa/isa.c **** 					offsetNanoSec = HIGH_TIMER_TICKES_PER_MILISEC-time_correction%HIGH_TIMER_TICKES_PER_MILISEC;	/
+ 932:../../../src/net/isa/isa.c **** 					tmp_offsetNanoSec = offsetNanoSec;																//This is the high speed timer ticks that we
+ 933:../../../src/net/isa/isa.c **** 
+ 934:../../../src/net/isa/isa.c **** 					_nrk_high_speed_timer_reset();
+ 935:../../../src/net/isa/isa.c **** 					nrk_spin_wait_us(50);
+ 936:../../../src/net/isa/isa.c **** 
+ 937:../../../src/net/isa/isa.c **** 					nrk_high_speed_timer_wait(0,offsetNanoSec);
+ 938:../../../src/net/isa/isa.c **** 					//nrk_high_speed_timer_wait(0,4912);
+ 939:../../../src/net/isa/isa.c **** 
+ 940:../../../src/net/isa/isa.c **** 					_nrk_os_timer_set(curSec+offsetSec);
+ 941:../../../src/net/isa/isa.c **** 					nrk_spin_wait_us(100);
+ 942:../../../src/net/isa/isa.c **** 					#ifdef CORRECTION
+ 943:../../../src/net/isa/isa.c **** 					    nrk_gpio_set(NRK_DEBUG_1);
+ 944:../../../src/net/isa/isa.c **** 					    nrk_gpio_clr(NRK_DEBUG_1);
+ 945:../../../src/net/isa/isa.c **** 					#endif
+ 946:../../../src/net/isa/isa.c **** 		//printf("p\n\r");
+ 947:../../../src/net/isa/isa.c **** 					_nrk_os_timer_start();
+ 948:../../../src/net/isa/isa.c **** 
+ 949:../../../src/net/isa/isa.c **** 
+ 950:../../../src/net/isa/isa.c **** 				    }else if(time_correction<0){
+ 951:../../../src/net/isa/isa.c **** 				    	putchar('!');
+ 952:../../../src/net/isa/isa.c **** 					_nrk_os_timer_stop();
+ 953:../../../src/net/isa/isa.c **** 
+ 954:../../../src/net/isa/isa.c **** 					_nrk_high_speed_timer_reset();
+ 955:../../../src/net/isa/isa.c **** 
+ 956:../../../src/net/isa/isa.c **** 					//_nrk_set_next_wakeup(10);
+ 957:../../../src/net/isa/isa.c **** 					#ifdef CORRECTION
+ 958:../../../src/net/isa/isa.c **** 					nrk_gpio_set(NRK_DEBUG_2);
+ 959:../../../src/net/isa/isa.c **** 					//nrk_high_speed_timer_wait(0,22800); // for test
+ 960:../../../src/net/isa/isa.c **** 					nrk_gpio_clr(NRK_DEBUG_2);
+ 961:../../../src/net/isa/isa.c **** 					#endif
+ 962:../../../src/net/isa/isa.c **** 					//printf("%d\n\r",-time_correction);
+ 963:../../../src/net/isa/isa.c **** 					nrk_high_speed_timer_wait(0,-time_correction);
+ 964:../../../src/net/isa/isa.c **** 					_nrk_os_timer_set(curSec);
+ 965:../../../src/net/isa/isa.c **** 
+ 966:../../../src/net/isa/isa.c **** 					_nrk_os_timer_start();
+ 967:../../../src/net/isa/isa.c **** 				    }
+ 968:../../../src/net/isa/isa.c **** 				    //_nrk_prev_timer_val=tmp_nrk_prev_timer_val;
+ 969:../../../src/net/isa/isa.c **** 		//nrk_cur_task_TCB->next_wakeup = 10;
+ 970:../../../src/net/isa/isa.c **** 				    _nrk_high_speed_timer_reset();
+ 971:../../../src/net/isa/isa.c **** 				    nrk_spin_wait_us(50);
+ 972:../../../src/net/isa/isa.c **** 				    nrk_gpio_clr(NRK_DEBUG_2);
+ 973:../../../src/net/isa/isa.c **** 				}
+ 974:../../../src/net/isa/isa.c **** 
+ 975:../../../src/net/isa/isa.c **** 
+ 976:../../../src/net/isa/isa.c **** 		//****************************************************
+ 977:../../../src/net/isa/isa.c **** 
+ 978:../../../src/net/isa/isa.c **** 	    }		
+ 979:../../../src/net/isa/isa.c ****         }
+ 980:../../../src/net/isa/isa.c **** 
+ 981:../../../src/net/isa/isa.c ****     }//wait for ACK 
+ 982:../../../src/net/isa/isa.c ****     //printf("Pointer %p", transmitEntry->slot_callback);
+ 983:../../../src/net/isa/isa.c ****     transmitEntry-> slot_callback(transmitEntry);
+ 984:../../../src/net/isa/isa.c **** }
+ 985:../../../src/net/isa/isa.c **** 
+ 986:../../../src/net/isa/isa.c **** /*
+ 987:../../../src/net/isa/isa.c **** uint8_t _isa_join_process ()
+ 988:../../../src/net/isa/isa.c **** {
+ 989:../../../src/net/isa/isa.c ****     int8_t n;
+ 990:../../../src/net/isa/isa.c ****     uint16_t timeout;
+ 991:../../../src/net/isa/isa.c ****     uint16_t timer;
+ 992:../../../src/net/isa/isa.c ****     uint8_t tdma_start_tick;
+ 993:../../../src/net/isa/isa.c ****     uint8_t battery_save_cnt;
+ 994:../../../src/net/isa/isa.c ****     uint8_t last_nrk_tick;
+ 995:../../../src/net/isa/isa.c ****     uint8_t i;
+ 996:../../../src/net/isa/isa.c **** 
+ 997:../../../src/net/isa/isa.c ****     timer=0;
+ 998:../../../src/net/isa/isa.c ****     battery_save_cnt=0;
+ 999:../../../src/net/isa/isa.c **** 
+1000:../../../src/net/isa/isa.c ****     while(1)
+1001:../../../src/net/isa/isa.c ****     {
+1002:../../../src/net/isa/isa.c **** 	
+1003:../../../src/net/isa/isa.c **** 	rf_set_rx (&isa_rfRxInfo, isa_param.channel);       // sets rx buffer and channel 
+1004:../../../src/net/isa/isa.c **** 	rf_polling_rx_on ();
+1005:../../../src/net/isa/isa.c **** 	n = 0;
+1006:../../../src/net/isa/isa.c **** 	_isa_sync_ok = 0;
+1007:../../../src/net/isa/isa.c **** 	last_nrk_tick=0;  // should be 0 going in
+1008:../../../src/net/isa/isa.c **** 	//_nrk_prev_timer_val=250;
+1009:../../../src/net/isa/isa.c **** 	//_nrk_set_next_wakeup(250);
+1010:../../../src/net/isa/isa.c **** 	//_nrk_os_timer_set(0);
+1011:../../../src/net/isa/isa.c **** 	//timeout=200;
+1012:../../../src/net/isa/isa.c **** 	while ((n = rf_rx_check_sfd()) == 0) {
+1013:../../../src/net/isa/isa.c **** 	    // every OS tick 
+1014:../../../src/net/isa/isa.c **** 	    if(last_nrk_tick!=_nrk_os_timer_get()) {
+1015:../../../src/net/isa/isa.c **** 		last_nrk_tick=_nrk_os_timer_get();
+1016:../../../src/net/isa/isa.c **** 		timer++;
+1017:../../../src/net/isa/isa.c **** 		if(timer>ISA_TOKEN_TIMEOUT){
+1018:../../../src/net/isa/isa.c **** 		    timer=0;
+1019:../../../src/net/isa/isa.c **** 		    break;
+1020:../../../src/net/isa/isa.c **** 		}
+1021:../../../src/net/isa/isa.c **** 	    }
+1022:../../../src/net/isa/isa.c **** 	}
+1023:../../../src/net/isa/isa.c **** 	//_nrk_high_speed_timer_reset();
+1024:../../../src/net/isa/isa.c **** 
+1025:../../../src/net/isa/isa.c **** 	tdma_start_tick=_nrk_os_timer_get();
+1026:../../../src/net/isa/isa.c **** 	timeout = tdma_start_tick+4;
+1027:../../../src/net/isa/isa.c **** 	// an interrupt could happen in here and mess things up
+1028:../../../src/net/isa/isa.c **** 	if (n != 0) {
+1029:../../../src/net/isa/isa.c **** 	    n = 0;
+1030:../../../src/net/isa/isa.c **** 	// Packet on its way
+1031:../../../src/net/isa/isa.c **** 	    while ((n = rf_polling_rx_packet (false,128)) == 0) {
+1032:../../../src/net/isa/isa.c **** 		if (_nrk_os_timer_get () > timeout)
+1033:../../../src/net/isa/isa.c **** 		{
+1034:../../../src/net/isa/isa.c **** 		    //nrk_kprintf( PSTR("Pkt timed out\r\n") );
+1035:../../../src/net/isa/isa.c **** 		    break;          // huge timeout as failsafe
+1036:../../../src/net/isa/isa.c **** 		}
+1037:../../../src/net/isa/isa.c **** 	    }
+1038:../../../src/net/isa/isa.c **** 	}
+1039:../../../src/net/isa/isa.c **** 	rf_rx_off (); 
+1040:../../../src/net/isa/isa.c **** 	if (n == 1){ //&& isa_rfRxInfo.length>0) {
+1041:../../../src/net/isa/isa.c **** 	   // if(isa_rfRxInfo.pPayload[SRC_INDEX]==isa_clk_src_id){//change
+1042:../../../src/net/isa/isa.c **** 		// CRC and checksum passed
+1043:../../../src/net/isa/isa.c **** 		if(isa_rfRxInfo.pPayload[DAUX_INDEX+7]==10){ // DAUX packet
+1044:../../../src/net/isa/isa.c **** 			isa_rx_data_ready = 1;	
+1045:../../../src/net/isa/isa.c **** 			//global_slot = (volatile)isa_rfRxInfo.pPayload[SLOT_INDEX];
+1046:../../../src/net/isa/isa.c **** 
+1047:../../../src/net/isa/isa.c **** 			isa_set_channel_pattern(isa_rfRxInfo.pPayload[DAUX_INDEX+9]); //set channel hopping pattern
+1048:../../../src/net/isa/isa.c **** 			channelIndex=isa_rfRxInfo.pPayload[DAUX_INDEX+10];
+1049:../../../src/net/isa/isa.c **** 			currentChannel = slottedPattern[channelIndex];
+1050:../../../src/net/isa/isa.c **** 			isa_set_channel(currentChannel);
+1051:../../../src/net/isa/isa.c **** 			for(i=0;i<4;i++){  // set tx slots
+1052:../../../src/net/isa/isa.c **** 			    if(isa_rfRxInfo.pPayload[DAUX_INDEX+19+i]==0)
+1053:../../../src/net/isa/isa.c **** 				break;
+1054:../../../src/net/isa/isa.c **** 			    else{
+1055:../../../src/net/isa/isa.c **** 				isa_tdma_tx_mask |= ((uint32_t) 1) << isa_rfRxInfo.pPayload[DAUX_INDEX+19+i];
+1056:../../../src/net/isa/isa.c **** 				isa_sched[isa_rfRxInfo.pPayload[DAUX_INDEX+19+i]] = 1;
+1057:../../../src/net/isa/isa.c **** 				tx_slot_from_join[i]=isa_rfRxInfo.pPayload[DAUX_INDEX+19+i];
+1058:../../../src/net/isa/isa.c **** 			//	printf("TX:%d\r\n",tx_slot_from_join[i]);
+1059:../../../src/net/isa/isa.c ****                             }
+1060:../../../src/net/isa/isa.c **** 			}			
+1061:../../../src/net/isa/isa.c **** 			
+1062:../../../src/net/isa/isa.c **** 			for(i=0;i<4;i++){  // set rx slots
+1063:../../../src/net/isa/isa.c **** 			    if(isa_rfRxInfo.pPayload[DAUX_INDEX+23+i]==0)
+1064:../../../src/net/isa/isa.c **** 				break;
+1065:../../../src/net/isa/isa.c **** 			    else{
+1066:../../../src/net/isa/isa.c **** 				isa_tdma_rx_mask |= ((uint32_t) 1) << isa_rfRxInfo.pPayload[DAUX_INDEX+23+i];
+1067:../../../src/net/isa/isa.c **** 				isa_sched[isa_rfRxInfo.pPayload[DAUX_INDEX+23+i]] = 1;
+1068:../../../src/net/isa/isa.c **** 			    }
+1069:../../../src/net/isa/isa.c **** 			}
+1070:../../../src/net/isa/isa.c **** 			nrk_event_signal(SIG(isa_rx_pkt_signal));
+1071:../../../src/net/isa/isa.c **** 		break;
+1072:../../../src/net/isa/isa.c ****  		}
+1073:../../../src/net/isa/isa.c **** 	   // }
+1074:../../../src/net/isa/isa.c **** 	}
+1075:../../../src/net/isa/isa.c ****     }
+1076:../../../src/net/isa/isa.c **** 
+1077:../../../src/net/isa/isa.c **** 
+1078:../../../src/net/isa/isa.c **** 
+1079:../../../src/net/isa/isa.c ****     _isa_join_ok=1;
+1080:../../../src/net/isa/isa.c ****     isa_rx_pkt_release();
+1081:../../../src/net/isa/isa.c ****     return _isa_join_ok;
+1082:../../../src/net/isa/isa.c **** }
+1083:../../../src/net/isa/isa.c **** */
+1084:../../../src/net/isa/isa.c **** 
+1085:../../../src/net/isa/isa.c **** 
+1086:../../../src/net/isa/isa.c **** int8_t isa_join_ready()
+1087:../../../src/net/isa/isa.c **** {
+ 665               	.LM67:
+ 666               	.LFBB12:
+ 667               	/* prologue: frame size=0 */
+ 668               	/* prologue end (size=0) */
+1088:../../../src/net/isa/isa.c ****     if (_isa_join_ok ==  1)
+ 670               	.LM68:
+ 671 01ba 8091 0000 		lds r24,_isa_join_ok
+ 672 01be 8130      		cpi r24,lo8(1)
+ 673 01c0 01F4      		brne .L40
+ 675               	.LM69:
+ 676 01c2 81E0      		ldi r24,lo8(1)
+ 677 01c4 90E0      		ldi r25,hi8(1)
+ 678 01c6 0895      		ret
+ 679               	.L40:
+ 680 01c8 8FEF      		ldi r24,lo8(-1)
+ 681 01ca 9FEF      		ldi r25,hi8(-1)
+1089:../../../src/net/isa/isa.c ****         return NRK_OK;
+1090:../../../src/net/isa/isa.c ****     else
+1091:../../../src/net/isa/isa.c ****         return NRK_ERROR;
+1092:../../../src/net/isa/isa.c **** }
+ 683               	.LM70:
+ 684 01cc 0895      		ret
+ 685               	/* epilogue: frame size=0 */
+ 686               	/* epilogue: noreturn */
+ 687               	/* epilogue end (size=0) */
+ 688               	/* function isa_join_ready size 10 (10) */
+ 690               	.Lscope12:
+ 692               		.stabd	78,0,0
+ 694               	.global	isa_task_config
+ 696               	isa_task_config:
+ 697               		.stabd	46,0,0
+1093:../../../src/net/isa/isa.c **** 
+1094:../../../src/net/isa/isa.c **** 
+1095:../../../src/net/isa/isa.c **** /** FIXME this is only a temporary function need to be more specified
+1096:../../../src/net/isa/isa.c ****  * _isa_init_sync()
+1097:../../../src/net/isa/isa.c ****  *
+1098:../../../src/net/isa/isa.c ****  * This function is used for join process.
+1099:../../../src/net/isa/isa.c ****  * A node that wants to join the network would keep listening first
+1100:../../../src/net/isa/isa.c ****  * and set up first sync.
+1101:../../../src/net/isa/isa.c ****  * 
+1102:../../../src/net/isa/isa.c ****  * Return: _isa_sync_ok.
+1103:../../../src/net/isa/isa.c ****  */
+1104:../../../src/net/isa/isa.c **** uint8_t _isa_init_sync ()
+1105:../../../src/net/isa/isa.c **** {
+1106:../../../src/net/isa/isa.c ****     int8_t n;
+1107:../../../src/net/isa/isa.c ****     uint16_t timeout;
+1108:../../../src/net/isa/isa.c ****     uint16_t timer;
+1109:../../../src/net/isa/isa.c ****     uint8_t tdma_start_tick;
+1110:../../../src/net/isa/isa.c ****     uint8_t battery_save_cnt;
+1111:../../../src/net/isa/isa.c ****     uint8_t last_nrk_tick;
+1112:../../../src/net/isa/isa.c ****     uint8_t tmp_nrk_prev_timer_val;
+1113:../../../src/net/isa/isa.c ****     //volatile uint16_t sfd_start_time;
+1114:../../../src/net/isa/isa.c **** 
+1115:../../../src/net/isa/isa.c **** 	//printf("%d,%d\n\r",isa_param.channel,global_slot);
+1116:../../../src/net/isa/isa.c ****   //  DISABLE_GLOBAL_INT ();
+1117:../../../src/net/isa/isa.c ****     timer=0;
+1118:../../../src/net/isa/isa.c ****     battery_save_cnt=0;
+1119:../../../src/net/isa/isa.c **** 
+1120:../../../src/net/isa/isa.c **** 
+1121:../../../src/net/isa/isa.c ****     while(1)
+1122:../../../src/net/isa/isa.c ****     {
+1123:../../../src/net/isa/isa.c **** 
+1124:../../../src/net/isa/isa.c ****     	//printf("Init sync \r\n");
+1125:../../../src/net/isa/isa.c **** 	isa_rfRxInfo.pPayload[DHDR_INDEX]=1;			//configDHDR(0); This will have to change
+1126:../../../src/net/isa/isa.c **** 	//isa_rfRxInfo.pPayload[SLOT_INDEX]=global_slot;
+1127:../../../src/net/isa/isa.c **** 	
+1128:../../../src/net/isa/isa.c **** 	#ifdef LED_DEBUG
+1129:../../../src/net/isa/isa.c **** 	    nrk_led_set(1);
+1130:../../../src/net/isa/isa.c **** 	#endif
+1131:../../../src/net/isa/isa.c **** 	rf_set_rx (&isa_rfRxInfo, isa_param.channel);       // sets rx buffer and channel 
+1132:../../../src/net/isa/isa.c **** 	rf_polling_rx_on ();
+1133:../../../src/net/isa/isa.c **** 	n = 0;
+1134:../../../src/net/isa/isa.c **** 	_isa_sync_ok = 0;
+1135:../../../src/net/isa/isa.c **** 	last_nrk_tick=0;  // should be 0 going in
+1136:../../../src/net/isa/isa.c **** 	//_nrk_prev_timer_val=250;
+1137:../../../src/net/isa/isa.c **** 	_nrk_set_next_wakeup(250);
+1138:../../../src/net/isa/isa.c **** 	_nrk_os_timer_set(0);
+1139:../../../src/net/isa/isa.c **** 	//timeout=200;
+1140:../../../src/net/isa/isa.c **** 	while ((n = rf_rx_check_sfd()) == 0) {
+1141:../../../src/net/isa/isa.c **** 
+1142:../../../src/net/isa/isa.c **** 	    // every OS tick 
+1143:../../../src/net/isa/isa.c **** 	    if(last_nrk_tick!=_nrk_os_timer_get()) {
+1144:../../../src/net/isa/isa.c **** 		last_nrk_tick=_nrk_os_timer_get();
+1145:../../../src/net/isa/isa.c **** 		timer++;
+1146:../../../src/net/isa/isa.c **** 		if(timer>ISA_TOKEN_TIMEOUT){
+1147:../../../src/net/isa/isa.c **** 		    timer=0;
+1148:../../../src/net/isa/isa.c **** 		    break;
+1149:../../../src/net/isa/isa.c **** 		}
+1150:../../../src/net/isa/isa.c **** 	    }
+1151:../../../src/net/isa/isa.c **** 	}
+1152:../../../src/net/isa/isa.c **** 	//printf("3 \n");
+1153:../../../src/net/isa/isa.c **** 	_nrk_high_speed_timer_reset();
+1154:../../../src/net/isa/isa.c **** 	// capture SFD transition with high speed timer
+1155:../../../src/net/isa/isa.c **** 	//sfd_start_time=_nrk_high_speed_timer_get();
+1156:../../../src/net/isa/isa.c **** 	tdma_start_tick=_nrk_os_timer_get();
+1157:../../../src/net/isa/isa.c **** 
+1158:../../../src/net/isa/isa.c **** 	timeout = tdma_start_tick+4;
+1159:../../../src/net/isa/isa.c **** 	// an interrupt could happen in here and mess things up
+1160:../../../src/net/isa/isa.c **** 	if (n != 0) {
+1161:../../../src/net/isa/isa.c **** 	    n = 0;
+1162:../../../src/net/isa/isa.c **** 	// Packet on its way
+1163:../../../src/net/isa/isa.c **** 	    while ((n = rf_polling_rx_packet (false,128)) == 0) {
+1164:../../../src/net/isa/isa.c **** 	  //  	printf("4 \n");
+1165:../../../src/net/isa/isa.c **** 		if (_nrk_os_timer_get () > timeout)
+1166:../../../src/net/isa/isa.c **** 		{
+1167:../../../src/net/isa/isa.c **** 		    //nrk_kprintf( PSTR("Pkt timed out\r\n") );
+1168:../../../src/net/isa/isa.c **** 		    break;          // huge timeout as failsafe
+1169:../../../src/net/isa/isa.c **** 		}
+1170:../../../src/net/isa/isa.c **** 	    }
+1171:../../../src/net/isa/isa.c **** 	}
+1172:../../../src/net/isa/isa.c **** 	rf_rx_off (); 
+1173:../../../src/net/isa/isa.c **** 	//printf("5 \n");
+1174:../../../src/net/isa/isa.c **** 	if (n == 1 /*&& isa_rfRxInfo.length>0*/) {
+1175:../../../src/net/isa/isa.c **** 	    if(isa_rfRxInfo.pPayload[SRC_INDEX]==isa_clk_src_id){//change
+1176:../../../src/net/isa/isa.c **** 		// CRC and checksum passed
+1177:../../../src/net/isa/isa.c **** 		isa_rx_data_ready = 1;
+1178:../../../src/net/isa/isa.c **** 		//rtl_rx_slot = 0;
+1179:../../../src/net/isa/isa.c **** 		//DHDR = (volatile)isa_rfRxInfo.pPayload[DHDR_INDEX];		
+1180:../../../src/net/isa/isa.c **** 		global_slot += (volatile)isa_rfRxInfo.pPayload[SLOT_INDEX];
+1181:../../../src/net/isa/isa.c **** 
+1182:../../../src/net/isa/isa.c **** 		nrk_led_toggle(GREEN_LED);
+1183:../../../src/net/isa/isa.c **** 		putchar ('i');
+1184:../../../src/net/isa/isa.c **** 
+1185:../../../src/net/isa/isa.c **** 	//	nrk_event_signal(SIG(isa_rx_pkt_signal));
+1186:../../../src/net/isa/isa.c **** 		break;
+1187:../../../src/net/isa/isa.c **** 		//
+1188:../../../src/net/isa/isa.c **** 	    }
+1189:../../../src/net/isa/isa.c **** 	}
+1190:../../../src/net/isa/isa.c ****     }
+1191:../../../src/net/isa/isa.c **** 
+1192:../../../src/net/isa/isa.c **** 
+1193:../../../src/net/isa/isa.c **** #ifdef LED_DEBUG
+1194:../../../src/net/isa/isa.c ****     nrk_led_clr(1);
+1195:../../../src/net/isa/isa.c **** #endif
+1196:../../../src/net/isa/isa.c ****      //printf("os_timer=%d\r\n",_nrk_os_itimer_get());
+1197:../../../src/net/isa/isa.c ****      #ifdef INIT_SYNC
+1198:../../../src/net/isa/isa.c **** 	nrk_gpio_set(NRK_DEBUG_1);
+1199:../../../src/net/isa/isa.c ****      #endif
+1200:../../../src/net/isa/isa.c ****     _isa_sync_ok = 1;
+1201:../../../src/net/isa/isa.c ****     isa_rx_pkt_release();
+1202:../../../src/net/isa/isa.c ****     tmp_nrk_prev_timer_val=_nrk_prev_timer_val;
+1203:../../../src/net/isa/isa.c ****     _nrk_os_timer_stop();
+1204:../../../src/net/isa/isa.c ****     //_nrk_os_timer_reset();
+1205:../../../src/net/isa/isa.c ****     _nrk_set_next_wakeup(10);
+1206:../../../src/net/isa/isa.c ****     _nrk_os_timer_set(7);
+1207:../../../src/net/isa/isa.c ****     nrk_high_speed_timer_wait(0,SFD_TO_NEXT_SLOT_TIME);
+1208:../../../src/net/isa/isa.c ****     //_nrk_os_timer_reset();
+1209:../../../src/net/isa/isa.c ****     _nrk_os_timer_start();
+1210:../../../src/net/isa/isa.c ****     //_nrk_prev_timer_val=9;
+1211:../../../src/net/isa/isa.c ****     //printf("%d\n\r", _nrk_os_timer_get());
+1212:../../../src/net/isa/isa.c **** nrk_cur_task_TCB->next_wakeup = 10;
+1213:../../../src/net/isa/isa.c ****     //printf("%d\n\r",_nrk_prev_timer_val);
+1214:../../../src/net/isa/isa.c ****    // _nrk_high_speed_timer_reset();
+1215:../../../src/net/isa/isa.c ****    // slot_start_time=_nrk_high_speed_timer_get();
+1216:../../../src/net/isa/isa.c ****     #ifdef INIT_SYNC
+1217:../../../src/net/isa/isa.c **** 	nrk_gpio_clr(NRK_DEBUG_1);
+1218:../../../src/net/isa/isa.c ****      #endif
+1219:../../../src/net/isa/isa.c **** 
+1220:../../../src/net/isa/isa.c **** 	return _isa_sync_ok;
+1221:../../../src/net/isa/isa.c **** 
+1222:../../../src/net/isa/isa.c **** }
+1223:../../../src/net/isa/isa.c **** 
+1224:../../../src/net/isa/isa.c **** 
+1225:../../../src/net/isa/isa.c **** void isa_nw_task ()
+1226:../../../src/net/isa/isa.c **** {
+1227:../../../src/net/isa/isa.c ****     uint8_t slot;
+1228:../../../src/net/isa/isa.c ****     uint32_t slot_mask;
+1229:../../../src/net/isa/isa.c ****     uint16_t next_slot_offset = 0; 
+1230:../../../src/net/isa/isa.c ****     uint8_t FIRST = 1;
+1231:../../../src/net/isa/isa.c ****     DLMO_LINK * link;
+1232:../../../src/net/isa/isa.c **** 
+1233:../../../src/net/isa/isa.c ****     _isa_ready = 0;
+1234:../../../src/net/isa/isa.c ****     
+1235:../../../src/net/isa/isa.c ****     // wait for isa ready 
+1236:../../../src/net/isa/isa.c ****     do {
+1237:../../../src/net/isa/isa.c ****         nrk_wait_until_next_period ();
+1238:../../../src/net/isa/isa.c ****     }while (_isa_ready == 0);
+1239:../../../src/net/isa/isa.c **** 
+1240:../../../src/net/isa/isa.c ****     _isa_ready = 1;
+1241:../../../src/net/isa/isa.c ****     //nrk_gpio_clr(NRK_DEBUG_0);
+1242:../../../src/net/isa/isa.c ****     //nrk_time_get (&last_slot_time);// dont know if it is useful
+1243:../../../src/net/isa/isa.c ****     while (1) {
+1244:../../../src/net/isa/isa.c ****     	//putchar('n');
+1245:../../../src/net/isa/isa.c **** 	nrk_gpio_set(NRK_DEBUG_1);
+1246:../../../src/net/isa/isa.c **** 	nrk_gpio_clr(NRK_DEBUG_1);
+1247:../../../src/net/isa/isa.c **** 
+1248:../../../src/net/isa/isa.c **** 	// reset high speed timer and then record the timer value used for calculating offsets
+1249:../../../src/net/isa/isa.c **** 	_nrk_high_speed_timer_reset();
+1250:../../../src/net/isa/isa.c ****         slot_start_time = _nrk_high_speed_timer_get();
+1251:../../../src/net/isa/isa.c **** 	//nrk_time_get (&last_slot_time);// dont know if it is useful
+1252:../../../src/net/isa/isa.c ****      //   last_slot = global_slot; //global_slot has been initialized to MAX_ISA_GLOBAL_SLOTS in is
+1253:../../../src/net/isa/isa.c ****       //  if (last_slot > MAX_ISA_GLOBAL_SLOTS)
+1254:../../../src/net/isa/isa.c ****         //    last_slot -= (MAX_ISA_GLOBAL_SLOTS+1);
+1255:../../../src/net/isa/isa.c **** 
+1256:../../../src/net/isa/isa.c **** 	current_global_slot = global_slot;
+1257:../../../src/net/isa/isa.c **** 	/* global_slot should be wrapped */
+1258:../../../src/net/isa/isa.c ****         if (global_slot > MAX_ISA_GLOBAL_SLOTS) {
+1259:../../../src/net/isa/isa.c ****             global_slot -= MAX_ISA_GLOBAL_SLOTS;
+1260:../../../src/net/isa/isa.c ****             global_cycle++;
+1261:../../../src/net/isa/isa.c ****         }
+1262:../../../src/net/isa/isa.c **** 
+1263:../../../src/net/isa/isa.c **** 	slot = global_slot % ISA_SLOTS_PER_FRAME;
+1264:../../../src/net/isa/isa.c ****         slot_mask = ((uint32_t) 1) << slot;
+1265:../../../src/net/isa/isa.c **** 	if(_isa_sync_ok == 1){
+1266:../../../src/net/isa/isa.c **** 	    #ifdef CHANNEL_HOPPING
+1267:../../../src/net/isa/isa.c **** 		channelIndex += next_slot_offset;
+1268:../../../src/net/isa/isa.c **** 		currentChannel = slottedPattern[(channelIndex)&0x0F];
+1269:../../../src/net/isa/isa.c **** 		isa_set_channel(currentChannel);
+1270:../../../src/net/isa/isa.c **** 
+1271:../../../src/net/isa/isa.c **** 		/*
+1272:../../../src/net/isa/isa.c **** 		if(slot>=22 && isa_node_mode == ISA_GATEWAY){
+1273:../../../src/net/isa/isa.c **** 		   slowIndex = slowIndex % 3;
+1274:../../../src/net/isa/isa.c **** 		   currentChannel = slowPattern[slowIndex];
+1275:../../../src/net/isa/isa.c **** 		   isa_set_channel(currentChannel);
+1276:../../../src/net/isa/isa.c **** 		   if(slot>=24)
+1277:../../../src/net/isa/isa.c **** 		      slowIndex++;
+1278:../../../src/net/isa/isa.c **** 		}
+1279:../../../src/net/isa/isa.c **** 
+1280:../../../src/net/isa/isa.c **** 		*/
+1281:../../../src/net/isa/isa.c **** 	    //printf("CH:%d SL: %d\r\n",currentChannel,slot);
+1282:../../../src/net/isa/isa.c **** 	    #endif
+1283:../../../src/net/isa/isa.c **** 	    //printf("%d,%d\n\r",currentChannel,(channelIndex)&0x0F);
+1284:../../../src/net/isa/isa.c **** 	    //printf("isa_rx_data_ready:%d\r\n",isa_rx_data_ready);
+1285:../../../src/net/isa/isa.c **** 	    // if TX slot mask and tx ready, send a packet
+1286:../../../src/net/isa/isa.c **** 	    #ifdef JOIN_PROCESS
+1287:../../../src/net/isa/isa.c **** 		if(slot>=22 && isa_node_mode == ISA_GATEWAY)
+1288:../../../src/net/isa/isa.c **** 		   isa_tx_data_ready |= ((uint32_t) 1 << slot);
+1289:../../../src/net/isa/isa.c **** 	    #endif
+1290:../../../src/net/isa/isa.c **** 	    #ifdef TX_RX_DEBUG
+1291:../../../src/net/isa/isa.c **** 		//printf("R\r\n");
+1292:../../../src/net/isa/isa.c **** 	//	nrk_gpio_set(NRK_DEBUG_0);
+1293:../../../src/net/isa/isa.c **** 
+1294:../../../src/net/isa/isa.c **** 	    #endif
+1295:../../../src/net/isa/isa.c ****             	/*
+1296:../../../src/net/isa/isa.c ****             	 * who is the neighbor that this slot is configured for?
+1297:../../../src/net/isa/isa.c ****             	 */
+1298:../../../src/net/isa/isa.c **** 		link = findLink(slot);
+1299:../../../src/net/isa/isa.c ****             	if(link != NULL){
+1300:../../../src/net/isa/isa.c ****             		//what type of link is this
+1301:../../../src/net/isa/isa.c ****             		if (link->linkType == RX){
+1302:../../../src/net/isa/isa.c ****             			_isa_rx (slot);
+1303:../../../src/net/isa/isa.c ****             		}
+1304:../../../src/net/isa/isa.c ****             		else if (link->linkType == TX_NO_ADV){
+1305:../../../src/net/isa/isa.c ****             			_isa_tx(link , slot);
+1306:../../../src/net/isa/isa.c ****             		}
+1307:../../../src/net/isa/isa.c ****             		//find the highest priority entry in the queue (if any)
+1308:../../../src/net/isa/isa.c ****             		//if (transmitEntry = hightestPriorityEntry(neighbor) != NULL){
+1309:../../../src/net/isa/isa.c ****             		//	_isa_tx(transmitEntry, link);
+1310:../../../src/net/isa/isa.c ****             	//	}
+1311:../../../src/net/isa/isa.c ****             	}
+1312:../../../src/net/isa/isa.c **** 
+1313:../../../src/net/isa/isa.c **** 
+1314:../../../src/net/isa/isa.c **** 		//printf("isa tx slot %d.\n\r",slot);
+1315:../../../src/net/isa/isa.c **** 	//	printf("TX %d,%d,%d\n\r",currentChannel,(channelIndex)&0x0F,slot);
+1316:../../../src/net/isa/isa.c **** 		//printf("tx\n\r");
+1317:../../../src/net/isa/isa.c **** 	//	_isa_tx (slot);
+1318:../../../src/net/isa/isa.c **** 	//	previous_tx_slot = slot;
+1319:../../../src/net/isa/isa.c **** 		#ifdef HIGH_TIMER_DEBUG
+1320:../../../src/net/isa/isa.c **** 	    	    //printf("TX later, high speed timer value is %d.\n\r", _nrk_high_speed_timer_get());
+1321:../../../src/net/isa/isa.c **** 		#endif		
+1322:../../../src/net/isa/isa.c **** 
+1323:../../../src/net/isa/isa.c **** 
+1324:../../../src/net/isa/isa.c **** 	} else	{
+1325:../../../src/net/isa/isa.c **** 
+1326:../../../src/net/isa/isa.c **** 	    ///do joining or sync request here
+1327:../../../src/net/isa/isa.c **** 	//    DHDR = configDHDR(0);
+1328:../../../src/net/isa/isa.c **** 	    if(isa_node_mode != ISA_GATEWAY){//change
+1329:../../../src/net/isa/isa.c **** 		#ifdef JOIN_PROCESS
+1330:../../../src/net/isa/isa.c **** 		if(!_isa_join_ok){
+1331:../../../src/net/isa/isa.c **** 		    _isa_join_process();
+1332:../../../src/net/isa/isa.c **** 		}
+1333:../../../src/net/isa/isa.c **** 		#endif
+1334:../../../src/net/isa/isa.c **** 		DHDRcount = 0;	//make send request for time correction
+1335:../../../src/net/isa/isa.c **** 		_isa_sync_ok = _isa_init_sync();
+1336:../../../src/net/isa/isa.c **** 
+1337:../../../src/net/isa/isa.c **** 		//printf("waiting for sync...isa_sync_ok is %d.\n\r",_isa_sync_ok);
+1338:../../../src/net/isa/isa.c **** 	    }else if (isa_node_mode == ISA_GATEWAY){
+1339:../../../src/net/isa/isa.c **** 		_isa_sync_ok = 1;
+1340:../../../src/net/isa/isa.c **** 	    }	
+1341:../../../src/net/isa/isa.c **** 	}
+1342:../../../src/net/isa/isa.c **** 	
+1343:../../../src/net/isa/isa.c **** 	//nrk_gpio_clr(NRK_DEBUG_2);
+1344:../../../src/net/isa/isa.c **** 	//printf("next_slot_offset %d\n\r",next_slot_offset);
+1345:../../../src/net/isa/isa.c **** 	// To make sure that initial sync is correct
+1346:../../../src/net/isa/isa.c ****         /*if(FIRST){
+1347:../../../src/net/isa/isa.c **** 		//printf("%d\n\r",_nrk_os_timer_get ());
+1348:../../../src/net/isa/isa.c **** 		next_slot_offset = 1;
+1349:../../../src/net/isa/isa.c **** 		FIRST = 0;
+1350:../../../src/net/isa/isa.c **** 	}*/
+1351:../../../src/net/isa/isa.c **** 	if(slot_expired >= EXPIRATION && isa_node_mode != ISA_GATEWAY){
+1352:../../../src/net/isa/isa.c **** 	    //printf("re-sync\n\r");
+1353:../../../src/net/isa/isa.c **** 	    _isa_sync_ok = 0;
+1354:../../../src/net/isa/isa.c **** 	    slot_expired = 0;    
+1355:../../../src/net/isa/isa.c **** 	    global_slot = 0;
+1356:../../../src/net/isa/isa.c **** 	    next_slot_offset = 0;
+1357:../../../src/net/isa/isa.c **** 	    resync_times++;
+1358:../../../src/net/isa/isa.c **** 	    if(isa_id!=0){
+1359:../../../src/net/isa/isa.c **** 	        channelIndex = isa_clk_src_id;
+1360:../../../src/net/isa/isa.c **** 	        currentChannel = slottedPattern[channelIndex];    
+1361:../../../src/net/isa/isa.c **** 	    }else{
+1362:../../../src/net/isa/isa.c **** 	        channelIndex = 0;
+1363:../../../src/net/isa/isa.c **** 	        currentChannel = slottedPattern[channelIndex];
+1364:../../../src/net/isa/isa.c **** 	    }
+1365:../../../src/net/isa/isa.c **** 	    isa_set_channel(currentChannel);
+1366:../../../src/net/isa/isa.c **** 
+1367:../../../src/net/isa/isa.c **** 
+1368:../../../src/net/isa/isa.c **** 	}else{
+1369:../../../src/net/isa/isa.c **** 	    //printf("global_slot is %d. global cycle is %d.\n\r",global_slot,global_cycle);
+1370:../../../src/net/isa/isa.c **** 	    next_slot_offset = isa_get_slots_until_next_wakeup (global_slot);
+1371:../../../src/net/isa/isa.c **** 	  //  printf("NOS:%d\n\r",next_slot_offset);
+1372:../../../src/net/isa/isa.c **** 	    //printf("%d,%d,%d,%d\n\r",_nrk_os_timer_get (),_nrk_get_next_wakeup (),global_slot,next_slot_
+1373:../../../src/net/isa/isa.c **** 	    global_slot += next_slot_offset;
+1374:../../../src/net/isa/isa.c ****             //nrk_clr_led (1);
+1375:../../../src/net/isa/isa.c **** 	    #ifdef LED_SLOT_DEBUG
+1376:../../../src/net/isa/isa.c **** 	    nrk_led_clr(0);
+1377:../../../src/net/isa/isa.c **** 	    #endif
+1378:../../../src/net/isa/isa.c **** 
+1379:../../../src/net/isa/isa.c **** 	    offsetY = 0;
+1380:../../../src/net/isa/isa.c **** 	    //printf("%d\n\r",next_slot_offset);
+1381:../../../src/net/isa/isa.c **** 
+1382:../../../src/net/isa/isa.c ****             nrk_wait_until_next_n_periods (next_slot_offset);
+1383:../../../src/net/isa/isa.c **** 
+1384:../../../src/net/isa/isa.c **** 
+1385:../../../src/net/isa/isa.c **** 	    #ifdef LED_SLOT_DEBUG
+1386:../../../src/net/isa/isa.c **** 	    nrk_led_set(0);
+1387:../../../src/net/isa/isa.c **** 	    #endif
+1388:../../../src/net/isa/isa.c **** 	//}
+1389:../../../src/net/isa/isa.c ****         //nrk_set_led (1);
+1390:../../../src/net/isa/isa.c ****         // Set last_slot_time to the time of the start of the slot
+1391:../../../src/net/isa/isa.c **** 	}
+1392:../../../src/net/isa/isa.c ****     }
+1393:../../../src/net/isa/isa.c **** }
+1394:../../../src/net/isa/isa.c **** 
+1395:../../../src/net/isa/isa.c **** void isa_task_config ()
+1396:../../../src/net/isa/isa.c **** {
+ 699               	.LM71:
+ 700               	.LFBB13:
+ 701               	/* prologue: frame size=0 */
+ 702 01ce 0F93      		push r16
+ 703 01d0 1F93      		push r17
+ 704               	/* prologue end (size=2) */
+1397:../../../src/net/isa/isa.c ****     isa_task.task = isa_nw_task;
+ 706               	.LM72:
+ 707 01d2 80E0      		ldi r24,lo8(pm(isa_nw_task))
+ 708 01d4 90E0      		ldi r25,hi8(pm(isa_nw_task))
+ 709 01d6 9093 0000 		sts (isa_task+5)+1,r25
+ 710 01da 8093 0000 		sts isa_task+5,r24
+1398:../../../src/net/isa/isa.c ****     nrk_task_set_stk( &isa_task, isa_task_stack, ISA_STACK_SIZE);
+ 712               	.LM73:
+ 713 01de 00E0      		ldi r16,lo8(isa_task)
+ 714 01e0 10E0      		ldi r17,hi8(isa_task)
+ 715 01e2 40E8      		ldi r20,lo8(128)
+ 716 01e4 50E0      		ldi r21,hi8(128)
+ 717 01e6 60E0      		ldi r22,lo8(isa_task_stack)
+ 718 01e8 70E0      		ldi r23,hi8(isa_task_stack)
+ 719 01ea C801      		movw r24,r16
+ 720 01ec 0E94 0000 		call nrk_task_set_stk
+1399:../../../src/net/isa/isa.c ****     isa_task.prio = 20;
+ 722               	.LM74:
+ 723 01f0 84E1      		ldi r24,lo8(20)
+ 724 01f2 8093 0000 		sts isa_task+8,r24
+1400:../../../src/net/isa/isa.c ****     isa_task.FirstActivation = TRUE;
+ 726               	.LM75:
+ 727 01f6 81E0      		ldi r24,lo8(1)
+ 728 01f8 8093 0000 		sts isa_task+7,r24
+1401:../../../src/net/isa/isa.c ****     isa_task.Type = BASIC_TASK;
+ 730               	.LM76:
+ 731 01fc 8093 0000 		sts isa_task+9,r24
+1402:../../../src/net/isa/isa.c ****     isa_task.SchType = PREEMPTIVE;
+ 733               	.LM77:
+ 734 0200 8093 0000 		sts isa_task+10,r24
+1403:../../../src/net/isa/isa.c ****     isa_task.period.secs = 0;
+ 736               	.LM78:
+ 737 0204 1092 0000 		sts isa_task+11,__zero_reg__
+ 738 0208 1092 0000 		sts (isa_task+11)+1,__zero_reg__
+ 739 020c 1092 0000 		sts (isa_task+11)+2,__zero_reg__
+ 740 0210 1092 0000 		sts (isa_task+11)+3,__zero_reg__
+1404:../../../src/net/isa/isa.c ****     isa_task.period.nano_secs = 10*NANOS_PER_MS;
+ 742               	.LM79:
+ 743 0214 80E8      		ldi r24,lo8(10000000)
+ 744 0216 96E9      		ldi r25,hi8(10000000)
+ 745 0218 A8E9      		ldi r26,hlo8(10000000)
+ 746 021a B0E0      		ldi r27,hhi8(10000000)
+ 747 021c 8093 0000 		sts isa_task+15,r24
+ 748 0220 9093 0000 		sts (isa_task+15)+1,r25
+ 749 0224 A093 0000 		sts (isa_task+15)+2,r26
+ 750 0228 B093 0000 		sts (isa_task+15)+3,r27
+1405:../../../src/net/isa/isa.c ****     isa_task.cpu_reserve.secs = 0;      
+ 752               	.LM80:
+ 753 022c 1092 0000 		sts isa_task+19,__zero_reg__
+ 754 0230 1092 0000 		sts (isa_task+19)+1,__zero_reg__
+ 755 0234 1092 0000 		sts (isa_task+19)+2,__zero_reg__
+ 756 0238 1092 0000 		sts (isa_task+19)+3,__zero_reg__
+1406:../../../src/net/isa/isa.c ****     isa_task.cpu_reserve.nano_secs = 0;
+ 758               	.LM81:
+ 759 023c 1092 0000 		sts isa_task+23,__zero_reg__
+ 760 0240 1092 0000 		sts (isa_task+23)+1,__zero_reg__
+ 761 0244 1092 0000 		sts (isa_task+23)+2,__zero_reg__
+ 762 0248 1092 0000 		sts (isa_task+23)+3,__zero_reg__
+1407:../../../src/net/isa/isa.c ****     isa_task.offset.secs = 0;
+ 764               	.LM82:
+ 765 024c 1092 0000 		sts isa_task+27,__zero_reg__
+ 766 0250 1092 0000 		sts (isa_task+27)+1,__zero_reg__
+ 767 0254 1092 0000 		sts (isa_task+27)+2,__zero_reg__
+ 768 0258 1092 0000 		sts (isa_task+27)+3,__zero_reg__
+1408:../../../src/net/isa/isa.c ****     isa_task.offset.nano_secs = 0;
+ 770               	.LM83:
+ 771 025c 1092 0000 		sts isa_task+31,__zero_reg__
+ 772 0260 1092 0000 		sts (isa_task+31)+1,__zero_reg__
+ 773 0264 1092 0000 		sts (isa_task+31)+2,__zero_reg__
+ 774 0268 1092 0000 		sts (isa_task+31)+3,__zero_reg__
+1409:../../../src/net/isa/isa.c ****     nrk_activate_task (&isa_task);
+ 776               	.LM84:
+ 777 026c C801      		movw r24,r16
+ 778 026e 0E94 0000 		call nrk_activate_task
+ 779               	/* epilogue: frame size=0 */
+ 780 0272 1F91      		pop r17
+ 781 0274 0F91      		pop r16
+ 782 0276 0895      		ret
+ 783               	/* epilogue end (size=3) */
+ 784               	/* function isa_task_config size 85 (80) */
+ 786               	.Lscope13:
+ 788               		.stabd	78,0,0
+ 790               	.global	_isa_init_sync
+ 792               	_isa_init_sync:
+ 793               		.stabd	46,0,0
+ 795               	.LM85:
+ 796               	.LFBB14:
+ 797               	/* prologue: frame size=0 */
+ 798 0278 CF92      		push r12
+ 799 027a DF92      		push r13
+ 800 027c EF92      		push r14
+ 801 027e FF92      		push r15
+ 802 0280 0F93      		push r16
+ 803 0282 1F93      		push r17
+ 804 0284 CF93      		push r28
+ 805 0286 DF93      		push r29
+ 806               	/* prologue end (size=8) */
+ 807 0288 EE24      		clr r14
+ 808 028a FF24      		clr r15
+ 809 028c 80E0      		ldi r24,lo8(isa_rfRxInfo)
+ 810 028e C82E      		mov r12,r24
+ 811 0290 80E0      		ldi r24,hi8(isa_rfRxInfo)
+ 812 0292 D82E      		mov r13,r24
+ 813               	.L66:
+ 815               	.LM86:
+ 816 0294 E091 0000 		lds r30,isa_rfRxInfo+5
+ 817 0298 F091 0000 		lds r31,(isa_rfRxInfo+5)+1
+ 818 029c 81E0      		ldi r24,lo8(1)
+ 819 029e 8083      		st Z,r24
+ 821               	.LM87:
+ 822 02a0 6091 0000 		lds r22,isa_param+2
+ 823 02a4 C601      		movw r24,r12
+ 824 02a6 0E94 0000 		call rf_set_rx
+ 826               	.LM88:
+ 827 02aa 0E94 0000 		call rf_polling_rx_on
+ 829               	.LM89:
+ 830 02ae 1092 0000 		sts _isa_sync_ok,__zero_reg__
+ 832               	.LM90:
+ 833 02b2 8AEF      		ldi r24,lo8(-6)
+ 834 02b4 0E94 0000 		call _nrk_set_next_wakeup
+ 836               	.LM91:
+ 837 02b8 80E0      		ldi r24,lo8(0)
+ 838 02ba 0E94 0000 		call _nrk_os_timer_set
+ 839 02be 00E0      		ldi r16,lo8(0)
+ 840 02c0 00C0      		rjmp .L67
+ 841               	.L49:
+ 843               	.LM92:
+ 844 02c2 0E94 0000 		call _nrk_os_timer_get
+ 845 02c6 0817      		cp r16,r24
+ 846 02c8 01F0      		breq .L67
+ 848               	.LM93:
+ 849 02ca 0E94 0000 		call _nrk_os_timer_get
+ 850 02ce 082F      		mov r16,r24
+ 852               	.LM94:
+ 853 02d0 0894      		sec
+ 854 02d2 E11C      		adc r14,__zero_reg__
+ 855 02d4 F11C      		adc r15,__zero_reg__
+ 857               	.LM95:
+ 858 02d6 81E1      		ldi r24,lo8(10001)
+ 859 02d8 E816      		cp r14,r24
+ 860 02da 87E2      		ldi r24,hi8(10001)
+ 861 02dc F806      		cpc r15,r24
+ 862 02de 00F0      		brlo .L67
+ 863 02e0 EE24      		clr r14
+ 864 02e2 FF24      		clr r15
+ 865 02e4 00C0      		rjmp .L52
+ 866               	.L67:
+ 868               	.LM96:
+ 869 02e6 0E94 0000 		call rf_rx_check_sfd
+ 870 02ea 182F      		mov r17,r24
+ 871 02ec 8823      		tst r24
+ 872 02ee 01F0      		breq .L49
+ 873               	.L52:
+ 875               	.LM97:
+ 876 02f0 0E94 0000 		call _nrk_high_speed_timer_reset
+ 878               	.LM98:
+ 879 02f4 0E94 0000 		call _nrk_os_timer_get
+ 881               	.LM99:
+ 882 02f8 C82F      		mov r28,r24
+ 883 02fa DD27      		clr r29
+ 884 02fc 2496      		adiw r28,4
+ 886               	.LM100:
+ 887 02fe 1123      		tst r17
+ 888 0300 01F0      		breq .L54
+ 889 0302 00C0      		rjmp .L63
+ 890               	.L55:
+ 892               	.LM101:
+ 893 0304 0E94 0000 		call _nrk_os_timer_get
+ 894 0308 9927      		clr r25
+ 895 030a C817      		cp r28,r24
+ 896 030c D907      		cpc r29,r25
+ 897 030e 00F0      		brlo .L54
+ 898               	.L63:
+ 900               	.LM102:
+ 901 0310 60E8      		ldi r22,lo8(-128)
+ 902 0312 80E0      		ldi r24,lo8(0)
+ 903 0314 0E94 0000 		call rf_polling_rx_packet
+ 904 0318 182F      		mov r17,r24
+ 905 031a 8823      		tst r24
+ 906 031c 01F0      		breq .L55
+ 907               	.L54:
+ 909               	.LM103:
+ 910 031e 0E94 0000 		call rf_rx_off
+ 912               	.LM104:
+ 913 0322 1130      		cpi r17,lo8(1)
+ 914 0324 01F0      		breq .+2
+ 915 0326 00C0      		rjmp .L66
+ 917               	.LM105:
+ 918 0328 E091 0000 		lds r30,isa_rfRxInfo+5
+ 919 032c F091 0000 		lds r31,(isa_rfRxInfo+5)+1
+ 920 0330 9281      		ldd r25,Z+2
+ 921 0332 8091 0000 		lds r24,isa_clk_src_id
+ 922 0336 9817      		cp r25,r24
+ 923 0338 01F0      		breq .+2
+ 924 033a 00C0      		rjmp .L66
+ 926               	.LM106:
+ 927 033c 81E0      		ldi r24,lo8(1)
+ 928 033e 90E0      		ldi r25,hi8(1)
+ 929 0340 A0E0      		ldi r26,hlo8(1)
+ 930 0342 B0E0      		ldi r27,hhi8(1)
+ 931 0344 8093 0000 		sts isa_rx_data_ready,r24
+ 932 0348 9093 0000 		sts (isa_rx_data_ready)+1,r25
+ 933 034c A093 0000 		sts (isa_rx_data_ready)+2,r26
+ 934 0350 B093 0000 		sts (isa_rx_data_ready)+3,r27
+ 936               	.LM107:
+ 937 0354 8091 0000 		lds r24,global_slot
+ 938 0358 9091 0000 		lds r25,(global_slot)+1
+ 939 035c 2181      		ldd r18,Z+1
+ 940 035e 820F      		add r24,r18
+ 941 0360 911D      		adc r25,__zero_reg__
+ 942 0362 9093 0000 		sts (global_slot)+1,r25
+ 943 0366 8093 0000 		sts global_slot,r24
+ 945               	.LM108:
+ 946 036a 82E0      		ldi r24,lo8(2)
+ 947 036c 90E0      		ldi r25,hi8(2)
+ 948 036e 0E94 0000 		call nrk_led_toggle
+ 950               	.LM109:
+ 951 0372 6091 0000 		lds r22,__iob+2
+ 952 0376 7091 0000 		lds r23,(__iob+2)+1
+ 953 037a 89E6      		ldi r24,lo8(105)
+ 954 037c 90E0      		ldi r25,hi8(105)
+ 955 037e 0E94 0000 		call fputc
+ 957               	.LM110:
+ 958 0382 1093 0000 		sts _isa_sync_ok,r17
+ 959               	.LBB7:
+ 960               	.LBB8:
+ 962               	.LM111:
+ 963 0386 1092 0000 		sts isa_rx_data_ready,__zero_reg__
+ 964 038a 1092 0000 		sts (isa_rx_data_ready)+1,__zero_reg__
+ 965 038e 1092 0000 		sts (isa_rx_data_ready)+2,__zero_reg__
+ 966 0392 1092 0000 		sts (isa_rx_data_ready)+3,__zero_reg__
+ 967               	.LBE8:
+ 968               	.LBE7:
+ 970               	.LM112:
+ 971 0396 0E94 0000 		call _nrk_os_timer_stop
+ 973               	.LM113:
+ 974 039a 8AE0      		ldi r24,lo8(10)
+ 975 039c 0E94 0000 		call _nrk_set_next_wakeup
+ 977               	.LM114:
+ 978 03a0 87E0      		ldi r24,lo8(7)
+ 979 03a2 0E94 0000 		call _nrk_os_timer_set
+ 981               	.LM115:
+ 982 03a6 60E5      		ldi r22,lo8(-28336)
+ 983 03a8 71E9      		ldi r23,hi8(-28336)
+ 984 03aa 80E0      		ldi r24,lo8(0)
+ 985 03ac 90E0      		ldi r25,hi8(0)
+ 986 03ae 0E94 0000 		call nrk_high_speed_timer_wait
+ 988               	.LM116:
+ 989 03b2 0E94 0000 		call _nrk_os_timer_start
+ 991               	.LM117:
+ 992 03b6 E091 0000 		lds r30,nrk_cur_task_TCB
+ 993 03ba F091 0000 		lds r31,(nrk_cur_task_TCB)+1
+ 994 03be 8AE0      		ldi r24,lo8(10)
+ 995 03c0 90E0      		ldi r25,hi8(10)
+ 996 03c2 968B      		std Z+22,r25
+ 997 03c4 858B      		std Z+21,r24
+ 998 03c6 8091 0000 		lds r24,_isa_sync_ok
+ 1000               	.LM118:
+ 1001 03ca 9927      		clr r25
+ 1002               	/* epilogue: frame size=0 */
+ 1003 03cc DF91      		pop r29
+ 1004 03ce CF91      		pop r28
+ 1005 03d0 1F91      		pop r17
+ 1006 03d2 0F91      		pop r16
+ 1007 03d4 FF90      		pop r15
+ 1008 03d6 EF90      		pop r14
+ 1009 03d8 DF90      		pop r13
+ 1010 03da CF90      		pop r12
+ 1011 03dc 0895      		ret
+ 1012               	/* epilogue end (size=9) */
+ 1013               	/* function _isa_init_sync size 179 (162) */
+ 1021               	.Lscope14:
+ 1023               		.stabd	78,0,0
+ 1024               		.data
+ 1025               	.LC0:
+ 1026 0000 7061 636B 		.string	"packet is too long, times out.\n\r"
+ 1026      6574 2069 
+ 1026      7320 746F 
+ 1026      6F20 6C6F 
+ 1026      6E67 2C20 
+ 1027               		.text
+ 1030               	.global	_isa_rx
+ 1032               	_isa_rx:
+ 1033               		.stabd	46,0,0
+ 1035               	.LM119:
+ 1036               	.LFBB15:
+ 1037               	/* prologue: frame size=1 */
+ 1038 03de 0F93      		push r16
+ 1039 03e0 1F93      		push r17
+ 1040 03e2 CF93      		push r28
+ 1041 03e4 DF93      		push r29
+ 1042 03e6 CDB7      		in r28,__SP_L__
+ 1043 03e8 DEB7      		in r29,__SP_H__
+ 1044 03ea 2197      		sbiw r28,1
+ 1045 03ec 0FB6      		in __tmp_reg__,__SREG__
+ 1046 03ee F894      		cli
+ 1047 03f0 DEBF      		out __SP_H__,r29
+ 1048 03f2 0FBE      		out __SREG__,__tmp_reg__
+ 1049 03f4 CDBF      		out __SP_L__,r28
+ 1050               	/* prologue end (size=12) */
+ 1052               	.LM120:
+ 1053 03f6 6091 0000 		lds r22,isa_param+2
+ 1054 03fa 80E0      		ldi r24,lo8(isa_rfRxInfo)
+ 1055 03fc 90E0      		ldi r25,hi8(isa_rfRxInfo)
+ 1056 03fe 0E94 0000 		call rf_set_rx
+ 1058               	.LM121:
+ 1059 0402 0E94 0000 		call rf_polling_rx_on
+ 1061               	.LM122:
+ 1062 0406 0091 0000 		lds r16,NRK_DEBUG_2
+ 1063 040a 802F      		mov r24,r16
+ 1064 040c 0E94 0000 		call nrk_gpio_set
+ 1066               	.LM123:
+ 1067 0410 0E94 0000 		call _nrk_os_timer_get
+ 1068 0414 8983      		std Y+1,r24
+ 1070               	.LM124:
+ 1071 0416 8981      		ldd r24,Y+1
+ 1072 0418 8C5F      		subi r24,lo8(-(4))
+ 1073 041a 8983      		std Y+1,r24
+ 1074 041c 00C0      		rjmp .L69
+ 1075               	.L70:
+ 1077               	.LM125:
+ 1078 041e 0E94 0000 		call _nrk_os_timer_get
+ 1079 0422 9981      		ldd r25,Y+1
+ 1080 0424 9817      		cp r25,r24
+ 1081 0426 00F4      		brsh .L69
+ 1083               	.LM126:
+ 1084 0428 802F      		mov r24,r16
+ 1085 042a 0E94 0000 		call nrk_gpio_clr
+ 1087               	.LM127:
+ 1088 042e 0E94 0000 		call rf_rx_off
+ 1090               	.LM128:
+ 1091 0432 802F      		mov r24,r16
+ 1092 0434 0E94 0000 		call nrk_gpio_set
+ 1094               	.LM129:
+ 1095 0438 802F      		mov r24,r16
+ 1096 043a 0E94 0000 		call nrk_gpio_clr
+ 1098               	.LM130:
+ 1099 043e 6091 0000 		lds r22,__iob+2
+ 1100 0442 7091 0000 		lds r23,(__iob+2)+1
+ 1101 0446 86E7      		ldi r24,lo8(118)
+ 1102 0448 90E0      		ldi r25,hi8(118)
+ 1103 044a 00C0      		rjmp .L93
+ 1104               	.L69:
+ 1106               	.LM131:
+ 1107 044c 0E94 0000 		call rf_rx_check_sfd
+ 1108 0450 8823      		tst r24
+ 1109 0452 01F0      		breq .L70
+ 1111               	.LM132:
+ 1112 0454 0E94 0000 		call _nrk_high_speed_timer_get
+ 1113 0458 9093 0000 		sts (rx_start_time)+1,r25
+ 1114 045c 8093 0000 		sts rx_start_time,r24
+ 1116               	.LM133:
+ 1117 0460 0E94 0000 		call _nrk_os_timer_get
+ 1118 0464 8983      		std Y+1,r24
+ 1120               	.LM134:
+ 1121 0466 8981      		ldd r24,Y+1
+ 1122 0468 8B5F      		subi r24,lo8(-(5))
+ 1123 046a 8983      		std Y+1,r24
+ 1124 046c 00C0      		rjmp .L74
+ 1125               	.L75:
+ 1127               	.LM135:
+ 1128 046e 0E94 0000 		call _nrk_os_timer_get
+ 1129 0472 9981      		ldd r25,Y+1
+ 1130 0474 9817      		cp r25,r24
+ 1131 0476 00F4      		brsh .L74
+ 1133               	.LM136:
+ 1134 0478 80E0      		ldi r24,lo8(.LC0)
+ 1135 047a 90E0      		ldi r25,hi8(.LC0)
+ 1136 047c 9F93      		push r25
+ 1137 047e 8F93      		push r24
+ 1138 0480 0E94 0000 		call printf
+ 1140               	.LM137:
+ 1141 0484 8091 0000 		lds r24,packetsLost
+ 1142 0488 9091 0000 		lds r25,(packetsLost)+1
+ 1143 048c 0196      		adiw r24,1
+ 1144 048e 9093 0000 		sts (packetsLost)+1,r25
+ 1145 0492 8093 0000 		sts packetsLost,r24
+ 1147               	.LM138:
+ 1148 0496 0F90      		pop __tmp_reg__
+ 1149 0498 0F90      		pop __tmp_reg__
+ 1150 049a 00C0      		rjmp .L87
+ 1151               	.L74:
+ 1153               	.LM139:
+ 1154 049c 60E8      		ldi r22,lo8(-128)
+ 1155 049e 80E0      		ldi r24,lo8(0)
+ 1156 04a0 0E94 0000 		call rf_polling_rx_packet
+ 1157 04a4 182F      		mov r17,r24
+ 1158 04a6 8823      		tst r24
+ 1159 04a8 01F0      		breq .L75
+ 1161               	.LM140:
+ 1162 04aa 802F      		mov r24,r16
+ 1163 04ac 0E94 0000 		call nrk_gpio_clr
+ 1165               	.LM141:
+ 1166 04b0 0E94 0000 		call rf_rx_off
+ 1168               	.LM142:
+ 1169 04b4 1130      		cpi r17,lo8(1)
+ 1170 04b6 01F4      		brne .+2
+ 1171 04b8 00C0      		rjmp .L78
+ 1173               	.LM143:
+ 1174 04ba 6091 0000 		lds r22,__iob+2
+ 1175 04be 7091 0000 		lds r23,(__iob+2)+1
+ 1176 04c2 82E6      		ldi r24,lo8(98)
+ 1177 04c4 90E0      		ldi r25,hi8(98)
+ 1178               	.L93:
+ 1179 04c6 0E94 0000 		call fputc
+ 1181               	.LM144:
+ 1182 04ca 8091 0000 		lds r24,packetsLost
+ 1183 04ce 9091 0000 		lds r25,(packetsLost)+1
+ 1184 04d2 0196      		adiw r24,1
+ 1185 04d4 9093 0000 		sts (packetsLost)+1,r25
+ 1186 04d8 8093 0000 		sts packetsLost,r24
+ 1187 04dc 00C0      		rjmp .L87
+ 1188               	.L80:
+ 1190               	.LM145:
+ 1191 04de 8091 0000 		lds r24,txCount
+ 1192 04e2 9091 0000 		lds r25,(txCount)+1
+ 1193 04e6 0196      		adiw r24,1
+ 1194 04e8 9093 0000 		sts (txCount)+1,r25
+ 1195 04ec 8093 0000 		sts txCount,r24
+ 1196               	.LBB9:
+ 1197               	.LBB10:
+ 1199               	.LM146:
+ 1200 04f0 12FF      		sbrs r17,2
+ 1201 04f2 00C0      		rjmp .L81
+ 1202 04f4 83E8      		ldi r24,lo8(-125)
+ 1203 04f6 00C0      		rjmp .L83
+ 1204               	.L81:
+ 1205 04f8 83E0      		ldi r24,lo8(3)
+ 1206               	.L83:
+ 1207               	.LBE10:
+ 1208               	.LBE9:
+ 1210               	.LM147:
+ 1211 04fa 8093 0000 		sts DHR,r24
+ 1213               	.LM148:
+ 1214 04fe 8093 0000 		sts isa_ack_buf,r24
+ 1216               	.LM149:
+ 1217 0502 80E0      		ldi r24,lo8(isa_ack_buf)
+ 1218 0504 90E0      		ldi r25,hi8(isa_ack_buf)
+ 1219 0506 9093 0000 		sts (isa_ack_tx+3)+1,r25
+ 1220 050a 8093 0000 		sts isa_ack_tx+3,r24
+ 1222               	.LM150:
+ 1223 050e 12FF      		sbrs r17,2
+ 1224 0510 00C0      		rjmp .L84
+ 1225               	.LBB11:
+ 1227               	.LM151:
+ 1228 0512 6091 0000 		lds r22,__iob+2
+ 1229 0516 7091 0000 		lds r23,(__iob+2)+1
+ 1230 051a 8BE4      		ldi r24,lo8(75)
+ 1231 051c 90E0      		ldi r25,hi8(75)
+ 1232 051e 0E94 0000 		call fputc
+ 1234               	.LM152:
+ 1235 0522 8091 0000 		lds r24,rx_start_time
+ 1236 0526 9091 0000 		lds r25,(rx_start_time)+1
+ 1237 052a 2091 0000 		lds r18,slot_start_time
+ 1238 052e 3091 0000 		lds r19,(slot_start_time)+1
+ 1239 0532 821B      		sub r24,r18
+ 1240 0534 930B      		sbc r25,r19
+ 1241 0536 9093 0000 		sts (offsetX)+1,r25
+ 1242 053a 8093 0000 		sts offsetX,r24
+ 1244               	.LM153:
+ 1245 053e 292F      		mov r18,r25
+ 1246 0540 3327      		clr r19
+ 1247 0542 2093 0000 		sts isa_ack_buf+1,r18
+ 1249               	.LM154:
+ 1250 0546 8093 0000 		sts isa_ack_buf+2,r24
+ 1252               	.LM155:
+ 1253 054a 84E0      		ldi r24,lo8(4)
+ 1254 054c 00C0      		rjmp .L92
+ 1255               	.L84:
+ 1256               	.LBE11:
+ 1258               	.LM156:
+ 1259 054e 82E0      		ldi r24,lo8(2)
+ 1260               	.L92:
+ 1261 0550 8093 0000 		sts isa_ack_tx+2,r24
+ 1263               	.LM157:
+ 1264 0554 802F      		mov r24,r16
+ 1265 0556 0E94 0000 		call nrk_gpio_set
+ 1267               	.LM158:
+ 1268 055a 4091 0000 		lds r20,isa_param+4
+ 1269 055e 5091 0000 		lds r21,(isa_param+4)+1
+ 1270 0562 6091 0000 		lds r22,slot_start_time
+ 1271 0566 7091 0000 		lds r23,(slot_start_time)+1
+ 1272 056a 20E0      		ldi r18,lo8(tx_start_time)
+ 1273 056c 30E0      		ldi r19,hi8(tx_start_time)
+ 1274 056e 80E0      		ldi r24,lo8(isa_ack_tx)
+ 1275 0570 90E0      		ldi r25,hi8(isa_ack_tx)
+ 1276 0572 0E94 0000 		call rf_tx_tdma_packet
+ 1278               	.LM159:
+ 1279 0576 802F      		mov r24,r16
+ 1280 0578 0E94 0000 		call nrk_gpio_clr
+ 1281 057c 00C0      		rjmp .L87
+ 1282               	.L78:
+ 1284               	.LM160:
+ 1285 057e 8091 0000 		lds r24,rxCount
+ 1286 0582 9091 0000 		lds r25,(rxCount)+1
+ 1287 0586 0196      		adiw r24,1
+ 1288 0588 9093 0000 		sts (rxCount)+1,r25
+ 1289 058c 8093 0000 		sts rxCount,r24
+ 1291               	.LM161:
+ 1292 0590 81E0      		ldi r24,lo8(1)
+ 1293 0592 90E0      		ldi r25,hi8(1)
+ 1294 0594 0E94 0000 		call nrk_led_toggle
+ 1296               	.LM162:
+ 1297 0598 E091 0000 		lds r30,isa_rfRxInfo+5
+ 1298 059c F091 0000 		lds r31,(isa_rfRxInfo+5)+1
+ 1299 05a0 1081      		ld r17,Z
+ 1301               	.LM163:
+ 1302 05a2 8091 0000 		lds r24,isa_rx_pkt_signal
+ 1303 05a6 0E94 0000 		call nrk_event_signal
+ 1305               	.LM164:
+ 1306 05aa 17FD      		sbrc r17,7
+ 1307 05ac 00C0      		rjmp .L80
+ 1308               	.L87:
+ 1309               	/* epilogue: frame size=1 */
+ 1310 05ae 2196      		adiw r28,1
+ 1311 05b0 0FB6      		in __tmp_reg__,__SREG__
+ 1312 05b2 F894      		cli
+ 1313 05b4 DEBF      		out __SP_H__,r29
+ 1314 05b6 0FBE      		out __SREG__,__tmp_reg__
+ 1315 05b8 CDBF      		out __SP_L__,r28
+ 1316 05ba DF91      		pop r29
+ 1317 05bc CF91      		pop r28
+ 1318 05be 1F91      		pop r17
+ 1319 05c0 0F91      		pop r16
+ 1320 05c2 0895      		ret
+ 1321               	/* epilogue end (size=11) */
+ 1322               	/* function _isa_rx size 243 (220) */
+ 1332               	.Lscope15:
+ 1334               		.stabd	78,0,0
+ 1335               		.data
+ 1336               	.LC1:
+ 1337 0021 4E6F 206C 		.string	"No link for this slot"
+ 1337      696E 6B20 
+ 1337      666F 7220 
+ 1337      7468 6973 
+ 1337      2073 6C6F 
+ 1338               	.LC2:
+ 1339 0037 4448 4452 		.string	"DHDRcount:%d"
+ 1339      636F 756E 
+ 1339      743A 2564 
+ 1339      00
+ 1340               		.text
+ 1344               	.global	_isa_tx
+ 1346               	_isa_tx:
+ 1347               		.stabd	46,0,0
+ 1349               	.LM165:
+ 1350               	.LFBB16:
+ 1351               	/* prologue: frame size=1 */
+ 1352 05c4 8F92      		push r8
+ 1353 05c6 9F92      		push r9
+ 1354 05c8 AF92      		push r10
+ 1355 05ca BF92      		push r11
+ 1356 05cc CF92      		push r12
+ 1357 05ce DF92      		push r13
+ 1358 05d0 EF92      		push r14
+ 1359 05d2 FF92      		push r15
+ 1360 05d4 0F93      		push r16
+ 1361 05d6 1F93      		push r17
+ 1362 05d8 CF93      		push r28
+ 1363 05da DF93      		push r29
+ 1364 05dc CDB7      		in r28,__SP_L__
+ 1365 05de DEB7      		in r29,__SP_H__
+ 1366 05e0 2197      		sbiw r28,1
+ 1367 05e2 0FB6      		in __tmp_reg__,__SREG__
+ 1368 05e4 F894      		cli
+ 1369 05e6 DEBF      		out __SP_H__,r29
+ 1370 05e8 0FBE      		out __SREG__,__tmp_reg__
+ 1371 05ea CDBF      		out __SP_L__,r28
+ 1372               	/* prologue end (size=20) */
+ 1373 05ec 8C01      		movw r16,r24
+ 1374 05ee 5B01      		movw r10,r22
+ 1376               	.LM166:
+ 1377 05f0 81E0      		ldi r24,lo8(1)
+ 1378 05f2 8093 0000 		sts isa_rfTxInfo+5,r24
+ 1380               	.LM167:
+ 1381 05f6 F801      		movw r30,r16
+ 1382 05f8 A085      		ldd r26,Z+8
+ 1383 05fa B185      		ldd r27,Z+9
+ 1384 05fc FD01      		movw r30,r26
+ 1385 05fe 8181      		ldd r24,Z+1
+ 1386 0600 9281      		ldd r25,Z+2
+ 1387 0602 0E94 0000 		call getHighPriorityEntry
+ 1388 0606 6C01      		movw r12,r24
+ 1390               	.LM168:
+ 1391 0608 892B      		or r24,r25
+ 1392 060a 01F4      		brne .L95
+ 1394               	.LM169:
+ 1395 060c 80E0      		ldi r24,lo8(.LC1)
+ 1396 060e 90E0      		ldi r25,hi8(.LC1)
+ 1397 0610 9F93      		push r25
+ 1398 0612 8F93      		push r24
+ 1399 0614 0E94 0000 		call printf
+ 1400 0618 00C0      		rjmp .L134
+ 1401               	.L95:
+ 1403               	.LM170:
+ 1404 061a 8A2C      		mov r8,r10
+ 1405 061c A092 0000 		sts previous_tx_slot,r10
+ 1407               	.LM171:
+ 1408 0620 0894      		sec
+ 1409 0622 C11C      		adc r12,__zero_reg__
+ 1410 0624 D11C      		adc r13,__zero_reg__
+ 1411 0626 D092 0000 		sts (isa_rfTxInfo+3)+1,r13
+ 1412 062a C092 0000 		sts isa_rfTxInfo+3,r12
+ 1414               	.LM172:
+ 1415 062e D601      		movw r26,r12
+ 1416 0630 8E91      		ld r24,-X
+ 1417 0632 6D01      		movw r12,r26
+ 1418 0634 8093 0000 		sts isa_rfTxInfo+2,r24
+ 1420               	.LM173:
+ 1421 0638 C801      		movw r24,r16
+ 1422 063a 0E94 0000 		call configDHDR
+ 1423 063e 982E      		mov r9,r24
+ 1425               	.LM174:
+ 1426 0640 E091 0000 		lds r30,isa_rfTxInfo+3
+ 1427 0644 F091 0000 		lds r31,(isa_rfTxInfo+3)+1
+ 1428 0648 8083      		st Z,r24
+ 1430               	.LM175:
+ 1431 064a E091 0000 		lds r30,isa_rfTxInfo+3
+ 1432 064e F091 0000 		lds r31,(isa_rfTxInfo+3)+1
+ 1433 0652 8091 0000 		lds r24,global_slot
+ 1434 0656 9091 0000 		lds r25,(global_slot)+1
+ 1435 065a 8183      		std Z+1,r24
+ 1437               	.LM176:
+ 1438 065c E091 0000 		lds r30,isa_rfTxInfo+3
+ 1439 0660 F091 0000 		lds r31,(isa_rfTxInfo+3)+1
+ 1440 0664 8091 0000 		lds r24,isa_id
+ 1441 0668 8283      		std Z+2,r24
+ 1443               	.LM177:
+ 1444 066a 0E94 0000 		call _nrk_high_speed_timer_reset
+ 1446               	.LM178:
+ 1447 066e 60E8      		ldi r22,lo8(9600)
+ 1448 0670 75E2      		ldi r23,hi8(9600)
+ 1449 0672 80E0      		ldi r24,lo8(0)
+ 1450 0674 90E0      		ldi r25,hi8(0)
+ 1451 0676 0E94 0000 		call nrk_high_speed_timer_wait
+ 1453               	.LM179:
+ 1454 067a E090 0000 		lds r14,NRK_DEBUG_1
+ 1455 067e 8E2D      		mov r24,r14
+ 1456 0680 0E94 0000 		call nrk_gpio_set
+ 1458               	.LM180:
+ 1459 0684 4091 0000 		lds r20,isa_param+4
+ 1460 0688 5091 0000 		lds r21,(isa_param+4)+1
+ 1461 068c 6091 0000 		lds r22,slot_start_time
+ 1462 0690 7091 0000 		lds r23,(slot_start_time)+1
+ 1463 0694 20E0      		ldi r18,lo8(tx_start_time)
+ 1464 0696 30E0      		ldi r19,hi8(tx_start_time)
+ 1465 0698 80E0      		ldi r24,lo8(isa_rfTxInfo)
+ 1466 069a 90E0      		ldi r25,hi8(isa_rfTxInfo)
+ 1467 069c 0E94 0000 		call rf_tx_tdma_packet
+ 1468 06a0 8823      		tst r24
+ 1469 06a2 01F0      		breq .L98
+ 1471               	.LM181:
+ 1472 06a4 E5E7      		ldi r30,lo8(117)
+ 1473 06a6 F0E0      		ldi r31,hi8(117)
+ 1474 06a8 CE0E      		add r12,r30
+ 1475 06aa DF1E      		adc r13,r31
+ 1476 06ac D601      		movw r26,r12
+ 1477 06ae 1C92      		st X,__zero_reg__
+ 1478 06b0 EBE8      		ldi r30,lo8(-117)
+ 1479 06b2 FFEF      		ldi r31,hi8(-117)
+ 1480 06b4 CE0E      		add r12,r30
+ 1481 06b6 DF1E      		adc r13,r31
+ 1483               	.LM182:
+ 1484 06b8 8091 0000 		lds r24,txCount
+ 1485 06bc 9091 0000 		lds r25,(txCount)+1
+ 1486 06c0 0196      		adiw r24,1
+ 1487 06c2 9093 0000 		sts (txCount)+1,r25
+ 1488 06c6 8093 0000 		sts txCount,r24
+ 1490               	.LM183:
+ 1491 06ca 8E2D      		mov r24,r14
+ 1492 06cc 0E94 0000 		call nrk_gpio_clr
+ 1494               	.LM184:
+ 1495 06d0 83E0      		ldi r24,lo8(3)
+ 1496 06d2 90E0      		ldi r25,hi8(3)
+ 1497 06d4 0E94 0000 		call nrk_led_toggle
+ 1499               	.LM185:
+ 1500 06d8 8091 0000 		lds r24,tx_start_time
+ 1501 06dc 9091 0000 		lds r25,(tx_start_time)+1
+ 1502 06e0 2091 0000 		lds r18,slot_start_time
+ 1503 06e4 3091 0000 		lds r19,(slot_start_time)+1
+ 1504 06e8 821B      		sub r24,r18
+ 1505 06ea 930B      		sbc r25,r19
+ 1506 06ec 9093 0000 		sts (offsetY)+1,r25
+ 1507 06f0 8093 0000 		sts offsetY,r24
+ 1508               	.L98:
+ 1510               	.LM186:
+ 1511 06f4 8091 0000 		lds r24,isa_tx_done_signal
+ 1512 06f8 0E94 0000 		call nrk_event_signal
+ 1514               	.LM187:
+ 1515 06fc 97FE      		sbrs r9,7
+ 1516 06fe 00C0      		rjmp .L100
+ 1518               	.LM188:
+ 1519 0700 0E94 0000 		call rf_polling_rx_on
+ 1521               	.LM189:
+ 1522 0704 8E2D      		mov r24,r14
+ 1523 0706 0E94 0000 		call nrk_gpio_set
+ 1525               	.LM190:
+ 1526 070a 0E94 0000 		call _nrk_high_speed_timer_reset
+ 1528               	.LM191:
+ 1529 070e 60E0      		ldi r22,lo8(4096)
+ 1530 0710 70E1      		ldi r23,hi8(4096)
+ 1531 0712 80E0      		ldi r24,lo8(0)
+ 1532 0714 90E0      		ldi r25,hi8(0)
+ 1533 0716 0E94 0000 		call nrk_high_speed_timer_wait
+ 1535               	.LM192:
+ 1536 071a 0E94 0000 		call _nrk_os_timer_get
+ 1537 071e 8983      		std Y+1,r24
+ 1539               	.LM193:
+ 1540 0720 8981      		ldd r24,Y+1
+ 1541 0722 8E5F      		subi r24,lo8(-(2))
+ 1542 0724 8983      		std Y+1,r24
+ 1543 0726 00C0      		rjmp .L102
+ 1544               	.L103:
+ 1546               	.LM194:
+ 1547 0728 0E94 0000 		call _nrk_os_timer_get
+ 1548 072c 9981      		ldd r25,Y+1
+ 1549 072e 9817      		cp r25,r24
+ 1550 0730 00F0      		brlo .+2
+ 1551 0732 00C0      		rjmp .L102
+ 1553               	.LM195:
+ 1554 0734 2091 0000 		lds r18,previous_tx_slot
+ 1556               	.LM196:
+ 1557 0738 822F      		mov r24,r18
+ 1558 073a 9927      		clr r25
+ 1559 073c A816      		cp r10,r24
+ 1560 073e B906      		cpc r11,r25
+ 1561 0740 01F4      		brne .L105
+ 1563               	.LM197:
+ 1564 0742 8091 0000 		lds r24,slot_expired
+ 1565 0746 9091 0000 		lds r25,(slot_expired)+1
+ 1566 074a 4996      		adiw r24,25
+ 1567 074c 9093 0000 		sts (slot_expired)+1,r25
+ 1568 0750 8093 0000 		sts slot_expired,r24
+ 1569 0754 00C0      		rjmp .L107
+ 1570               	.L105:
+ 1572               	.LM198:
+ 1573 0756 882D      		mov r24,r8
+ 1574 0758 821B      		sub r24,r18
+ 1575 075a 2091 0000 		lds r18,slot_expired
+ 1576 075e 3091 0000 		lds r19,(slot_expired)+1
+ 1577 0762 482F      		mov r20,r24
+ 1578 0764 5527      		clr r21
+ 1579 0766 47FD      		sbrc r20,7
+ 1580 0768 5095      		com r21
+ 1582               	.LM199:
+ 1583 076a 1816      		cp __zero_reg__,r24
+ 1584 076c 04F0      		brlt .L131
+ 1586               	.LM200:
+ 1587 076e 275E      		subi r18,lo8(-(25))
+ 1588 0770 3F4F      		sbci r19,hi8(-(25))
+ 1589               	.L131:
+ 1590 0772 240F      		add r18,r20
+ 1591 0774 351F      		adc r19,r21
+ 1592 0776 3093 0000 		sts (slot_expired)+1,r19
+ 1593 077a 2093 0000 		sts slot_expired,r18
+ 1594               	.L107:
+ 1596               	.LM201:
+ 1597 077e 0E94 0000 		call rf_rx_off
+ 1599               	.LM202:
+ 1600 0782 8E2D      		mov r24,r14
+ 1601 0784 0E94 0000 		call nrk_gpio_clr
+ 1603               	.LM203:
+ 1604 0788 6091 0000 		lds r22,__iob+2
+ 1605 078c 7091 0000 		lds r23,(__iob+2)+1
+ 1606 0790 83E7      		ldi r24,lo8(115)
+ 1607 0792 90E0      		ldi r25,hi8(115)
+ 1608 0794 0E94 0000 		call fputc
+ 1610               	.LM204:
+ 1611 0798 8091 0000 		lds r24,packetsLost
+ 1612 079c 9091 0000 		lds r25,(packetsLost)+1
+ 1613 07a0 0196      		adiw r24,1
+ 1614 07a2 9093 0000 		sts (packetsLost)+1,r25
+ 1615 07a6 8093 0000 		sts packetsLost,r24
+ 1617               	.LM205:
+ 1618 07aa 87E7      		ldi r24,lo8(119)
+ 1619 07ac 90E0      		ldi r25,hi8(119)
+ 1620 07ae C80E      		add r12,r24
+ 1621 07b0 D91E      		adc r13,r25
+ 1622 07b2 00C0      		rjmp .L133
+ 1623               	.L102:
+ 1625               	.LM206:
+ 1626 07b4 0E94 0000 		call rf_rx_check_sfd
+ 1627 07b8 8823      		tst r24
+ 1628 07ba 01F4      		brne .+2
+ 1629 07bc 00C0      		rjmp .L103
+ 1631               	.LM207:
+ 1632 07be 0E94 0000 		call _nrk_os_timer_get
+ 1633 07c2 8983      		std Y+1,r24
+ 1635               	.LM208:
+ 1636 07c4 8981      		ldd r24,Y+1
+ 1637 07c6 8E5F      		subi r24,lo8(-(2))
+ 1638 07c8 8983      		std Y+1,r24
+ 1640               	.LM209:
+ 1641 07ca F801      		movw r30,r16
+ 1642 07cc A085      		ldd r26,Z+8
+ 1643 07ce B185      		ldd r27,Z+9
+ 1644 07d0 FD01      		movw r30,r26
+ 1645 07d2 8585      		ldd r24,Z+13
+ 1646 07d4 87FF      		sbrs r24,7
+ 1647 07d6 00C0      		rjmp .L111
+ 1648 07d8 14E0      		ldi r17,lo8(4)
+ 1649 07da 00C0      		rjmp .L126
+ 1650               	.L114:
+ 1652               	.LM210:
+ 1653 07dc 0E94 0000 		call _nrk_os_timer_get
+ 1654 07e0 9981      		ldd r25,Y+1
+ 1655 07e2 9817      		cp r25,r24
+ 1656 07e4 00F4      		brsh .L126
+ 1658               	.LM211:
+ 1659 07e6 80E0      		ldi r24,lo8(.LC0)
+ 1660 07e8 90E0      		ldi r25,hi8(.LC0)
+ 1661 07ea 9F93      		push r25
+ 1662 07ec 8F93      		push r24
+ 1663 07ee 0E94 0000 		call printf
+ 1665               	.LM212:
+ 1666 07f2 8091 0000 		lds r24,packetsLost
+ 1667 07f6 9091 0000 		lds r25,(packetsLost)+1
+ 1668 07fa 0196      		adiw r24,1
+ 1669 07fc 9093 0000 		sts (packetsLost)+1,r25
+ 1670 0800 8093 0000 		sts packetsLost,r24
+ 1672               	.LM213:
+ 1673 0804 0E94 0000 		call _nrk_os_timer_get
+ 1674 0808 8093 0000 		sts tmp_curSec,r24
+ 1676               	.LM214:
+ 1677 080c 87E7      		ldi r24,lo8(119)
+ 1678 080e 90E0      		ldi r25,hi8(119)
+ 1679 0810 C80E      		add r12,r24
+ 1680 0812 D91E      		adc r13,r25
+ 1681 0814 D601      		movw r26,r12
+ 1682 0816 ED91      		ld r30,X+
+ 1683 0818 FC91      		ld r31,X
+ 1684 081a 89E8      		ldi r24,lo8(-119)
+ 1685 081c 9FEF      		ldi r25,hi8(-119)
+ 1686 081e C80E      		add r12,r24
+ 1687 0820 D91E      		adc r13,r25
+ 1688 0822 C601      		movw r24,r12
+ 1689 0824 0995      		icall
+ 1690               	.L134:
+ 1692               	.LM215:
+ 1693 0826 0F90      		pop __tmp_reg__
+ 1694 0828 0F90      		pop __tmp_reg__
+ 1695 082a 00C0      		rjmp .L125
+ 1696               	.L111:
+ 1697 082c 12E0      		ldi r17,lo8(2)
+ 1698               	.L126:
+ 1700               	.LM216:
+ 1701 082e 612F      		mov r22,r17
+ 1702 0830 81E0      		ldi r24,lo8(1)
+ 1703 0832 0E94 0000 		call rf_polling_rx_packet
+ 1704 0836 082F      		mov r16,r24
+ 1705 0838 8823      		tst r24
+ 1706 083a 01F0      		breq .L114
+ 1708               	.LM217:
+ 1709 083c 8130      		cpi r24,lo8(1)
+ 1710 083e 01F4      		brne .+2
+ 1711 0840 00C0      		rjmp .L117
+ 1713               	.LM218:
+ 1714 0842 6091 0000 		lds r22,__iob+2
+ 1715 0846 7091 0000 		lds r23,(__iob+2)+1
+ 1716 084a 86E6      		ldi r24,lo8(102)
+ 1717 084c 90E0      		ldi r25,hi8(102)
+ 1718 084e 0E94 0000 		call fputc
+ 1720               	.LM219:
+ 1721 0852 8091 0000 		lds r24,packetsLost
+ 1722 0856 9091 0000 		lds r25,(packetsLost)+1
+ 1723 085a 0196      		adiw r24,1
+ 1724 085c 9093 0000 		sts (packetsLost)+1,r25
+ 1725 0860 8093 0000 		sts packetsLost,r24
+ 1727               	.LM220:
+ 1728 0864 8091 0000 		lds r24,DHDRcount
+ 1729 0868 9091 0000 		lds r25,(DHDRcount)+1
+ 1730 086c 9F93      		push r25
+ 1731 086e 8F93      		push r24
+ 1732 0870 80E0      		ldi r24,lo8(.LC2)
+ 1733 0872 90E0      		ldi r25,hi8(.LC2)
+ 1734 0874 9F93      		push r25
+ 1735 0876 8F93      		push r24
+ 1736 0878 0E94 0000 		call printf
+ 1737 087c 0F90      		pop __tmp_reg__
+ 1738 087e 0F90      		pop __tmp_reg__
+ 1739 0880 0F90      		pop __tmp_reg__
+ 1740 0882 0F90      		pop __tmp_reg__
+ 1741               	.L119:
+ 1743               	.LM221:
+ 1744 0884 8E2D      		mov r24,r14
+ 1745 0886 0E94 0000 		call nrk_gpio_clr
+ 1747               	.LM222:
+ 1748 088a 0130      		cpi r16,lo8(1)
+ 1749 088c 01F0      		breq .+2
+ 1750 088e 00C0      		rjmp .L100
+ 1752               	.LM223:
+ 1753 0890 8091 0000 		lds r24,rxCount
+ 1754 0894 9091 0000 		lds r25,(rxCount)+1
+ 1755 0898 0196      		adiw r24,1
+ 1756 089a 9093 0000 		sts (rxCount)+1,r25
+ 1757 089e 8093 0000 		sts rxCount,r24
+ 1759               	.LM224:
+ 1760 08a2 1092 0000 		sts (slot_expired)+1,__zero_reg__
+ 1761 08a6 1092 0000 		sts slot_expired,__zero_reg__
+ 1763               	.LM225:
+ 1764 08aa E091 0000 		lds r30,isa_rfRxInfo+5
+ 1765 08ae F091 0000 		lds r31,(isa_rfRxInfo+5)+1
+ 1766 08b2 8081      		ld r24,Z
+ 1767 08b4 8093 0000 		sts DHR,r24
+ 1769               	.LM226:
+ 1770 08b8 87FF      		sbrs r24,7
+ 1771 08ba 00C0      		rjmp .L100
+ 1773               	.LM227:
+ 1774 08bc 8181      		ldd r24,Z+1
+ 1775 08be 9927      		clr r25
+ 1776 08c0 982F      		mov r25,r24
+ 1777 08c2 8827      		clr r24
+ 1778 08c4 2281      		ldd r18,Z+2
+ 1779 08c6 3327      		clr r19
+ 1780 08c8 822B      		or r24,r18
+ 1781 08ca 932B      		or r25,r19
+ 1782 08cc 9093 0000 		sts (offsetX)+1,r25
+ 1783 08d0 8093 0000 		sts offsetX,r24
+ 1785               	.LM228:
+ 1786 08d4 80E0      		ldi r24,lo8(0)
+ 1787 08d6 90E0      		ldi r25,hi8(0)
+ 1788 08d8 0E94 0000 		call nrk_led_toggle
+ 1790               	.LM229:
+ 1791 08dc 6091 0000 		lds r22,__iob+2
+ 1792 08e0 7091 0000 		lds r23,(__iob+2)+1
+ 1793 08e4 81E6      		ldi r24,lo8(97)
+ 1794 08e6 90E0      		ldi r25,hi8(97)
+ 1795 08e8 0E94 0000 		call fputc
+ 1797               	.LM230:
+ 1798 08ec A090 0000 		lds r10,offsetX
+ 1799 08f0 B090 0000 		lds r11,(offsetX)+1
+ 1800 08f4 8091 0000 		lds r24,offsetY
+ 1801 08f8 9091 0000 		lds r25,(offsetY)+1
+ 1802 08fc A81A      		sub r10,r24
+ 1803 08fe B90A      		sbc r11,r25
+ 1805               	.LM231:
+ 1806 0900 82E3      		ldi r24,lo8(50)
+ 1807 0902 8983      		std Y+1,r24
+ 1809               	.LM232:
+ 1810 0904 0E94 0000 		call _nrk_os_timer_get
+ 1811 0908 982E      		mov r9,r24
+ 1813               	.LM233:
+ 1814 090a 8090 0000 		lds r8,NRK_DEBUG_2
+ 1815 090e 882D      		mov r24,r8
+ 1816 0910 0E94 0000 		call nrk_gpio_set
+ 1818               	.LM234:
+ 1819 0914 B7FC      		sbrc r11,7
+ 1820 0916 00C0      		rjmp .L122
+ 1822               	.LM235:
+ 1823 0918 9092 0000 		sts tmp_curSec,r9
+ 1825               	.LM236:
+ 1826 091c 0E94 0000 		call _nrk_os_timer_stop
+ 1828               	.LM237:
+ 1829 0920 34E6      		ldi r19,lo8(6500)
+ 1830 0922 E32E      		mov r14,r19
+ 1831 0924 39E1      		ldi r19,hi8(6500)
+ 1832 0926 F32E      		mov r15,r19
+ 1833 0928 C501      		movw r24,r10
+ 1834 092a 64E6      		ldi r22,lo8(6500)
+ 1835 092c 79E1      		ldi r23,hi8(6500)
+ 1836 092e 0E94 0000 		call __divmodhi4
+ 1837 0932 8B01      		movw r16,r22
+ 1838 0934 0F5F      		subi r16,lo8(-(1))
+ 1840               	.LM238:
+ 1841 0936 0093 0000 		sts tmp_offsetSec,r16
+ 1843               	.LM239:
+ 1844 093a C501      		movw r24,r10
+ 1845 093c 64E6      		ldi r22,lo8(6500)
+ 1846 093e 79E1      		ldi r23,hi8(6500)
+ 1847 0940 0E94 0000 		call __divmodhi4
+ 1848 0944 E81A      		sub r14,r24
+ 1849 0946 F90A      		sbc r15,r25
+ 1851               	.LM240:
+ 1852 0948 F092 0000 		sts (tmp_offsetNanoSec)+1,r15
+ 1853 094c E092 0000 		sts tmp_offsetNanoSec,r14
+ 1855               	.LM241:
+ 1856 0950 0E94 0000 		call _nrk_high_speed_timer_reset
+ 1858               	.LM242:
+ 1859 0954 82E3      		ldi r24,lo8(50)
+ 1860 0956 90E0      		ldi r25,hi8(50)
+ 1861 0958 0E94 0000 		call nrk_spin_wait_us
+ 1863               	.LM243:
+ 1864 095c B701      		movw r22,r14
+ 1865 095e 80E0      		ldi r24,lo8(0)
+ 1866 0960 90E0      		ldi r25,hi8(0)
+ 1867 0962 0E94 0000 		call nrk_high_speed_timer_wait
+ 1869               	.LM244:
+ 1870 0966 892D      		mov r24,r9
+ 1871 0968 800F      		add r24,r16
+ 1872 096a 0E94 0000 		call _nrk_os_timer_set
+ 1874               	.LM245:
+ 1875 096e 84E6      		ldi r24,lo8(100)
+ 1876 0970 90E0      		ldi r25,hi8(100)
+ 1877 0972 0E94 0000 		call nrk_spin_wait_us
+ 1878 0976 00C0      		rjmp .L132
+ 1879               	.L122:
+ 1881               	.LM246:
+ 1882 0978 6091 0000 		lds r22,__iob+2
+ 1883 097c 7091 0000 		lds r23,(__iob+2)+1
+ 1884 0980 81E2      		ldi r24,lo8(33)
+ 1885 0982 90E0      		ldi r25,hi8(33)
+ 1886 0984 0E94 0000 		call fputc
+ 1888               	.LM247:
+ 1889 0988 0E94 0000 		call _nrk_os_timer_stop
+ 1891               	.LM248:
+ 1892 098c 0E94 0000 		call _nrk_high_speed_timer_reset
+ 1894               	.LM249:
+ 1895 0990 6627      		clr r22
+ 1896 0992 7727      		clr r23
+ 1897 0994 6A19      		sub r22,r10
+ 1898 0996 7B09      		sbc r23,r11
+ 1899 0998 80E0      		ldi r24,lo8(0)
+ 1900 099a 90E0      		ldi r25,hi8(0)
+ 1901 099c 0E94 0000 		call nrk_high_speed_timer_wait
+ 1903               	.LM250:
+ 1904 09a0 892D      		mov r24,r9
+ 1905 09a2 0E94 0000 		call _nrk_os_timer_set
+ 1906               	.L132:
+ 1908               	.LM251:
+ 1909 09a6 0E94 0000 		call _nrk_os_timer_start
+ 1911               	.LM252:
+ 1912 09aa 0E94 0000 		call _nrk_high_speed_timer_reset
+ 1914               	.LM253:
+ 1915 09ae 82E3      		ldi r24,lo8(50)
+ 1916 09b0 90E0      		ldi r25,hi8(50)
+ 1917 09b2 0E94 0000 		call nrk_spin_wait_us
+ 1919               	.LM254:
+ 1920 09b6 882D      		mov r24,r8
+ 1921 09b8 0E94 0000 		call nrk_gpio_clr
+ 1922               	.L100:
+ 1924               	.LM255:
+ 1925 09bc A7E7      		ldi r26,lo8(119)
+ 1926 09be B0E0      		ldi r27,hi8(119)
+ 1927 09c0 CA0E      		add r12,r26
+ 1928 09c2 DB1E      		adc r13,r27
+ 1929               	.L133:
+ 1930 09c4 D601      		movw r26,r12
+ 1931 09c6 ED91      		ld r30,X+
+ 1932 09c8 FC91      		ld r31,X
+ 1933 09ca 89E8      		ldi r24,lo8(-119)
+ 1934 09cc 9FEF      		ldi r25,hi8(-119)
+ 1935 09ce C80E      		add r12,r24
+ 1936 09d0 D91E      		adc r13,r25
+ 1937 09d2 C601      		movw r24,r12
+ 1938 09d4 0995      		icall
+ 1939 09d6 00C0      		rjmp .L125
+ 1940               	.L117:
+ 1942               	.LM256:
+ 1943 09d8 0E94 0000 		call rf_rx_off
+ 1944 09dc 00C0      		rjmp .L119
+ 1945               	.L125:
+ 1946               	/* epilogue: frame size=1 */
+ 1947 09de 2196      		adiw r28,1
+ 1948 09e0 0FB6      		in __tmp_reg__,__SREG__
+ 1949 09e2 F894      		cli
+ 1950 09e4 DEBF      		out __SP_H__,r29
+ 1951 09e6 0FBE      		out __SREG__,__tmp_reg__
+ 1952 09e8 CDBF      		out __SP_L__,r28
+ 1953 09ea DF91      		pop r29
+ 1954 09ec CF91      		pop r28
+ 1955 09ee 1F91      		pop r17
+ 1956 09f0 0F91      		pop r16
+ 1957 09f2 FF90      		pop r15
+ 1958 09f4 EF90      		pop r14
+ 1959 09f6 DF90      		pop r13
+ 1960 09f8 CF90      		pop r12
+ 1961 09fa BF90      		pop r11
+ 1962 09fc AF90      		pop r10
+ 1963 09fe 9F90      		pop r9
+ 1964 0a00 8F90      		pop r8
+ 1965 0a02 0895      		ret
+ 1966               	/* epilogue end (size=19) */
+ 1967               	/* function _isa_tx size 545 (506) */
+ 1978               	.Lscope16:
+ 1980               		.stabd	78,0,0
+ 1982               	.global	isa_wait_until_rx_or_tx
+ 1984               	isa_wait_until_rx_or_tx:
+ 1985               		.stabd	46,0,0
+ 1987               	.LM257:
+ 1988               	.LFBB17:
+ 1989               	/* prologue: frame size=0 */
+ 1990               	/* prologue end (size=0) */
+ 1992               	.LM258:
+ 1993 0a04 8091 0000 		lds r24,isa_rx_pkt_signal
+ 1994 0a08 0E94 0000 		call nrk_signal_register
+ 1996               	.LM259:
+ 1997 0a0c 8091 0000 		lds r24,isa_tx_done_signal
+ 1998 0a10 0E94 0000 		call nrk_signal_register
+ 2000               	.LM260:
+ 2001 0a14 21E0      		ldi r18,lo8(1)
+ 2002 0a16 30E0      		ldi r19,hi8(1)
+ 2003 0a18 40E0      		ldi r20,hlo8(1)
+ 2004 0a1a 50E0      		ldi r21,hhi8(1)
+ 2005 0a1c CA01      		movw r24,r20
+ 2006 0a1e B901      		movw r22,r18
+ 2007 0a20 0090 0000 		lds r0,isa_tx_done_signal
+ 2008 0a24 00C0      		rjmp 2f
+ 2009 0a26 660F      	1:	lsl r22
+ 2010 0a28 771F      		rol r23
+ 2011 0a2a 881F      		rol r24
+ 2012 0a2c 991F      		rol r25
+ 2013 0a2e 0A94      	2:	dec r0
+ 2014 0a30 02F4      		brpl 1b
+ 2015 0a32 0090 0000 		lds r0,isa_rx_pkt_signal
+ 2016 0a36 00C0      		rjmp 2f
+ 2017 0a38 220F      	1:	lsl r18
+ 2018 0a3a 331F      		rol r19
+ 2019 0a3c 441F      		rol r20
+ 2020 0a3e 551F      		rol r21
+ 2021 0a40 0A94      	2:	dec r0
+ 2022 0a42 02F4      		brpl 1b
+ 2023 0a44 622B      		or r22,r18
+ 2024 0a46 732B      		or r23,r19
+ 2025 0a48 842B      		or r24,r20
+ 2026 0a4a 952B      		or r25,r21
+ 2027 0a4c 0E94 0000 		call nrk_event_wait
+ 2029               	.LM261:
+ 2030 0a50 81E0      		ldi r24,lo8(1)
+ 2031 0a52 90E0      		ldi r25,hi8(1)
+ 2032               	/* epilogue: frame size=0 */
+ 2033 0a54 0895      		ret
+ 2034               	/* epilogue end (size=1) */
+ 2035               	/* function isa_wait_until_rx_or_tx size 41 (40) */
+ 2037               	.Lscope17:
+ 2039               		.stabd	78,0,0
+ 2042               	.global	isa_set_channel
+ 2044               	isa_set_channel:
+ 2045               		.stabd	46,0,0
+ 2047               	.LM262:
+ 2048               	.LFBB18:
+ 2049               	/* prologue: frame size=0 */
+ 2050               	/* prologue end (size=0) */
+ 2052               	.LM263:
+ 2053 0a56 8093 0000 		sts isa_param+2,r24
+ 2055               	.LM264:
+ 2056 0a5a 0E94 0000 		call rf_set_channel
+ 2057               	/* epilogue: frame size=0 */
+ 2058 0a5e 0895      		ret
+ 2059               	/* epilogue end (size=1) */
+ 2060               	/* function isa_set_channel size 5 (4) */
+ 2062               	.Lscope18:
+ 2064               		.stabd	78,0,0
+ 2066               	.global	isa_nw_task
+ 2068               	isa_nw_task:
+ 2069               		.stabd	46,0,0
+ 2071               	.LM265:
+ 2072               	.LFBB19:
+ 2073               	/* prologue: frame size=0 */
+ 2074 0a60 EF92      		push r14
+ 2075 0a62 FF92      		push r15
+ 2076 0a64 0F93      		push r16
+ 2077 0a66 1F93      		push r17
+ 2078 0a68 CF93      		push r28
+ 2079 0a6a DF93      		push r29
+ 2080               	/* prologue end (size=6) */
+ 2082               	.LM266:
+ 2083 0a6c 1092 0000 		sts _isa_ready,__zero_reg__
+ 2084               	.L140:
+ 2086               	.LM267:
+ 2087 0a70 0E94 0000 		call nrk_wait_until_next_period
+ 2089               	.LM268:
+ 2090 0a74 8091 0000 		lds r24,_isa_ready
+ 2091 0a78 8823      		tst r24
+ 2092 0a7a 01F0      		breq .L140
+ 2094               	.LM269:
+ 2095 0a7c 81E0      		ldi r24,lo8(1)
+ 2096 0a7e 8093 0000 		sts _isa_ready,r24
+ 2098               	.LM270:
+ 2099 0a82 E090 0000 		lds r14,NRK_DEBUG_1
+ 2100               	.L166:
+ 2101 0a86 00E0      		ldi r16,lo8(0)
+ 2102 0a88 10E0      		ldi r17,hi8(0)
+ 2103               	.L165:
+ 2104 0a8a 8E2D      		mov r24,r14
+ 2105 0a8c 0E94 0000 		call nrk_gpio_set
+ 2107               	.LM271:
+ 2108 0a90 8E2D      		mov r24,r14
+ 2109 0a92 0E94 0000 		call nrk_gpio_clr
+ 2111               	.LM272:
+ 2112 0a96 0E94 0000 		call _nrk_high_speed_timer_reset
+ 2114               	.LM273:
+ 2115 0a9a 0E94 0000 		call _nrk_high_speed_timer_get
+ 2116 0a9e 9093 0000 		sts (slot_start_time)+1,r25
+ 2117 0aa2 8093 0000 		sts slot_start_time,r24
+ 2119               	.LM274:
+ 2120 0aa6 8091 0000 		lds r24,global_slot
+ 2121 0aaa 9091 0000 		lds r25,(global_slot)+1
+ 2122 0aae 9093 0000 		sts (current_global_slot)+1,r25
+ 2123 0ab2 8093 0000 		sts current_global_slot,r24
+ 2125               	.LM275:
+ 2126 0ab6 8091 0000 		lds r24,global_slot
+ 2127 0aba 9091 0000 		lds r25,(global_slot)+1
+ 2128 0abe 8536      		cpi r24,101
+ 2129 0ac0 9105      		cpc r25,__zero_reg__
+ 2130 0ac2 00F0      		brlo .L143
+ 2132               	.LM276:
+ 2133 0ac4 8091 0000 		lds r24,global_slot
+ 2134 0ac8 9091 0000 		lds r25,(global_slot)+1
+ 2135 0acc 8456      		subi r24,lo8(-(-100))
+ 2136 0ace 9040      		sbci r25,hi8(-(-100))
+ 2137 0ad0 9093 0000 		sts (global_slot)+1,r25
+ 2138 0ad4 8093 0000 		sts global_slot,r24
+ 2140               	.LM277:
+ 2141 0ad8 8091 0000 		lds r24,global_cycle
+ 2142 0adc 9091 0000 		lds r25,(global_cycle)+1
+ 2143 0ae0 0196      		adiw r24,1
+ 2144 0ae2 9093 0000 		sts (global_cycle)+1,r25
+ 2145 0ae6 8093 0000 		sts global_cycle,r24
+ 2146               	.L143:
+ 2148               	.LM278:
+ 2149 0aea 2091 0000 		lds r18,global_slot
+ 2150 0aee 3091 0000 		lds r19,(global_slot)+1
+ 2152               	.LM279:
+ 2153 0af2 8091 0000 		lds r24,_isa_sync_ok
+ 2154 0af6 8130      		cpi r24,lo8(1)
+ 2155 0af8 01F4      		brne .L145
+ 2157               	.LM280:
+ 2158 0afa C901      		movw r24,r18
+ 2159 0afc 69E1      		ldi r22,lo8(25)
+ 2160 0afe 70E0      		ldi r23,hi8(25)
+ 2161 0b00 0E94 0000 		call __udivmodhi4
+ 2162 0b04 EC01      		movw r28,r24
+ 2164               	.LM281:
+ 2165 0b06 E091 0000 		lds r30,channelIndex
+ 2166 0b0a E00F      		add r30,r16
+ 2167 0b0c E093 0000 		sts channelIndex,r30
+ 2169               	.LM282:
+ 2170 0b10 FF27      		clr r31
+ 2171 0b12 EF70      		andi r30,lo8(15)
+ 2172 0b14 F070      		andi r31,hi8(15)
+ 2173 0b16 E050      		subi r30,lo8(-(slottedPattern))
+ 2174 0b18 F040      		sbci r31,hi8(-(slottedPattern))
+ 2175 0b1a 8081      		ld r24,Z
+ 2176 0b1c 8093 0000 		sts currentChannel,r24
+ 2178               	.LM283:
+ 2179 0b20 0E94 0000 		call isa_set_channel
+ 2181               	.LM284:
+ 2182 0b24 8C2F      		mov r24,r28
+ 2183 0b26 0E94 0000 		call findLink
+ 2184 0b2a FC01      		movw r30,r24
+ 2186               	.LM285:
+ 2187 0b2c 892B      		or r24,r25
+ 2188 0b2e 01F0      		breq .L147
+ 2190               	.LM286:
+ 2191 0b30 8481      		ldd r24,Z+4
+ 2192 0b32 8830      		cpi r24,lo8(8)
+ 2193 0b34 01F4      		brne .L149
+ 2195               	.LM287:
+ 2196 0b36 8C2F      		mov r24,r28
+ 2197 0b38 0E94 0000 		call _isa_rx
+ 2198 0b3c 00C0      		rjmp .L147
+ 2199               	.L149:
+ 2201               	.LM288:
+ 2202 0b3e 8130      		cpi r24,lo8(1)
+ 2203 0b40 01F4      		brne .L147
+ 2205               	.LM289:
+ 2206 0b42 6C2F      		mov r22,r28
+ 2207 0b44 7727      		clr r23
+ 2208 0b46 CF01      		movw r24,r30
+ 2209 0b48 0E94 0000 		call _isa_tx
+ 2210 0b4c 00C0      		rjmp .L147
+ 2211               	.L145:
+ 2213               	.LM290:
+ 2214 0b4e 8091 0000 		lds r24,isa_node_mode
+ 2215 0b52 8230      		cpi r24,lo8(2)
+ 2216 0b54 01F0      		breq .L152
+ 2218               	.LM291:
+ 2219 0b56 1092 0000 		sts (DHDRcount)+1,__zero_reg__
+ 2220 0b5a 1092 0000 		sts DHDRcount,__zero_reg__
+ 2222               	.LM292:
+ 2223 0b5e 0E94 0000 		call _isa_init_sync
+ 2224 0b62 00C0      		rjmp .L167
+ 2225               	.L152:
+ 2227               	.LM293:
+ 2228 0b64 81E0      		ldi r24,lo8(1)
+ 2229               	.L167:
+ 2230 0b66 8093 0000 		sts _isa_sync_ok,r24
+ 2231               	.L147:
+ 2233               	.LM294:
+ 2234 0b6a 2091 0000 		lds r18,slot_expired
+ 2235 0b6e 3091 0000 		lds r19,(slot_expired)+1
+ 2236 0b72 8091 0000 		lds r24,EXPIRATION
+ 2237 0b76 9091 0000 		lds r25,(EXPIRATION)+1
+ 2238 0b7a 2817      		cp r18,r24
+ 2239 0b7c 3907      		cpc r19,r25
+ 2240 0b7e 00F0      		brlo .L154
+ 2241 0b80 8091 0000 		lds r24,isa_node_mode
+ 2242 0b84 8230      		cpi r24,lo8(2)
+ 2243 0b86 01F0      		breq .L154
+ 2245               	.LM295:
+ 2246 0b88 1092 0000 		sts _isa_sync_ok,__zero_reg__
+ 2248               	.LM296:
+ 2249 0b8c 1092 0000 		sts (slot_expired)+1,__zero_reg__
+ 2250 0b90 1092 0000 		sts slot_expired,__zero_reg__
+ 2252               	.LM297:
+ 2253 0b94 1092 0000 		sts (global_slot)+1,__zero_reg__
+ 2254 0b98 1092 0000 		sts global_slot,__zero_reg__
+ 2256               	.LM298:
+ 2257 0b9c 8091 0000 		lds r24,resync_times
+ 2258 0ba0 9091 0000 		lds r25,(resync_times)+1
+ 2259 0ba4 0196      		adiw r24,1
+ 2260 0ba6 9093 0000 		sts (resync_times)+1,r25
+ 2261 0baa 8093 0000 		sts resync_times,r24
+ 2263               	.LM299:
+ 2264 0bae 8091 0000 		lds r24,isa_id
+ 2265 0bb2 8823      		tst r24
+ 2266 0bb4 01F0      		breq .L157
+ 2268               	.LM300:
+ 2269 0bb6 E091 0000 		lds r30,isa_clk_src_id
+ 2270 0bba E093 0000 		sts channelIndex,r30
+ 2272               	.LM301:
+ 2273 0bbe FF27      		clr r31
+ 2274 0bc0 E050      		subi r30,lo8(-(slottedPattern))
+ 2275 0bc2 F040      		sbci r31,hi8(-(slottedPattern))
+ 2276 0bc4 8081      		ld r24,Z
+ 2277 0bc6 00C0      		rjmp .L168
+ 2278               	.L157:
+ 2280               	.LM302:
+ 2281 0bc8 1092 0000 		sts channelIndex,__zero_reg__
+ 2283               	.LM303:
+ 2284 0bcc 8091 0000 		lds r24,slottedPattern
+ 2285               	.L168:
+ 2286 0bd0 8093 0000 		sts currentChannel,r24
+ 2288               	.LM304:
+ 2289 0bd4 8091 0000 		lds r24,currentChannel
+ 2290 0bd8 0E94 0000 		call isa_set_channel
+ 2291 0bdc 00C0      		rjmp .L166
+ 2292               	.L154:
+ 2294               	.LM305:
+ 2295 0bde 8091 0000 		lds r24,global_slot
+ 2296 0be2 9091 0000 		lds r25,(global_slot)+1
+ 2297 0be6 0E94 0000 		call isa_get_slots_until_next_wakeup
+ 2298 0bea 8C01      		movw r16,r24
+ 2300               	.LM306:
+ 2301 0bec 8091 0000 		lds r24,global_slot
+ 2302 0bf0 9091 0000 		lds r25,(global_slot)+1
+ 2303 0bf4 800F      		add r24,r16
+ 2304 0bf6 911F      		adc r25,r17
+ 2305 0bf8 9093 0000 		sts (global_slot)+1,r25
+ 2306 0bfc 8093 0000 		sts global_slot,r24
+ 2308               	.LM307:
+ 2309 0c00 80E0      		ldi r24,lo8(0)
+ 2310 0c02 90E0      		ldi r25,hi8(0)
+ 2311 0c04 0E94 0000 		call nrk_led_clr
+ 2313               	.LM308:
+ 2314 0c08 1092 0000 		sts (offsetY)+1,__zero_reg__
+ 2315 0c0c 1092 0000 		sts offsetY,__zero_reg__
+ 2317               	.LM309:
+ 2318 0c10 C801      		movw r24,r16
+ 2319 0c12 0E94 0000 		call nrk_wait_until_next_n_periods
+ 2321               	.LM310:
+ 2322 0c16 80E0      		ldi r24,lo8(0)
+ 2323 0c18 90E0      		ldi r25,hi8(0)
+ 2324 0c1a 0E94 0000 		call nrk_led_set
+ 2325 0c1e 00C0      		rjmp .L165
+ 2326               	/* epilogue: frame size=0 */
+ 2327               	/* epilogue: noreturn */
+ 2328               	/* epilogue end (size=0) */
+ 2329               	/* function isa_nw_task size 224 (218) */
+ 2336               	.Lscope19:
+ 2338               		.stabd	78,0,0
+ 2343               	.global	isa_init
+ 2345               	isa_init:
+ 2346               		.stabd	46,0,0
+ 2348               	.LM311:
+ 2349               	.LFBB20:
+ 2350               	/* prologue: frame size=0 */
+ 2351 0c20 FF92      		push r15
+ 2352 0c22 0F93      		push r16
+ 2353 0c24 1F93      		push r17
+ 2354               	/* prologue end (size=3) */
+ 2355 0c26 082F      		mov r16,r24
+ 2356 0c28 F62E      		mov r15,r22
+ 2357 0c2a 142F      		mov r17,r20
+ 2359               	.LM312:
+ 2360 0c2c 0E94 0000 		call nrk_signal_create
+ 2361 0c30 8093 0000 		sts isa_rx_pkt_signal,r24
+ 2363               	.LM313:
+ 2364 0c34 8F3F      		cpi r24,lo8(-1)
+ 2365 0c36 01F4      		brne .L170
+ 2367               	.LM314:
+ 2368 0c38 80E0      		ldi r24,lo8(__c.2718)
+ 2369 0c3a 90E0      		ldi r25,hi8(__c.2718)
+ 2370 0c3c 00C0      		rjmp .L180
+ 2371               	.L170:
+ 2373               	.LM315:
+ 2374 0c3e 0E94 0000 		call nrk_signal_create
+ 2375 0c42 8093 0000 		sts isa_tx_done_signal,r24
+ 2377               	.LM316:
+ 2378 0c46 8F3F      		cpi r24,lo8(-1)
+ 2379 0c48 01F4      		brne .L173
+ 2381               	.LM317:
+ 2382 0c4a 80E0      		ldi r24,lo8(__c.2720)
+ 2383 0c4c 90E0      		ldi r25,hi8(__c.2720)
+ 2384               	.L180:
+ 2385 0c4e 0E94 0000 		call nrk_kprintf
+ 2387               	.LM318:
+ 2388 0c52 E091 0000 		lds r30,nrk_cur_task_TCB
+ 2389 0c56 F091 0000 		lds r31,(nrk_cur_task_TCB)+1
+ 2390 0c5a 6085      		ldd r22,Z+8
+ 2391 0c5c 8EE0      		ldi r24,lo8(14)
+ 2392 0c5e 0E94 0000 		call nrk_kernel_error_add
+ 2393 0c62 8FEF      		ldi r24,lo8(255)
+ 2394 0c64 90E0      		ldi r25,hi8(255)
+ 2395 0c66 00C0      		rjmp .L172
+ 2396               	.L173:
+ 2398               	.LM319:
+ 2399 0c68 1092 0000 		sts (isa_rfRxInfo+5)+1,__zero_reg__
+ 2400 0c6c 1092 0000 		sts isa_rfRxInfo+5,__zero_reg__
+ 2402               	.LM320:
+ 2403 0c70 1092 0000 		sts isa_rfRxInfo+4,__zero_reg__
+ 2405               	.LM321:
+ 2406 0c74 0E94 0000 		call _nrk_high_speed_timer_start
+ 2408               	.LM322:
+ 2409 0c78 1092 0000 		sts (global_cycle)+1,__zero_reg__
+ 2410 0c7c 1092 0000 		sts global_cycle,__zero_reg__
+ 2412               	.LM323:
+ 2413 0c80 84E6      		ldi r24,lo8(100)
+ 2414 0c82 90E0      		ldi r25,hi8(100)
+ 2415 0c84 9093 0000 		sts (global_slot)+1,r25
+ 2416 0c88 8093 0000 		sts global_slot,r24
+ 2418               	.LM324:
+ 2419 0c8c 1092 0000 		sts _isa_sync_ok,__zero_reg__
+ 2421               	.LM325:
+ 2422 0c90 1092 0000 		sts _isa_join_ok,__zero_reg__
+ 2424               	.LM326:
+ 2425 0c94 1092 0000 		sts (slot_expired)+1,__zero_reg__
+ 2426 0c98 1092 0000 		sts slot_expired,__zero_reg__
+ 2428               	.LM327:
+ 2429 0c9c 0093 0000 		sts isa_node_mode,r16
+ 2431               	.LM328:
+ 2432 0ca0 F092 0000 		sts isa_id,r15
+ 2434               	.LM329:
+ 2435 0ca4 1093 0000 		sts isa_clk_src_id,r17
+ 2437               	.LM330:
+ 2438 0ca8 1092 0000 		sts isa_rx_data_ready,__zero_reg__
+ 2439 0cac 1092 0000 		sts (isa_rx_data_ready)+1,__zero_reg__
+ 2440 0cb0 1092 0000 		sts (isa_rx_data_ready)+2,__zero_reg__
+ 2441 0cb4 1092 0000 		sts (isa_rx_data_ready)+3,__zero_reg__
+ 2443               	.LM331:
+ 2444 0cb8 84E6      		ldi r24,lo8(100)
+ 2445 0cba 8093 0000 		sts isa_param+8,r24
+ 2447               	.LM332:
+ 2448 0cbe 80E4      		ldi r24,lo8(8000)
+ 2449 0cc0 9FE1      		ldi r25,hi8(8000)
+ 2450 0cc2 9093 0000 		sts (isa_param+6)+1,r25
+ 2451 0cc6 8093 0000 		sts isa_param+6,r24
+ 2453               	.LM333:
+ 2454 0cca 80EA      		ldi r24,lo8(4000)
+ 2455 0ccc 9FE0      		ldi r25,hi8(4000)
+ 2456 0cce 9093 0000 		sts (isa_param+4)+1,r25
+ 2457 0cd2 8093 0000 		sts isa_param+4,r24
+ 2459               	.LM334:
+ 2460 0cd6 8FE0      		ldi r24,lo8(15)
+ 2461 0cd8 8093 0000 		sts isa_param+2,r24
+ 2463               	.LM335:
+ 2464 0cdc 81E8      		ldi r24,lo8(6529)
+ 2465 0cde 99E1      		ldi r25,hi8(6529)
+ 2466 0ce0 9093 0000 		sts (isa_param)+1,r25
+ 2467 0ce4 8093 0000 		sts isa_param,r24
+ 2469               	.LM336:
+ 2470 0ce8 21E8      		ldi r18,lo8(6529)
+ 2471 0cea 39E1      		ldi r19,hi8(6529)
+ 2472 0cec 41E2      		ldi r20,lo8(9249)
+ 2473 0cee 54E2      		ldi r21,hi8(9249)
+ 2474 0cf0 6FE0      		ldi r22,lo8(15)
+ 2475 0cf2 80E0      		ldi r24,lo8(isa_rfRxInfo)
+ 2476 0cf4 90E0      		ldi r25,hi8(isa_rfRxInfo)
+ 2477 0cf6 0E94 0000 		call rf_init
+ 2479               	.LM337:
+ 2480 0cfa 81E0      		ldi r24,lo8(1)
+ 2481 0cfc 8093 0000 		sts AFTER_FIRST_SYNC,r24
+ 2483               	.LM338:
+ 2484 0d00 1092 0000 		sts slowIndex,__zero_reg__
+ 2486               	.LM339:
+ 2487 0d04 FF20      		tst r15
+ 2488 0d06 01F0      		breq .L175
+ 2490               	.LM340:
+ 2491 0d08 1093 0000 		sts channelIndex,r17
+ 2493               	.LM341:
+ 2494 0d0c E12F      		mov r30,r17
+ 2495 0d0e FF27      		clr r31
+ 2496 0d10 E050      		subi r30,lo8(-(slottedPattern))
+ 2497 0d12 F040      		sbci r31,hi8(-(slottedPattern))
+ 2498 0d14 8081      		ld r24,Z
+ 2499 0d16 00C0      		rjmp .L179
+ 2500               	.L175:
+ 2502               	.LM342:
+ 2503 0d18 1092 0000 		sts channelIndex,__zero_reg__
+ 2505               	.LM343:
+ 2506 0d1c 8091 0000 		lds r24,slottedPattern
+ 2507               	.L179:
+ 2508 0d20 8093 0000 		sts currentChannel,r24
+ 2510               	.LM344:
+ 2511 0d24 8091 0000 		lds r24,currentChannel
+ 2512 0d28 0E94 0000 		call isa_set_channel
+ 2514               	.LM345:
+ 2515 0d2c 1092 0000 		sts (resync_times)+1,__zero_reg__
+ 2516 0d30 1092 0000 		sts resync_times,__zero_reg__
+ 2518               	.LM346:
+ 2519 0d34 0E94 0000 		call dlmoInit
+ 2520 0d38 81E0      		ldi r24,lo8(1)
+ 2521 0d3a 90E0      		ldi r25,hi8(1)
+ 2522               	.L172:
+ 2523               	/* epilogue: frame size=0 */
+ 2524 0d3c 1F91      		pop r17
+ 2525 0d3e 0F91      		pop r16
+ 2526 0d40 FF90      		pop r15
+ 2527 0d42 0895      		ret
+ 2528               	/* epilogue end (size=4) */
+ 2529               	/* function isa_init size 146 (139) */
+ 2531               	.Lscope20:
+ 2533               		.stabd	78,0,0
+ 2535               	.global	isa_wait_until_rx_pkt
+ 2537               	isa_wait_until_rx_pkt:
+ 2538               		.stabd	46,0,0
+ 2540               	.LM347:
+ 2541               	.LFBB21:
+ 2542               	/* prologue: frame size=0 */
+ 2543               	/* prologue end (size=0) */
+ 2545               	.LM348:
+ 2546 0d44 8091 0000 		lds r24,isa_rx_pkt_signal
+ 2547 0d48 0E94 0000 		call nrk_signal_register
+ 2549               	.LM349:
+ 2550 0d4c 8091 0000 		lds r24,isa_rx_data_ready
+ 2551 0d50 8823      		tst r24
+ 2552 0d52 01F4      		brne .L182
+ 2554               	.LM350:
+ 2555 0d54 61E0      		ldi r22,lo8(1)
+ 2556 0d56 70E0      		ldi r23,hi8(1)
+ 2557 0d58 80E0      		ldi r24,hlo8(1)
+ 2558 0d5a 90E0      		ldi r25,hhi8(1)
+ 2559 0d5c 0090 0000 		lds r0,isa_rx_pkt_signal
+ 2560 0d60 00C0      		rjmp 2f
+ 2561 0d62 660F      	1:	lsl r22
+ 2562 0d64 771F      		rol r23
+ 2563 0d66 881F      		rol r24
+ 2564 0d68 991F      		rol r25
+ 2565 0d6a 0A94      	2:	dec r0
+ 2566 0d6c 02F4      		brpl 1b
+ 2567 0d6e 0E94 0000 		call nrk_event_wait
+ 2568               	.L182:
+ 2570               	.LM351:
+ 2571 0d72 81E0      		ldi r24,lo8(1)
+ 2572 0d74 90E0      		ldi r25,hi8(1)
+ 2573               	/* epilogue: frame size=0 */
+ 2574 0d76 0895      		ret
+ 2575               	/* epilogue end (size=1) */
+ 2576               	/* function isa_wait_until_rx_pkt size 26 (25) */
+ 2578               	.Lscope21:
+ 2580               		.stabd	78,0,0
+ 2584               	.global	isa_rx_pkt_get
+ 2586               	isa_rx_pkt_get:
+ 2587               		.stabd	46,0,0
+ 2589               	.LM352:
+ 2590               	.LFBB22:
+ 2591               	/* prologue: frame size=0 */
+ 2592               	/* prologue end (size=0) */
+ 2593 0d78 FC01      		movw r30,r24
+ 2594 0d7a DB01      		movw r26,r22
+ 2596               	.LM353:
+ 2597 0d7c 8091 0000 		lds r24,isa_rx_data_ready
+ 2598 0d80 8823      		tst r24
+ 2599 0d82 01F4      		brne .L186
+ 2601               	.LM354:
+ 2602 0d84 1082      		st Z,__zero_reg__
+ 2604               	.LM355:
+ 2605 0d86 1C92      		st X,__zero_reg__
+ 2606 0d88 80E0      		ldi r24,lo8(0)
+ 2607 0d8a 90E0      		ldi r25,hi8(0)
+ 2608 0d8c 0895      		ret
+ 2609               	.L186:
+ 2611               	.LM356:
+ 2612 0d8e 8091 0000 		lds r24,isa_rfRxInfo+3
+ 2613 0d92 8083      		st Z,r24
+ 2615               	.LM357:
+ 2616 0d94 8091 0000 		lds r24,isa_rfRxInfo+8
+ 2617 0d98 8C93      		st X,r24
+ 2619               	.LM358:
+ 2620 0d9a 8091 0000 		lds r24,isa_rfRxInfo+5
+ 2621 0d9e 9091 0000 		lds r25,(isa_rfRxInfo+5)+1
+ 2623               	.LM359:
+ 2624 0da2 0895      		ret
+ 2625               	/* epilogue: frame size=0 */
+ 2626               	/* epilogue: noreturn */
+ 2627               	/* epilogue end (size=0) */
+ 2628               	/* function isa_rx_pkt_get size 22 (22) */
+ 2630               	.Lscope22:
+ 2632               		.stabd	78,0,0
+ 2633               	.global	EXPIRATION
+ 2634               		.data
+ 2637               	EXPIRATION:
+ 2638 0044 C800      		.word	200
+ 2639               	.global	tmp_count
+ 2640               	.global	tmp_count
+ 2641               		.section .bss
+ 2644               	tmp_count:
+ 2645 0000 0000      		.skip 2,0
+ 2646               	.global	DHDRcount
+ 2647               	.global	DHDRcount
+ 2650               	DHDRcount:
+ 2651 0002 0000      		.skip 2,0
+ 2652               	.global	txCount
+ 2653               	.global	txCount
+ 2656               	txCount:
+ 2657 0004 0000      		.skip 2,0
+ 2658               	.global	rxCount
+ 2659               	.global	rxCount
+ 2662               	rxCount:
+ 2663 0006 0000      		.skip 2,0
+ 2664               	.global	packetsLost
+ 2665               	.global	packetsLost
+ 2668               	packetsLost:
+ 2669 0008 0000      		.skip 2,0
+ 2670               		.section	.progmem.data,"a",@progbits
+ 2673               	__c.2720:
+ 2674 0000 4953 4120 		.string	"ISA ERROR: creating tx signal failed\r\n"
+ 2674      4552 524F 
+ 2674      523A 2063 
+ 2674      7265 6174 
+ 2674      696E 6720 
+ 2677               	__c.2718:
+ 2678 0027 4953 4120 		.string	"ISA ERROR: creating rx signal failed\r\n"
+ 2678      4552 524F 
+ 2678      523A 2063 
+ 2678      7265 6174 
+ 2678      696E 6720 
+ 2679               		.comm _nrk_signal_list,4,1
+ 2680               		.comm nrk_idle_task_stk,128,1
+ 2681               		.comm nrk_kernel_stk_ptr,2,1
+ 2682               		.comm _nrk_prev_timer_val,1,1
+ 2683               		.comm _nrk_time_trigger,1,1
+ 2684               		.comm app_timer0_callback,2,1
+ 2685               		.comm app_timer0_prescale,1,1
+ 2686               		.comm error_task,1,1
+ 2687               		.comm error_num,1,1
+ 2688               		.comm isa_id,1,1
+ 2689               		.comm isa_clk_src_id,1,1
+ 2690               		.comm tx_slot_from_join,4,1
+ 2691               		.comm isa_rx_data_ready,4,1
+ 2692               		.comm child_list,4,1
+ 2693               		.comm DHDR,1,1
+ 2694               		.comm last_slot,2,1
+ 2695               		.comm resync_times,2,1
+ 2696               		.comm isa_param,9,1
+ 2697               		.comm isa_node_mode,1,1
+ 2698               		.comm isa_task,35,1
+ 2699               		.comm isa_task_stack,128,1
+ 2700               		.comm isa_rfRxInfo,9,1
+ 2701               		.comm isa_ack_tx,7,1
+ 2702               		.comm isa_ack_buf,4,1
+ 2703               		.comm isa_rfTxInfo,7,1
+ 2704               		.comm _isa_ready,1,1
+ 2705               		.comm _isa_join_ok,1,1
+ 2706               		.comm global_slot,2,1
+ 2707               		.comm current_global_slot,2,1
+ 2708               		.comm global_cycle,2,1
+ 2709               		.comm last_sync_slot,2,1
+ 2710               		.comm slottedPattern,16,1
+ 2711               		.comm slowPattern,3,1
+ 2712               		.comm currentChannel,1,1
+ 2713               		.comm channelIndex,1,1
+ 2714               		.comm slowIndex,1,1
+ 2715               		.comm slot_start_time,2,1
+ 2716               		.comm tx_start_time,2,1
+ 2717               		.comm rx_start_time,2,1
+ 2718               		.comm offsetY,2,1
+ 2719               		.comm offsetX,2,1
+ 2720               		.comm _isa_sync_ok,1,1
+ 2721               		.comm AFTER_FIRST_SYNC,1,1
+ 2722               		.comm slot_expired,2,1
+ 2723               		.comm previous_tx_slot,1,1
+ 2724               		.comm isa_tx_done_signal,1,1
+ 2725               		.comm isa_rx_pkt_signal,1,1
+ 2726               		.comm DAUX,29,1
+ 2727               		.comm DHR,1,1
+ 2728               		.comm tmp_curSec,1,1
+ 2729               		.comm tmp_offsetSec,1,1
+ 2730               		.comm tmp_offsetNanoSec,2,1
+ 2791               		.text
+ 2793               	.Letext0:
+ 2794               	/* File "../../../src/net/isa/isa.c": code 1748 = 0x06d4 (1620), prologues  62, epilogues  66 */
+DEFINED SYMBOLS
+                            *ABS*:00000000 isa.c
+     /tmp/ccIErN4k.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccIErN4k.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccIErN4k.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccIErN4k.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccIErN4k.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccIErN4k.s:159    .text:00000000 config_child_list
+                            *COM*:00000004 child_list
+     /tmp/ccIErN4k.s:202    .text:00000040 isa_get_channel
+                            *COM*:00000009 isa_param
+     /tmp/ccIErN4k.s:225    .text:00000048 isa_set_channel_pattern
+                            *COM*:00000010 slottedPattern
+                            *COM*:00000003 slowPattern
+     /tmp/ccIErN4k.s:333    .text:000000c8 isa_ready
+                            *COM*:00000001 _isa_ready
+     /tmp/ccIErN4k.s:369    .text:000000dc isa_rx_pkt_set_buffer
+                            *COM*:00000009 isa_rfRxInfo
+     /tmp/ccIErN4k.s:413    .text:000000fc isa_start
+     /tmp/ccIErN4k.s:436    .text:00000104 configDHDR
+     /tmp/ccIErN4k.s:482    .text:00000126 configDHR
+     /tmp/ccIErN4k.s:530    .text:00000138 configAdvDAUX
+                            *COM*:0000001d DAUX
+     /tmp/ccIErN4k.s:614    .text:0000019c isa_rx_pkt_check
+                            *COM*:00000004 isa_rx_data_ready
+     /tmp/ccIErN4k.s:638    .text:000001a8 isa_rx_pkt_release
+     /tmp/ccIErN4k.s:662    .text:000001ba isa_join_ready
+                            *COM*:00000001 _isa_join_ok
+     /tmp/ccIErN4k.s:696    .text:000001ce isa_task_config
+     /tmp/ccIErN4k.s:2068   .text:00000a60 isa_nw_task
+                            *COM*:00000023 isa_task
+                            *COM*:00000080 isa_task_stack
+     /tmp/ccIErN4k.s:792    .text:00000278 _isa_init_sync
+                            *COM*:00000001 _isa_sync_ok
+                            *COM*:00000001 isa_clk_src_id
+                            *COM*:00000002 global_slot
+     /tmp/ccIErN4k.s:1032   .text:000003de _isa_rx
+                            *COM*:00000002 rx_start_time
+     /tmp/ccIErN4k.s:2668   .bss:00000008 packetsLost
+     /tmp/ccIErN4k.s:2656   .bss:00000004 txCount
+                            *COM*:00000001 DHR
+                            *COM*:00000004 isa_ack_buf
+                            *COM*:00000007 isa_ack_tx
+                            *COM*:00000002 slot_start_time
+                            *COM*:00000002 offsetX
+                            *COM*:00000002 tx_start_time
+     /tmp/ccIErN4k.s:2662   .bss:00000006 rxCount
+                            *COM*:00000001 isa_rx_pkt_signal
+     /tmp/ccIErN4k.s:1346   .text:000005c4 _isa_tx
+                            *COM*:00000007 isa_rfTxInfo
+                            *COM*:00000001 previous_tx_slot
+                            *COM*:00000001 isa_id
+                            *COM*:00000002 offsetY
+                            *COM*:00000001 isa_tx_done_signal
+                            *COM*:00000002 slot_expired
+                            *COM*:00000001 tmp_curSec
+     /tmp/ccIErN4k.s:2650   .bss:00000002 DHDRcount
+                            *COM*:00000001 tmp_offsetSec
+                            *COM*:00000002 tmp_offsetNanoSec
+     /tmp/ccIErN4k.s:1984   .text:00000a04 isa_wait_until_rx_or_tx
+     /tmp/ccIErN4k.s:2044   .text:00000a56 isa_set_channel
+                            *COM*:00000002 current_global_slot
+                            *COM*:00000002 global_cycle
+                            *COM*:00000001 channelIndex
+                            *COM*:00000001 currentChannel
+                            *COM*:00000001 isa_node_mode
+     /tmp/ccIErN4k.s:2637   .data:00000044 EXPIRATION
+                            *COM*:00000002 resync_times
+     /tmp/ccIErN4k.s:2345   .text:00000c20 isa_init
+     /tmp/ccIErN4k.s:2677   .progmem.data:00000027 __c.2718
+     /tmp/ccIErN4k.s:2673   .progmem.data:00000000 __c.2720
+                            *COM*:00000001 AFTER_FIRST_SYNC
+                            *COM*:00000001 slowIndex
+     /tmp/ccIErN4k.s:2537   .text:00000d44 isa_wait_until_rx_pkt
+     /tmp/ccIErN4k.s:2586   .text:00000d78 isa_rx_pkt_get
+     /tmp/ccIErN4k.s:2644   .bss:00000000 tmp_count
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000080 nrk_idle_task_stk
+                            *COM*:00000002 nrk_kernel_stk_ptr
+                            *COM*:00000001 _nrk_prev_timer_val
+                            *COM*:00000001 _nrk_time_trigger
+                            *COM*:00000002 app_timer0_callback
+                            *COM*:00000001 app_timer0_prescale
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+                            *COM*:00000004 tx_slot_from_join
+                            *COM*:00000001 DHDR
+                            *COM*:00000002 last_slot
+                            *COM*:00000002 last_sync_slot
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+nrk_task_set_stk
+nrk_activate_task
+rf_set_rx
+rf_polling_rx_on
+_nrk_set_next_wakeup
+_nrk_os_timer_set
+_nrk_os_timer_get
+rf_rx_check_sfd
+_nrk_high_speed_timer_reset
+rf_polling_rx_packet
+rf_rx_off
+nrk_led_toggle
+__iob
+fputc
+_nrk_os_timer_stop
+nrk_high_speed_timer_wait
+_nrk_os_timer_start
+nrk_cur_task_TCB
+NRK_DEBUG_2
+nrk_gpio_set
+nrk_gpio_clr
+_nrk_high_speed_timer_get
+printf
+rf_tx_tdma_packet
+nrk_event_signal
+getHighPriorityEntry
+NRK_DEBUG_1
+__divmodhi4
+nrk_spin_wait_us
+nrk_signal_register
+nrk_event_wait
+rf_set_channel
+nrk_wait_until_next_period
+__udivmodhi4
+findLink
+isa_get_slots_until_next_wakeup
+nrk_led_clr
+nrk_wait_until_next_n_periods
+nrk_led_set
+nrk_signal_create
+nrk_kprintf
+nrk_kernel_error_add
+_nrk_high_speed_timer_start
+rf_init
+dlmoInit

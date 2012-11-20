@@ -1,0 +1,812 @@
+   1               		.file	"nrk_eeprom.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 113               	.global	read_eeprom_current_image_checksum
+ 115               	read_eeprom_current_image_checksum:
+ 116               		.stabd	46,0,0
+   1:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** #include <nrk_eeprom.h>
+   2:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** #include <avr/eeprom.h>
+   3:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** #include <nrk_error.h>
+   4:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+   5:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t nrk_eeprom_read_byte( uint16_t addr )
+   6:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+   7:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t v;
+   8:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** v=eeprom_read_byte((uint8_t*)addr);
+   9:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** return v;
+  10:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+  11:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  12:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t nrk_eeprom_write_byte( uint16_t addr, uint8_t value )
+  13:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+  14:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** eeprom_write_byte( (uint8_t*)addr, value );
+  15:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+  16:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  17:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_mac_address(uint32_t *mac_addr)
+  18:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+  19:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t checksum,ct;
+  20:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t *buf;
+  21:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf=(uint8_t *)mac_addr;
+  22:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** checksum=buf[0]+buf[1]+buf[2]+buf[3];
+  23:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf[3]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_0);
+  24:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf[2]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_1);
+  25:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf[1]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_2);
+  26:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** buf[0]=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_3);
+  27:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** checksum=eeprom_read_byte ((uint8_t*)EE_MAC_ADDR_CHKSUM);
+  28:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** ct=buf[0];
+  29:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** ct+=buf[1];
+  30:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** ct+=buf[2];
+  31:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** ct+=buf[3];
+  32:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** if(checksum==ct) return NRK_OK;
+  33:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  34:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** return NRK_ERROR;
+  35:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+  36:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  37:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_channel(uint8_t *channel)
+  38:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+  39:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   *channel=eeprom_read_byte ((uint8_t*)EE_CHANNEL);
+  40:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** return NRK_OK;
+  41:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+  42:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  43:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t write_eeprom_load_img_pages(uint8_t *load_pages)
+  44:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+  45:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   eeprom_write_byte ((uint8_t*)EE_LOAD_IMG_PAGES, *load_pages);
+  46:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  47:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+  48:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  49:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_load_img_pages(uint8_t *load_pages)
+  50:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+  51:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   *load_pages=eeprom_read_byte ((uint8_t*)EE_LOAD_IMG_PAGES);
+  52:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  53:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+  54:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  55:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_aes_key(uint8_t *aes_key)
+  56:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+  57:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t i;
+  58:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+  59:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   aes_key[i]=eeprom_read_byte ((uint8_t*)(EE_AES_KEY+i));
+  60:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  61:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+  62:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  63:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t write_eeprom_aes_key(uint8_t *aes_key)
+  64:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+  65:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** uint8_t i;
+  66:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** for(i=0; i<16; i++ )
+  67:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   eeprom_write_byte ((uint8_t*)(EE_AES_KEY+i),aes_key[i]);
+  68:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  69:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+  70:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  71:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t read_eeprom_current_image_checksum(uint8_t *image_checksum)
+  72:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 118               	.LM0:
+ 119               	.LFBB1:
+ 120               	/* prologue: frame size=0 */
+ 121               	/* prologue end (size=0) */
+ 122 0000 FC01      		movw r30,r24
+ 123               	.LBB4:
+ 124               	.LBB5:
+ 126               	.Ltext1:
+   1:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /* Copyright (c) 2002, 2003, 2004, 2007 Marek Michalkiewicz
+   2:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    Copyright (c) 2005, 2006 Bjoern Haase
+   3:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    All rights reserved.
+   4:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+   5:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    Redistribution and use in source and binary forms, with or without
+   6:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    modification, are permitted provided that the following conditions are met:
+   7:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+   8:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    * Redistributions of source code must retain the above copyright
+   9:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      notice, this list of conditions and the following disclaimer.
+  10:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  11:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    * Redistributions in binary form must reproduce the above copyright
+  12:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      notice, this list of conditions and the following disclaimer in
+  13:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      the documentation and/or other materials provided with the
+  14:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      distribution.
+  15:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  16:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    * Neither the name of the copyright holders nor the names of
+  17:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      contributors may be used to endorse or promote products derived
+  18:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      from this software without specific prior written permission.
+  19:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  20:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  21:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  22:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  23:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  24:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  25:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  26:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  27:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  28:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  29:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  30:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  31:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  32:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /* $Id: eeprom.h,v 1.21 2007/01/23 15:32:48 joerg_wunsch Exp $ */
+  33:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  34:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /*
+  35:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    eeprom.h
+  36:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  37:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    Contributors:
+  38:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      Created by Marek Michalkiewicz <marekm@linux.org.pl>
+  39:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      eeprom_write_word and eeprom_write_block added by Artur Lipowski 
+  40:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      <LAL@pro.onet.pl>
+  41:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      Complete rewrite using the original interface by Bjoern Haase 
+  42:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      <bjoern.haase@de.bosch.com>. 
+  43:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****  */
+  44:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  45:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #ifndef _EEPROM_H_
+  46:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define _EEPROM_H_ 1
+  47:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  48:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define __need_size_t
+  49:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #include <stddef.h>
+  50:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #include <inttypes.h>
+  51:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  52:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \file */
+  53:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  54:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #ifdef __AVR_MEGA__
+  55:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define XCALL "call"
+  56:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #else
+  57:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define XCALL "rcall"
+  58:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #endif
+  59:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  60:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #include <avr/io.h>
+  61:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #ifndef __EEPROM_REG_LOCATIONS__
+  62:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \def __EEPROM_REG_LOCATIONS__
+  63:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \ingroup avr_eeprom
+  64:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      In order to be able to work without a requiring a multilib 
+  65:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      approach for dealing with controllers having the EEPROM registers
+  66:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      at different positions in memory space, the eeprom functions evaluate
+  67:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      __EEPROM_REG_LOCATIONS__: It is assumed to be defined by
+  68:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      the device io header and contains 6 uppercase hex digits encoding the 
+  69:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      addresses of EECR,EEDR and EEAR. 
+  70:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      First two letters:  EECR address.
+  71:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      Second two letters: EEDR address.
+  72:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      Last two letters:   EEAR address.
+  73:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      The default 1C1D1E corresponds to the
+  74:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      register location that is valid for most controllers. The value
+  75:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      of this define symbol is used for appending it to the base name of the
+  76:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      assembler functions.  */
+  77:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define __EEPROM_REG_LOCATIONS__ 1C1D1E
+  78:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #endif
+  79:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define _STR2(EXP) _STR1(EXP)
+  80:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define _STR1(EXP) #EXP
+  81:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define _REG_LOCATION_SUFFIX _STR2(__EEPROM_REG_LOCATIONS__)
+  82:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  83:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #ifndef CR_TAB
+  84:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define CR_TAB "\n\t"
+  85:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #endif
+  86:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  87:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  88:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \defgroup avr_eeprom <avr/eeprom.h>: EEPROM handling
+  89:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \code #include <avr/eeprom.h> \endcode
+  90:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  91:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     This header file declares the interface to some simple library
+  92:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     routines suitable for handling the data EEPROM contained in the
+  93:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     AVR microcontrollers.  The implementation uses a simple polled
+  94:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     mode interface.  Applications that require interrupt-controlled
+  95:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     EEPROM access to ensure that no time will be wasted in spinloops
+  96:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     will have to deploy their own implementation.
+  97:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+  98:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \note All of the read/write functions first make sure the EEPROM
+  99:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      is ready to be accessed.  Since this may cause long delays if a
+ 100:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      write operation is still pending, time-critical applications
+ 101:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      should first poll the EEPROM e. g. using eeprom_is_ready() before
+ 102:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      attempting any actual I/O.
+ 103:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 104:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \note This header file declares inline functions that call the
+ 105:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      assembler subroutines directly. This prevents that the compiler
+ 106:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      generates push/pops for the call-clobbered registers. This way
+ 107:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      also a specific calling convention could be used for the eeprom
+ 108:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      routines e.g. by passing values in __tmp_reg__, eeprom addresses in
+ 109:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      X and memory addresses in Z registers. Method is optimized for code 
+ 110:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      size.
+ 111:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 112:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \note Presently supported are two locations of the EEPROM register
+ 113:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      set: 0x1F,0x20,0x21 and 0x1C,0x1D,0x1E 
+ 114:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      (see ::__EEPROM_REG_LOCATIONS__).
+ 115:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 116:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \note As these functions modify IO registers, they are known to be
+ 117:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      non-reentrant.  If any of these functions are used from both,
+ 118:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      standard and interrupt context, the applications must ensure
+ 119:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      proper protection (e.g. by disabling interrupts before accessing
+ 120:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      them).
+ 121:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 122:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** */
+ 123:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 124:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 125:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /* forward declarations of the inline functions so that doxygen does
+ 126:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****    not get confused by the attribute expression.  */
+ 127:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 128:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** static inline uint8_t __attribute__ ((always_inline))
+ 129:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_read_byte (const uint8_t *addr);
+ 130:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 131:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** static inline uint16_t __attribute__ ((always_inline)) 
+ 132:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_read_word (const uint16_t *addr);
+ 133:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 134:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** static inline void __attribute__ ((always_inline))
+ 135:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_read_block (void *pointer_ram,
+ 136:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                    const void *pointer_eeprom,
+ 137:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                    size_t size);
+ 138:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 139:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** static inline void __attribute__ ((always_inline))
+ 140:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_write_byte (uint8_t *addr,uint8_t value);
+ 141:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 142:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** static inline void __attribute__ ((always_inline))
+ 143:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_write_word (uint16_t *addr,uint16_t value);
+ 144:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 145:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** static inline void __attribute__ ((always_inline))
+ 146:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_write_block (const void *pointer_ram,
+ 147:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                     void *pointer_eeprom,
+ 148:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                     size_t size);
+ 149:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 150:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \name avr-libc declarations */
+ 151:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 152:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /*@{*/
+ 153:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 154:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \def EEMEM
+ 155:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \ingroup avr_eeprom
+ 156:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     Attribute expression causing a variable to be allocated within the .eeprom
+ 157:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****      section.  */
+ 158:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define EEMEM __attribute__((section(".eeprom")))
+ 159:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 160:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \def eeprom_is_ready
+ 161:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \ingroup avr_eeprom
+ 162:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \returns 1 if EEPROM is ready for a new read/write operation, 0 if not. */
+ 163:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 164:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #if defined(__DOXYGEN__)
+ 165:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** # define eeprom_is_ready()
+ 166:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #elif defined(EEWE)
+ 167:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** # define eeprom_is_ready() bit_is_clear(EECR, EEWE)
+ 168:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #elif defined(EEPE)
+ 169:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** # define eeprom_is_ready() bit_is_clear(EECR, EEPE)
+ 170:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #elif defined(DEECR) && defined(EEL)
+ 171:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** # define eeprom_is_ready() bit_is_clear(DEECR, EEL)
+ 172:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #else
+ 173:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** # error "No write enable bit known for this device's EEPROM."
+ 174:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #endif
+ 175:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 176:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \def eeprom_busy_wait
+ 177:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \ingroup avr_eeprom
+ 178:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 179:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     Loops until the eeprom is no longer busy.
+ 180:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 181:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \returns Nothing. */
+ 182:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 183:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** #define eeprom_busy_wait() do {} while (!eeprom_is_ready())
+ 184:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 185:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 186:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \ingroup avr_eeprom
+ 187:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     Read one byte from EEPROM address \c addr. */
+ 188:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 189:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** uint8_t 
+ 190:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_read_byte (const uint8_t *addr) 
+ 191:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** {
+ 192:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   uint8_t result;
+ 193:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   __asm__ __volatile__
+ 128               	.LM1:
+ 129 0002 A7E0      		ldi r26,lo8(7)
+ 130 0004 B0E0      		ldi r27,hi8(7)
+ 131               	/* #APP */
+ 132 0006 0E94 0000 		call __eeprom_read_byte_1F2021
+ 133 000a 802D      		mov r24,__tmp_reg__
+ 134               	/* #NOAPP */
+ 135               	.LBE5:
+ 136               	.LBE4:
+ 138               	.Ltext2:
+  73:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   *image_checksum=eeprom_read_byte ((uint8_t*)EE_CURRENT_IMAGE_CHECKSUM);
+ 140               	.LM2:
+ 141 000c 8083      		st Z,r24
+  74:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  75:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 143               	.LM3:
+ 144 000e 81E0      		ldi r24,lo8(1)
+ 145 0010 90E0      		ldi r25,hi8(1)
+ 146               	/* epilogue: frame size=0 */
+ 147 0012 0895      		ret
+ 148               	/* epilogue end (size=1) */
+ 149               	/* function read_eeprom_current_image_checksum size 11 (10) */
+ 157               	.Lscope1:
+ 159               		.stabd	78,0,0
+ 162               	.global	write_eeprom_current_image_checksum
+ 164               	write_eeprom_current_image_checksum:
+ 165               		.stabd	46,0,0
+  76:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** 
+  77:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** int8_t write_eeprom_current_image_checksum(uint8_t *image_checksum)
+  78:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** {
+ 167               	.LM4:
+ 168               	.LFBB2:
+ 169               	/* prologue: frame size=0 */
+ 170               	/* prologue end (size=0) */
+ 171 0014 FC01      		movw r30,r24
+ 172               	.LBB8:
+ 173               	.LBB9:
+ 175               	.Ltext3:
+ 194:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****       ( XCALL " __eeprom_read_byte_" _REG_LOCATION_SUFFIX CR_TAB
+ 195:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****         "mov %1,__tmp_reg__"
+ 196:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****        : "+x" (addr),
+ 197:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****          "=r" (result)
+ 198:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****        : );
+ 199:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   return result;
+ 200:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** }
+ 201:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 202:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \ingroup avr_eeprom
+ 203:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     Read one 16-bit word (little endian) from EEPROM address \c addr. */
+ 204:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** uint16_t
+ 205:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_read_word (const uint16_t *addr)
+ 206:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** {
+ 207:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   uint16_t result;
+ 208:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 209:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   __asm__ __volatile__ (
+ 210:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****         XCALL " __eeprom_read_word_" _REG_LOCATION_SUFFIX CR_TAB
+ 211:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****        : "+x" (addr),
+ 212:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****          "=z" (result)
+ 213:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****        : );
+ 214:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   return result;
+ 215:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** }
+ 216:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 217:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \ingroup avr_eeprom
+ 218:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     Read a block of \c n bytes from EEPROM address \c pointer_eeprom to
+ 219:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     \c pointer_ram.  For constant n <= 256 bytes a library function is used.
+ 220:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     For block sizes unknown at compile time or block sizes > 256 an inline
+ 221:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     loop is expanded. */
+ 222:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 223:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** void 
+ 224:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_read_block (void *pointer_ram,
+ 225:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                    const void *pointer_eeprom,
+ 226:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                    size_t n)
+ 227:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** {
+ 228:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   if (!__builtin_constant_p (n)
+ 229:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****       || n > 256)
+ 230:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     {
+ 231:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****       /* make sure size is a 16 bit variable.  */
+ 232:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****       uint16_t size = n; 
+ 233:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 234:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****       __asm__ __volatile__ ( 
+ 235:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             ".%=_start:" CR_TAB
+ 236:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             "sbiw %2,1" CR_TAB
+ 237:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             "brlt .%=_finished" CR_TAB
+ 238:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****              XCALL " __eeprom_read_byte_" _REG_LOCATION_SUFFIX CR_TAB
+ 239:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             "st z+,__tmp_reg__" CR_TAB
+ 240:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             "rjmp .%=_start" CR_TAB
+ 241:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             ".%=_finished:" 
+ 242:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****           : "=x" (pointer_eeprom),
+ 243:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             "=z" (pointer_ram),
+ 244:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             "+w" (size)
+ 245:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****            : "x" (pointer_eeprom), 
+ 246:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****              "z" (pointer_ram)
+ 247:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****            : "memory");
+ 248:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     }
+ 249:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   else
+ 250:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     {
+ 251:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****       if (n != 0)
+ 252:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****         {
+ 253:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****           if (n == 256)
+ 254:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             {
+ 255:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****               __asm__ __volatile__ (
+ 256:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                   XCALL " __eeprom_read_block_" _REG_LOCATION_SUFFIX 
+ 257:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                 : "+x" (pointer_eeprom),
+ 258:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                   "=z" (pointer_ram)
+ 259:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                 : "z"  (pointer_ram)
+ 260:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                 : "memory");
+ 261:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             }
+ 262:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****           else
+ 263:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             {
+ 264:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****               /* Needed in order to truncate to 8 bit.  */
+ 265:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****               uint8_t len;
+ 266:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****               len = (uint8_t) n; 
+ 267:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 268:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****               __asm__ __volatile__ (
+ 269:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                   "mov __zero_reg__,%2"      CR_TAB
+ 270:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                    XCALL " __eeprom_read_block_" _REG_LOCATION_SUFFIX 
+ 271:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                 : "+x" (pointer_eeprom),
+ 272:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                   "=z" (pointer_ram)
+ 273:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                 : "r"  (len),
+ 274:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                   "z"  (pointer_ram)
+ 275:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****                 : "memory");
+ 276:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****             }
+ 277:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****         }
+ 278:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     }
+ 279:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** }
+ 280:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 281:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** /** \ingroup avr_eeprom
+ 282:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****     Write a byte \c value to EEPROM address \c addr. */
+ 283:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** 
+ 284:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** void 
+ 285:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** eeprom_write_byte (uint8_t *addr,uint8_t value)
+ 286:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h **** {
+ 287:/usr/local/lib/gcc/avr/4.2.2/../../../../avr/include/avr/eeprom.h ****   __asm__ __volatile__ (
+ 177               	.LM5:
+ 178 0016 8081      		ld r24,Z
+ 179 0018 A7E0      		ldi r26,lo8(7)
+ 180 001a B0E0      		ldi r27,hi8(7)
+ 181               	/* #APP */
+ 182 001c 082E      		mov __tmp_reg__,r24
+ 183 001e 0E94 0000 		call __eeprom_write_byte_1F2021
+ 184               	/* #NOAPP */
+ 185               	.LBE9:
+ 186               	.LBE8:
+ 188               	.Ltext4:
+  79:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   eeprom_write_byte ((uint8_t*)EE_CURRENT_IMAGE_CHECKSUM, *image_checksum);
+  80:../../../src/platform/firefly2_2/source/nrk_eeprom.c ****   return NRK_OK;
+  81:../../../src/platform/firefly2_2/source/nrk_eeprom.c **** }
+ 190               	.LM6:
+ 191 0022 81E0      		ldi r24,lo8(1)
+ 192 0024 90E0      		ldi r25,hi8(1)
+ 193               	/* epilogue: frame size=0 */
+ 194 0026 0895      		ret
+ 195               	/* epilogue end (size=1) */
+ 196               	/* function write_eeprom_current_image_checksum size 11 (10) */
+ 201               	.Lscope2:
+ 203               		.stabd	78,0,0
+ 206               	.global	nrk_eeprom_read_byte
+ 208               	nrk_eeprom_read_byte:
+ 209               		.stabd	46,0,0
+ 211               	.LM7:
+ 212               	.LFBB3:
+ 213               	/* prologue: frame size=0 */
+ 214               	/* prologue end (size=0) */
+ 215               	.LBB12:
+ 216               	.LBB13:
+ 218               	.Ltext5:
+ 220               	.LM8:
+ 221 0028 DC01      		movw r26,r24
+ 222               	/* #APP */
+ 223 002a 0E94 0000 		call __eeprom_read_byte_1F2021
+ 224 002e 802D      		mov r24,__tmp_reg__
+ 225               	/* #NOAPP */
+ 226               	.LBE13:
+ 227               	.LBE12:
+ 229               	.Ltext6:
+ 231               	.LM9:
+ 232 0030 9927      		clr r25
+ 233               	/* epilogue: frame size=0 */
+ 234 0032 0895      		ret
+ 235               	/* epilogue end (size=1) */
+ 236               	/* function nrk_eeprom_read_byte size 7 (6) */
+ 244               	.Lscope3:
+ 246               		.stabd	78,0,0
+ 249               	.global	read_eeprom_mac_address
+ 251               	read_eeprom_mac_address:
+ 252               		.stabd	46,0,0
+ 254               	.LM10:
+ 255               	.LFBB4:
+ 256               	/* prologue: frame size=0 */
+ 257               	/* prologue end (size=0) */
+ 258 0034 FC01      		movw r30,r24
+ 259               	.LBB24:
+ 260               	.LBB25:
+ 262               	.Ltext7:
+ 264               	.LM11:
+ 265 0036 A0E0      		ldi r26,lo8(0)
+ 266 0038 B0E0      		ldi r27,hi8(0)
+ 267               	/* #APP */
+ 268 003a 0E94 0000 		call __eeprom_read_byte_1F2021
+ 269 003e 402D      		mov r20,__tmp_reg__
+ 270               	/* #NOAPP */
+ 271               	.LBE25:
+ 272               	.LBE24:
+ 274               	.Ltext8:
+ 276               	.LM12:
+ 277 0040 4383      		std Z+3,r20
+ 278               	.LBB26:
+ 279               	.LBB27:
+ 281               	.Ltext9:
+ 283               	.LM13:
+ 284 0042 A1E0      		ldi r26,lo8(1)
+ 285 0044 B0E0      		ldi r27,hi8(1)
+ 286               	/* #APP */
+ 287 0046 0E94 0000 		call __eeprom_read_byte_1F2021
+ 288 004a 802D      		mov r24,__tmp_reg__
+ 289               	/* #NOAPP */
+ 290               	.LBE27:
+ 291               	.LBE26:
+ 293               	.Ltext10:
+ 295               	.LM14:
+ 296 004c 8283      		std Z+2,r24
+ 297               	.LBB28:
+ 298               	.LBB29:
+ 300               	.Ltext11:
+ 302               	.LM15:
+ 303 004e A2E0      		ldi r26,lo8(2)
+ 304 0050 B0E0      		ldi r27,hi8(2)
+ 305               	/* #APP */
+ 306 0052 0E94 0000 		call __eeprom_read_byte_1F2021
+ 307 0056 302D      		mov r19,__tmp_reg__
+ 308               	/* #NOAPP */
+ 309               	.LBE29:
+ 310               	.LBE28:
+ 312               	.Ltext12:
+ 314               	.LM16:
+ 315 0058 3183      		std Z+1,r19
+ 316               	.LBB30:
+ 317               	.LBB31:
+ 319               	.Ltext13:
+ 321               	.LM17:
+ 322 005a A3E0      		ldi r26,lo8(3)
+ 323 005c B0E0      		ldi r27,hi8(3)
+ 324               	/* #APP */
+ 325 005e 0E94 0000 		call __eeprom_read_byte_1F2021
+ 326 0062 902D      		mov r25,__tmp_reg__
+ 327               	/* #NOAPP */
+ 328               	.LBE31:
+ 329               	.LBE30:
+ 331               	.Ltext14:
+ 333               	.LM18:
+ 334 0064 9083      		st Z,r25
+ 335               	.LBB32:
+ 336               	.LBB33:
+ 338               	.Ltext15:
+ 340               	.LM19:
+ 341 0066 A4E0      		ldi r26,lo8(4)
+ 342 0068 B0E0      		ldi r27,hi8(4)
+ 343               	/* #APP */
+ 344 006a 0E94 0000 		call __eeprom_read_byte_1F2021
+ 345 006e 202D      		mov r18,__tmp_reg__
+ 346               	/* #NOAPP */
+ 347               	.LBE33:
+ 348               	.LBE32:
+ 350               	.Ltext16:
+ 352               	.LM20:
+ 353 0070 830F      		add r24,r19
+ 355               	.LM21:
+ 356 0072 840F      		add r24,r20
+ 358               	.LM22:
+ 359 0074 890F      		add r24,r25
+ 360 0076 2817      		cp r18,r24
+ 361 0078 01F4      		brne .L8
+ 363               	.LM23:
+ 364 007a 81E0      		ldi r24,lo8(1)
+ 365 007c 90E0      		ldi r25,hi8(1)
+ 366 007e 0895      		ret
+ 367               	.L8:
+ 368 0080 8FEF      		ldi r24,lo8(-1)
+ 369 0082 9FEF      		ldi r25,hi8(-1)
+ 371               	.LM24:
+ 372 0084 0895      		ret
+ 373               	/* epilogue: frame size=0 */
+ 374               	/* epilogue: noreturn */
+ 375               	/* epilogue end (size=0) */
+ 376               	/* function read_eeprom_mac_address size 46 (46) */
+ 408               	.Lscope4:
+ 410               		.stabd	78,0,0
+ 413               	.global	read_eeprom_channel
+ 415               	read_eeprom_channel:
+ 416               		.stabd	46,0,0
+ 418               	.LM25:
+ 419               	.LFBB5:
+ 420               	/* prologue: frame size=0 */
+ 421               	/* prologue end (size=0) */
+ 422 0086 FC01      		movw r30,r24
+ 423               	.LBB36:
+ 424               	.LBB37:
+ 426               	.Ltext17:
+ 428               	.LM26:
+ 429 0088 A5E0      		ldi r26,lo8(5)
+ 430 008a B0E0      		ldi r27,hi8(5)
+ 431               	/* #APP */
+ 432 008c 0E94 0000 		call __eeprom_read_byte_1F2021
+ 433 0090 802D      		mov r24,__tmp_reg__
+ 434               	/* #NOAPP */
+ 435               	.LBE37:
+ 436               	.LBE36:
+ 438               	.Ltext18:
+ 440               	.LM27:
+ 441 0092 8083      		st Z,r24
+ 443               	.LM28:
+ 444 0094 81E0      		ldi r24,lo8(1)
+ 445 0096 90E0      		ldi r25,hi8(1)
+ 446               	/* epilogue: frame size=0 */
+ 447 0098 0895      		ret
+ 448               	/* epilogue end (size=1) */
+ 449               	/* function read_eeprom_channel size 11 (10) */
+ 457               	.Lscope5:
+ 459               		.stabd	78,0,0
+ 462               	.global	read_eeprom_load_img_pages
+ 464               	read_eeprom_load_img_pages:
+ 465               		.stabd	46,0,0
+ 467               	.LM29:
+ 468               	.LFBB6:
+ 469               	/* prologue: frame size=0 */
+ 470               	/* prologue end (size=0) */
+ 471 009a FC01      		movw r30,r24
+ 472               	.LBB40:
+ 473               	.LBB41:
+ 475               	.Ltext19:
+ 477               	.LM30:
+ 478 009c A6E0      		ldi r26,lo8(6)
+ 479 009e B0E0      		ldi r27,hi8(6)
+ 480               	/* #APP */
+ 481 00a0 0E94 0000 		call __eeprom_read_byte_1F2021
+ 482 00a4 802D      		mov r24,__tmp_reg__
+ 483               	/* #NOAPP */
+ 484               	.LBE41:
+ 485               	.LBE40:
+ 487               	.Ltext20:
+ 489               	.LM31:
+ 490 00a6 8083      		st Z,r24
+ 492               	.LM32:
+ 493 00a8 81E0      		ldi r24,lo8(1)
+ 494 00aa 90E0      		ldi r25,hi8(1)
+ 495               	/* epilogue: frame size=0 */
+ 496 00ac 0895      		ret
+ 497               	/* epilogue end (size=1) */
+ 498               	/* function read_eeprom_load_img_pages size 11 (10) */
+ 506               	.Lscope6:
+ 508               		.stabd	78,0,0
+ 511               	.global	read_eeprom_aes_key
+ 513               	read_eeprom_aes_key:
+ 514               		.stabd	46,0,0
+ 516               	.LM33:
+ 517               	.LFBB7:
+ 518               	/* prologue: frame size=0 */
+ 519               	/* prologue end (size=0) */
+ 520 00ae AC01      		movw r20,r24
+ 521 00b0 20E0      		ldi r18,lo8(0)
+ 522 00b2 30E0      		ldi r19,hi8(0)
+ 523               	.L17:
+ 525               	.LM34:
+ 526 00b4 D901      		movw r26,r18
+ 527 00b6 1896      		adiw r26,8
+ 528               	.LBB44:
+ 529               	.LBB45:
+ 531               	.Ltext21:
+ 533               	.LM35:
+ 534               	/* #APP */
+ 535 00b8 0E94 0000 		call __eeprom_read_byte_1F2021
+ 536 00bc 802D      		mov r24,__tmp_reg__
+ 537               	/* #NOAPP */
+ 538               	.LBE45:
+ 539               	.LBE44:
+ 541               	.Ltext22:
+ 543               	.LM36:
+ 544 00be FA01      		movw r30,r20
+ 545 00c0 E20F      		add r30,r18
+ 546 00c2 F31F      		adc r31,r19
+ 547 00c4 8083      		st Z,r24
+ 548 00c6 2F5F      		subi r18,lo8(-(1))
+ 549 00c8 3F4F      		sbci r19,hi8(-(1))
+ 551               	.LM37:
+ 552 00ca 2031      		cpi r18,16
+ 553 00cc 3105      		cpc r19,__zero_reg__
+ 554 00ce 01F4      		brne .L17
+ 556               	.LM38:
+ 557 00d0 81E0      		ldi r24,lo8(1)
+ 558 00d2 90E0      		ldi r25,hi8(1)
+ 559               	/* epilogue: frame size=0 */
+ 560 00d4 0895      		ret
+ 561               	/* epilogue end (size=1) */
+ 562               	/* function read_eeprom_aes_key size 21 (20) */
+ 570               	.Lscope7:
+ 572               		.stabd	78,0,0
+ 576               	.global	nrk_eeprom_write_byte
+ 578               	nrk_eeprom_write_byte:
+ 579               		.stabd	46,0,0
+ 581               	.LM39:
+ 582               	.LFBB8:
+ 583               	/* prologue: frame size=0 */
+ 584               	/* prologue end (size=0) */
+ 585               	.LBB48:
+ 586               	.LBB49:
+ 588               	.Ltext23:
+ 590               	.LM40:
+ 591 00d6 DC01      		movw r26,r24
+ 592               	/* #APP */
+ 593 00d8 062E      		mov __tmp_reg__,r22
+ 594 00da 0E94 0000 		call __eeprom_write_byte_1F2021
+ 595               	/* #NOAPP */
+ 596               	.LBE49:
+ 597               	.LBE48:
+ 598               	/* epilogue: frame size=0 */
+ 599 00de 0895      		ret
+ 600               	/* epilogue end (size=1) */
+ 601               	/* function nrk_eeprom_write_byte size 6 (5) */
+ 606               	.Lscope8:
+ 608               		.stabd	78,0,0
+ 611               	.global	write_eeprom_load_img_pages
+ 613               	write_eeprom_load_img_pages:
+ 614               		.stabd	46,0,0
+ 616               	.Ltext24:
+ 618               	.LM41:
+ 619               	.LFBB9:
+ 620               	/* prologue: frame size=0 */
+ 621               	/* prologue end (size=0) */
+ 622 00e0 FC01      		movw r30,r24
+ 623               	.LBB52:
+ 624               	.LBB53:
+ 626               	.Ltext25:
+ 628               	.LM42:
+ 629 00e2 8081      		ld r24,Z
+ 630 00e4 A6E0      		ldi r26,lo8(6)
+ 631 00e6 B0E0      		ldi r27,hi8(6)
+ 632               	/* #APP */
+ 633 00e8 082E      		mov __tmp_reg__,r24
+ 634 00ea 0E94 0000 		call __eeprom_write_byte_1F2021
+ 635               	/* #NOAPP */
+ 636               	.LBE53:
+ 637               	.LBE52:
+ 639               	.Ltext26:
+ 641               	.LM43:
+ 642 00ee 81E0      		ldi r24,lo8(1)
+ 643 00f0 90E0      		ldi r25,hi8(1)
+ 644               	/* epilogue: frame size=0 */
+ 645 00f2 0895      		ret
+ 646               	/* epilogue end (size=1) */
+ 647               	/* function write_eeprom_load_img_pages size 11 (10) */
+ 652               	.Lscope9:
+ 654               		.stabd	78,0,0
+ 657               	.global	write_eeprom_aes_key
+ 659               	write_eeprom_aes_key:
+ 660               		.stabd	46,0,0
+ 662               	.LM44:
+ 663               	.LFBB10:
+ 664               	/* prologue: frame size=0 */
+ 665               	/* prologue end (size=0) */
+ 666 00f4 AC01      		movw r20,r24
+ 667 00f6 20E0      		ldi r18,lo8(0)
+ 668 00f8 30E0      		ldi r19,hi8(0)
+ 669               	.L27:
+ 671               	.LM45:
+ 672 00fa D901      		movw r26,r18
+ 673 00fc 1896      		adiw r26,8
+ 674               	.LBB56:
+ 675               	.LBB57:
+ 677               	.Ltext27:
+ 679               	.LM46:
+ 680 00fe FA01      		movw r30,r20
+ 681 0100 E20F      		add r30,r18
+ 682 0102 F31F      		adc r31,r19
+ 683 0104 8081      		ld r24,Z
+ 684               	/* #APP */
+ 685 0106 082E      		mov __tmp_reg__,r24
+ 686 0108 0E94 0000 		call __eeprom_write_byte_1F2021
+ 687               	/* #NOAPP */
+ 688 010c 2F5F      		subi r18,lo8(-(1))
+ 689 010e 3F4F      		sbci r19,hi8(-(1))
+ 690               	.LBE57:
+ 691               	.LBE56:
+ 693               	.Ltext28:
+ 695               	.LM47:
+ 696 0110 2031      		cpi r18,16
+ 697 0112 3105      		cpc r19,__zero_reg__
+ 698 0114 01F4      		brne .L27
+ 700               	.LM48:
+ 701 0116 81E0      		ldi r24,lo8(1)
+ 702 0118 90E0      		ldi r25,hi8(1)
+ 703               	/* epilogue: frame size=0 */
+ 704 011a 0895      		ret
+ 705               	/* epilogue end (size=1) */
+ 706               	/* function write_eeprom_aes_key size 21 (20) */
+ 711               	.Lscope10:
+ 713               		.stabd	78,0,0
+ 714               		.comm _nrk_signal_list,4,1
+ 715               		.comm error_task,1,1
+ 716               		.comm error_num,1,1
+ 721               	.Letext0:
+ 722               	/* File "../../../src/platform/firefly2_2/source/nrk_eeprom.c": code  156 = 0x009c ( 147), prologue
+DEFINED SYMBOLS
+                            *ABS*:00000000 nrk_eeprom.c
+     /tmp/ccoU0IZS.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccoU0IZS.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccoU0IZS.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccoU0IZS.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccoU0IZS.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccoU0IZS.s:115    .text:00000000 read_eeprom_current_image_checksum
+     /tmp/ccoU0IZS.s:164    .text:00000014 write_eeprom_current_image_checksum
+     /tmp/ccoU0IZS.s:208    .text:00000028 nrk_eeprom_read_byte
+     /tmp/ccoU0IZS.s:251    .text:00000034 read_eeprom_mac_address
+     /tmp/ccoU0IZS.s:415    .text:00000086 read_eeprom_channel
+     /tmp/ccoU0IZS.s:464    .text:0000009a read_eeprom_load_img_pages
+     /tmp/ccoU0IZS.s:513    .text:000000ae read_eeprom_aes_key
+     /tmp/ccoU0IZS.s:578    .text:000000d6 nrk_eeprom_write_byte
+     /tmp/ccoU0IZS.s:613    .text:000000e0 write_eeprom_load_img_pages
+     /tmp/ccoU0IZS.s:659    .text:000000f4 write_eeprom_aes_key
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__eeprom_read_byte_1F2021
+__eeprom_write_byte_1F2021

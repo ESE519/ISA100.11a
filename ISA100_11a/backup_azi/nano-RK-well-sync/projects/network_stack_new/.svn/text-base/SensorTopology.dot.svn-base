@@ -1,0 +1,12 @@
+
+digraph Topology
+{
+concentrate=true;
+	10 -> 2[label="-36"];
+	10 -> 4[label="-39"];
+	4 -> 2[label="-38"];
+	4 -> 3[label="-33"];
+	2 -> 10[label="-36"];
+	2 -> 4[label="-43"];
+	3 -> 4[label="-31"];
+}

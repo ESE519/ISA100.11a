@@ -1,0 +1,571 @@
+   1               		.file	"nrk_cpu.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 126               	.global	nrk_battery_save
+ 128               	nrk_battery_save:
+ 129               		.stabd	46,0,0
+   1:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** /******************************************************************************
+   2:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  Nano-RK, a real-time operating system for sensor networks.
+   3:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  Copyright (C) 2007, Real-Time and Multimedia Lab, Carnegie Mellon University
+   4:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  All rights reserved.
+   5:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+   6:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  This is the Open Source Version of Nano-RK included as part of a Dual
+   7:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  Licensing Model. If you are unsure which license to use please refer to:
+   8:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  http://www.nanork.org/nano-RK/wiki/Licensing
+   9:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  10:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  This program is free software: you can redistribute it and/or modify
+  11:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  it under the terms of the GNU General Public License as published by
+  12:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  the Free Software Foundation, version 2.0 of the License.
+  13:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  14:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  This program is distributed in the hope that it will be useful,
+  15:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  16:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  17:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  GNU General Public License for more details.
+  18:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  19:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  You should have received a copy of the GNU General Public License
+  20:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  21:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  22:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  Contributing Authors (specific to this file):
+  23:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  Anthony Rowe
+  24:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  Zane Starr
+  25:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *  Anand Eswaren
+  26:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *******************************************************************************/
+  27:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  28:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <include.h>
+  29:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <nrk.h>
+  30:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <avr/sleep.h>
+  31:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <nrk_stack_check.h>
+  32:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <nrk.h>
+  33:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <nrk_task.h>
+  34:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <nrk_defs.h>
+  35:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <nrk_cfg.h>
+  36:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <nrk_timer.h>
+  37:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #include <nrk_error.h>
+  38:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  39:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #define BUILD_DATE "Date: " __DATE__ "\n"
+  40:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** /*
+  41:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** ***************************************************************************************************
+  42:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *                                        INITIALIZE A TASK'S STACK
+  43:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  44:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** * Description: This function is highly processor specific.
+  45:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  46:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** * Arguments  : task          is a pointer to the task code
+  47:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  48:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *              pdata         is a pointer to a user supplied data area that will be passed to the t
+  49:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *                            when the task first executes.
+  50:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  51:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *              ptos          is a pointer to the top of stack.  It is assumed that 'ptos' points to
+  52:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *                            a 'free' entry on the task stack.  
+  53:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *                            'ptos' contains the HIGHEST valid address of the stack.  
+  54:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  55:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *              opt           specifies options that can be used to alter the behavior of OSTaskStkI
+  56:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *                            We don't use have any option implemented for this project. You can jus
+  57:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *                            set opt to 0
+  58:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  59:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** * Returns    : Always returns the location of the new top-of-stack' once the processor registers ha
+  60:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *              been placed on the stack in the proper order.
+  61:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** *
+  62:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** * Note(s)    : 
+  63:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** ***************************************************************************************************
+  64:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** */
+  65:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  66:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  67:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** void nrk_battery_save()
+  68:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** {
+ 131               	.LM0:
+ 132               	.LFBB1:
+ 133               	/* prologue: frame size=0 */
+ 134               	/* prologue end (size=0) */
+ 135               	/* epilogue: frame size=0 */
+ 136 0000 0895      		ret
+ 137               	/* epilogue end (size=1) */
+ 138               	/* function nrk_battery_save size 1 (0) */
+ 140               	.Lscope1:
+ 142               		.stabd	78,0,0
+ 144               	.global	nrk_sleep
+ 146               	nrk_sleep:
+ 147               		.stabd	46,0,0
+  69:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #ifdef NRK_BATTERY_SAVE
+  70:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****  	_nrk_stop_os_timer();
+  71:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         _nrk_set_next_wakeup(250);
+  72:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         nrk_led_clr(0);
+  73:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         nrk_led_set(1);
+  74:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         nrk_led_clr(2);
+  75:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         nrk_led_clr(3);
+  76:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         SET_VREG_INACTIVE();
+  77:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         nrk_sleep();
+  78:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #endif
+  79:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** }
+  80:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  81:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** void nrk_sleep()
+  82:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** {
+ 149               	.LM1:
+ 150               	.LFBB2:
+ 151               	/* prologue: frame size=0 */
+ 152               	/* prologue end (size=0) */
+  83:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  84:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     set_sleep_mode (SLEEP_MODE_PWR_SAVE);
+ 154               	.LM2:
+ 155 0002 83B7      		in r24,83-0x20
+ 156 0004 817F      		andi r24,lo8(-15)
+ 157 0006 8660      		ori r24,lo8(6)
+ 158 0008 83BF      		out 83-0x20,r24
+  85:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     sleep_mode ();
+ 160               	.LM3:
+ 161 000a 83B7      		in r24,83-0x20
+ 162 000c 8160      		ori r24,lo8(1)
+ 163 000e 83BF      		out 83-0x20,r24
+ 164               	/* #APP */
+ 165 0010 8895      		sleep
+ 166               		
+ 167               	/* #NOAPP */
+ 168 0012 83B7      		in r24,83-0x20
+ 169 0014 8E7F      		andi r24,lo8(-2)
+ 170 0016 83BF      		out 83-0x20,r24
+ 171               	/* epilogue: frame size=0 */
+ 172 0018 0895      		ret
+ 173               	/* epilogue end (size=1) */
+ 174               	/* function nrk_sleep size 15 (14) */
+ 176               	.Lscope2:
+ 178               		.stabd	78,0,0
+ 180               	.global	nrk_idle
+ 182               	nrk_idle:
+ 183               		.stabd	46,0,0
+  86:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  87:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** }
+  88:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  89:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** void nrk_idle()
+  90:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** {
+ 185               	.LM4:
+ 186               	.LFBB3:
+ 187               	/* prologue: frame size=0 */
+ 188               	/* prologue end (size=0) */
+  91:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  92:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     set_sleep_mode( SLEEP_MODE_IDLE);
+ 190               	.LM5:
+ 191 001a 83B7      		in r24,83-0x20
+ 192 001c 817F      		andi r24,lo8(-15)
+ 193 001e 83BF      		out 83-0x20,r24
+  93:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     sleep_mode ();
+ 195               	.LM6:
+ 196 0020 83B7      		in r24,83-0x20
+ 197 0022 8160      		ori r24,lo8(1)
+ 198 0024 83BF      		out 83-0x20,r24
+ 199               	/* #APP */
+ 200 0026 8895      		sleep
+ 201               		
+ 202               	/* #NOAPP */
+ 203 0028 83B7      		in r24,83-0x20
+ 204 002a 8E7F      		andi r24,lo8(-2)
+ 205 002c 83BF      		out 83-0x20,r24
+ 206               	/* epilogue: frame size=0 */
+ 207 002e 0895      		ret
+ 208               	/* epilogue end (size=1) */
+ 209               	/* function nrk_idle size 14 (13) */
+ 211               	.Lscope3:
+ 213               		.stabd	78,0,0
+ 217               	.global	nrk_task_set_entry_function
+ 219               	nrk_task_set_entry_function:
+ 220               		.stabd	46,0,0
+  94:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  95:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** }
+  96:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+  97:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** void nrk_task_set_entry_function( nrk_task_type *task, void *func )
+  98:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** {
+ 222               	.LM7:
+ 223               	.LFBB4:
+ 224               	/* prologue: frame size=0 */
+ 225               	/* prologue end (size=0) */
+  99:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** task->task=func;
+ 227               	.LM8:
+ 228 0030 FC01      		movw r30,r24
+ 229 0032 7683      		std Z+6,r23
+ 230 0034 6583      		std Z+5,r22
+ 231               	/* epilogue: frame size=0 */
+ 232 0036 0895      		ret
+ 233               	/* epilogue end (size=1) */
+ 234               	/* function nrk_task_set_entry_function size 4 (3) */
+ 236               	.Lscope4:
+ 238               		.stabd	78,0,0
+ 243               	.global	nrk_task_stk_init
+ 245               	nrk_task_stk_init:
+ 246               		.stabd	46,0,0
+ 100:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** }
+ 101:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 102:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** void nrk_task_set_stk( nrk_task_type *task, NRK_STK stk_base[], uint16_t stk_size )
+ 103:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** {
+ 104:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 105:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** if(stk_size<32) nrk_error_add(NRK_STACK_TOO_SMALL);
+ 106:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** task->Ptos = (void *) &stk_base[stk_size-1];
+ 107:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** task->Pbos = (void *) &stk_base[0];
+ 108:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 109:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** }
+ 110:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 111:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** void *nrk_task_stk_init (void (*task)(), void *ptos, void *pbos)
+ 112:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** {
+ 248               	.LM9:
+ 249               	.LFBB5:
+ 250               	/* prologue: frame size=0 */
+ 251               	/* prologue end (size=0) */
+ 252 0038 FB01      		movw r30,r22
+ 253 003a DA01      		movw r26,r20
+ 113:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     uint16_t *stk ;  // 2 bytes
+ 114:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     uint8_t *stkc; // 1 byte
+ 115:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 116:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     stk    = (unsigned int *)pbos;          /* Load stack pointer */ 
+ 117:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     stkc = (unsigned char*)stk;
+ 118:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *stkc = STK_CANARY_VAL;  // Flag for Stack Overflow    
+ 255               	.LM10:
+ 256 003c 25E5      		ldi r18,lo8(85)
+ 257 003e 2C93      		st X,r18
+ 119:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     stk    = (unsigned int *)ptos;          /* Load stack pointer */
+ 120:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     /* build a context for the new task */
+ 121:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     /* Where do these numbers come from? */
+ 122:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****    /* *(--stk) = 0x4f50;   // O P 
+ 123:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0x4d4e;   // M N 
+ 124:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0x4b4c;   // K L                      
+ 125:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0x494a;   // I J                      
+ 126:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0x4748;   // G H                      
+ 127:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0x4546;   // E F                    
+ 128:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0x4344;   // C D    	
+ 129:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0x4142;   // A B
+ 130:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** */
+ 131:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     --stk;
+ 259               	.LM11:
+ 260 0040 3297      		sbiw r30,2
+ 132:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     stkc = (unsigned char*)stk;	
+ 133:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *stkc++ = (unsigned char)((unsigned int)(task)/ 256);
+ 262               	.LM12:
+ 263 0042 292F      		mov r18,r25
+ 264 0044 3327      		clr r19
+ 265 0046 2083      		st Z,r18
+ 134:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *stkc = (unsigned char)((unsigned int)(task)%256);
+ 267               	.LM13:
+ 268 0048 8183      		std Z+1,r24
+ 135:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 	
+ 136:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0;
+ 270               	.LM14:
+ 271 004a 3297      		sbiw r30,2
+ 272 004c 1182      		std Z+1,__zero_reg__
+ 273 004e 1082      		st Z,__zero_reg__
+ 137:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0;       
+ 275               	.LM15:
+ 276 0050 3297      		sbiw r30,2
+ 277 0052 1182      		std Z+1,__zero_reg__
+ 278 0054 1082      		st Z,__zero_reg__
+ 138:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0;                        
+ 280               	.LM16:
+ 281 0056 3297      		sbiw r30,2
+ 282 0058 1182      		std Z+1,__zero_reg__
+ 283 005a 1082      		st Z,__zero_reg__
+ 139:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0;                        
+ 285               	.LM17:
+ 286 005c 3297      		sbiw r30,2
+ 287 005e 1182      		std Z+1,__zero_reg__
+ 288 0060 1082      		st Z,__zero_reg__
+ 140:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0;                         
+ 290               	.LM18:
+ 291 0062 3297      		sbiw r30,2
+ 292 0064 1182      		std Z+1,__zero_reg__
+ 293 0066 1082      		st Z,__zero_reg__
+ 141:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0;                         
+ 295               	.LM19:
+ 296 0068 3297      		sbiw r30,2
+ 297 006a 1182      		std Z+1,__zero_reg__
+ 298 006c 1082      		st Z,__zero_reg__
+ 142:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0;                        
+ 300               	.LM20:
+ 301 006e 3297      		sbiw r30,2
+ 302 0070 1182      		std Z+1,__zero_reg__
+ 303 0072 1082      		st Z,__zero_reg__
+ 143:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0; 
+ 305               	.LM21:
+ 306 0074 3297      		sbiw r30,2
+ 307 0076 1182      		std Z+1,__zero_reg__
+ 308 0078 1082      		st Z,__zero_reg__
+ 144:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 145:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0; 
+ 310               	.LM22:
+ 311 007a 3297      		sbiw r30,2
+ 312 007c 1182      		std Z+1,__zero_reg__
+ 313 007e 1082      		st Z,__zero_reg__
+ 146:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0; 
+ 315               	.LM23:
+ 316 0080 3297      		sbiw r30,2
+ 317 0082 1182      		std Z+1,__zero_reg__
+ 318 0084 1082      		st Z,__zero_reg__
+ 147:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0; 
+ 320               	.LM24:
+ 321 0086 3297      		sbiw r30,2
+ 322 0088 1182      		std Z+1,__zero_reg__
+ 323 008a 1082      		st Z,__zero_reg__
+ 148:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0; 
+ 325               	.LM25:
+ 326 008c 3297      		sbiw r30,2
+ 327 008e 1182      		std Z+1,__zero_reg__
+ 328 0090 1082      		st Z,__zero_reg__
+ 149:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0; 
+ 330               	.LM26:
+ 331 0092 3297      		sbiw r30,2
+ 332 0094 1182      		std Z+1,__zero_reg__
+ 333 0096 1082      		st Z,__zero_reg__
+ 150:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0; 
+ 335               	.LM27:
+ 336 0098 3297      		sbiw r30,2
+ 337 009a 1182      		std Z+1,__zero_reg__
+ 338 009c 1082      		st Z,__zero_reg__
+ 151:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0; 
+ 340               	.LM28:
+ 341 009e 3297      		sbiw r30,2
+ 342 00a0 1182      		std Z+1,__zero_reg__
+ 343 00a2 1082      		st Z,__zero_reg__
+ 152:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0; 
+ 345               	.LM29:
+ 346 00a4 3297      		sbiw r30,2
+ 347 00a6 1182      		std Z+1,__zero_reg__
+ 348 00a8 1082      		st Z,__zero_reg__
+ 153:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *(--stk) = 0;
+ 350               	.LM30:
+ 351 00aa 3297      		sbiw r30,2
+ 352 00ac 1182      		std Z+1,__zero_reg__
+ 353 00ae 1082      		st Z,__zero_reg__
+ 154:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 155:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 156:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     return ((void *)stk);
+ 157:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** }
+ 355               	.LM31:
+ 356 00b0 CF01      		movw r24,r30
+ 357               	/* epilogue: frame size=0 */
+ 358 00b2 0895      		ret
+ 359               	/* epilogue end (size=1) */
+ 360               	/* function nrk_task_stk_init size 62 (61) */
+ 362               	.Lscope5:
+ 364               		.stabd	78,0,0
+ 366               	.global	nrk_stack_pointer_init
+ 368               	nrk_stack_pointer_init:
+ 369               		.stabd	46,0,0
+ 158:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 159:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** inline void nrk_stack_pointer_init()
+ 160:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** {
+ 371               	.LM32:
+ 372               	.LFBB6:
+ 373               	/* prologue: frame size=0 */
+ 374               	/* prologue end (size=0) */
+ 161:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** unsigned char *stkc;
+ 162:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #ifdef KERNEL_STK_ARRAY
+ 163:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         stkc = (uint16_t*)&nrk_kernel_stk[NRK_KERNEL_STACKSIZE-1];
+ 164:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         nrk_kernel_stk[0]=STK_CANARY_VAL;
+ 165:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         nrk_kernel_stk_ptr = &nrk_kernel_stk[NRK_KERNEL_STACKSIZE-1];
+ 166:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     #else
+ 167:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         stkc = (unsigned char *)(NRK_KERNEL_STK_TOP-NRK_KERNEL_STACKSIZE);
+ 168:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         *stkc = STK_CANARY_VAL;
+ 376               	.LM33:
+ 377 00b4 85E5      		ldi r24,lo8(85)
+ 378 00b6 8093 7E21 		sts 8574,r24
+ 169:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         stkc = (unsigned char *)NRK_KERNEL_STK_TOP;
+ 170:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         nrk_kernel_stk_ptr = (unsigned char *)NRK_KERNEL_STK_TOP;
+ 380               	.LM34:
+ 381 00ba EEEF      		ldi r30,lo8(8702)
+ 382 00bc F1E2      		ldi r31,hi8(8702)
+ 383 00be F093 0000 		sts (nrk_kernel_stk_ptr)+1,r31
+ 384 00c2 E093 0000 		sts nrk_kernel_stk_ptr,r30
+ 171:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     #endif
+ 172:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *stkc++ = (uint16_t)((uint16_t)_nrk_timer_tick>>8);
+ 386               	.LM35:
+ 387 00c6 20E0      		ldi r18,lo8(pm(_nrk_timer_tick))
+ 388 00c8 30E0      		ldi r19,hi8(pm(_nrk_timer_tick))
+ 389 00ca 832F      		mov r24,r19
+ 390 00cc 9927      		clr r25
+ 391 00ce 8083      		st Z,r24
+ 173:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****     *stkc = (uint16_t)((uint16_t)_nrk_timer_tick&0xFF);
+ 393               	.LM36:
+ 394 00d0 2093 FF21 		sts 8703,r18
+ 395               	/* epilogue: frame size=0 */
+ 396 00d4 0895      		ret
+ 397               	/* epilogue end (size=1) */
+ 398               	/* function nrk_stack_pointer_init size 17 (16) */
+ 400               	.Lscope6:
+ 402               		.stabd	78,0,0
+ 404               	.global	nrk_stack_pointer_restore
+ 406               	nrk_stack_pointer_restore:
+ 407               		.stabd	46,0,0
+ 174:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 175:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** }
+ 176:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 177:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 178:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** inline void nrk_stack_pointer_restore()
+ 179:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** {
+ 409               	.LM37:
+ 410               	.LFBB7:
+ 411               	/* prologue: frame size=0 */
+ 412               	/* prologue end (size=0) */
+ 180:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** unsigned char *stkc;
+ 181:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 182:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #ifdef KERNEL_STK_ARRAY
+ 183:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         stkc = (uint16_t*)&nrk_kernel_stk[NRK_KERNEL_STACKSIZE-1];
+ 184:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #else
+ 185:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         stkc = (unsigned char *)NRK_KERNEL_STK_TOP;
+ 186:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** #endif
+ 187:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         *stkc++ = (uint16_t)((uint16_t)_nrk_timer_tick>>8);
+ 414               	.LM38:
+ 415 00d6 20E0      		ldi r18,lo8(pm(_nrk_timer_tick))
+ 416 00d8 30E0      		ldi r19,hi8(pm(_nrk_timer_tick))
+ 417 00da 832F      		mov r24,r19
+ 418 00dc 9927      		clr r25
+ 419 00de 8093 FE21 		sts 8702,r24
+ 188:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****         *stkc = (uint16_t)((uint16_t)_nrk_timer_tick&0xFF);
+ 421               	.LM39:
+ 422 00e2 2093 FF21 		sts 8703,r18
+ 423               	/* epilogue: frame size=0 */
+ 424 00e6 0895      		ret
+ 425               	/* epilogue end (size=1) */
+ 426               	/* function nrk_stack_pointer_restore size 9 (8) */
+ 428               	.Lscope7:
+ 430               		.stabd	78,0,0
+ 432               	.global	nrk_target_start
+ 434               	nrk_target_start:
+ 435               		.stabd	46,0,0
+ 189:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** }
+ 190:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 191:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** /* start the target running */
+ 192:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** void nrk_target_start(void)
+ 193:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** {
+ 437               	.LM40:
+ 438               	.LFBB8:
+ 439               	/* prologue: frame size=0 */
+ 440               	/* prologue end (size=0) */
+ 194:../../../src/kernel/hal/atmega1281/nrk_cpu.c **** 
+ 195:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****   _nrk_setup_timer();
+ 442               	.LM41:
+ 443 00e8 0E94 0000 		call _nrk_setup_timer
+ 196:../../../src/kernel/hal/atmega1281/nrk_cpu.c ****   nrk_int_enable();  
+ 445               	.LM42:
+ 446 00ec 0E94 0000 		call nrk_int_enable
+ 447               	/* epilogue: frame size=0 */
+ 448 00f0 0895      		ret
+ 449               	/* epilogue end (size=1) */
+ 450               	/* function nrk_target_start size 5 (4) */
+ 452               	.Lscope8:
+ 454               		.stabd	78,0,0
+ 459               	.global	nrk_task_set_stk
+ 461               	nrk_task_set_stk:
+ 462               		.stabd	46,0,0
+ 464               	.LM43:
+ 465               	.LFBB9:
+ 466               	/* prologue: frame size=0 */
+ 467 00f2 EF92      		push r14
+ 468 00f4 FF92      		push r15
+ 469 00f6 0F93      		push r16
+ 470 00f8 1F93      		push r17
+ 471 00fa CF93      		push r28
+ 472 00fc DF93      		push r29
+ 473               	/* prologue end (size=6) */
+ 474 00fe 7C01      		movw r14,r24
+ 475 0100 8B01      		movw r16,r22
+ 476 0102 EA01      		movw r28,r20
+ 478               	.LM44:
+ 479 0104 4032      		cpi r20,32
+ 480 0106 5105      		cpc r21,__zero_reg__
+ 481 0108 00F4      		brsh .L18
+ 483               	.LM45:
+ 484 010a 81E1      		ldi r24,lo8(17)
+ 485 010c 0E94 0000 		call nrk_error_add
+ 486               	.L18:
+ 488               	.LM46:
+ 489 0110 C801      		movw r24,r16
+ 490 0112 0197      		sbiw r24,1
+ 491 0114 8C0F      		add r24,r28
+ 492 0116 9D1F      		adc r25,r29
+ 493 0118 F701      		movw r30,r14
+ 494 011a 9283      		std Z+2,r25
+ 495 011c 8183      		std Z+1,r24
+ 497               	.LM47:
+ 498 011e 1483      		std Z+4,r17
+ 499 0120 0383      		std Z+3,r16
+ 500               	/* epilogue: frame size=0 */
+ 501 0122 DF91      		pop r29
+ 502 0124 CF91      		pop r28
+ 503 0126 1F91      		pop r17
+ 504 0128 0F91      		pop r16
+ 505 012a FF90      		pop r15
+ 506 012c EF90      		pop r14
+ 507 012e 0895      		ret
+ 508               	/* epilogue end (size=7) */
+ 509               	/* function nrk_task_set_stk size 31 (18) */
+ 511               	.Lscope9:
+ 513               		.stabd	78,0,0
+ 514               		.comm _nrk_signal_list,4,1
+ 515               		.comm nrk_idle_task_stk,128,1
+ 516               		.comm nrk_kernel_stk_ptr,2,1
+ 517               		.comm nrk_task_TCB,99,1
+ 518               		.comm nrk_wakeup_signal,1,1
+ 519               		.comm _nrk_readyQ,20,1
+ 520               		.comm _free_node,2,1
+ 521               		.comm _head_node,2,1
+ 522               		.comm nrk_cur_task_prio,1,1
+ 523               		.comm nrk_cur_task_TCB,2,1
+ 524               		.comm nrk_high_ready_prio,1,1
+ 525               		.comm nrk_high_ready_TCB,2,1
+ 526               		.comm _nrk_resource_cnt,1,1
+ 527               		.comm nrk_system_time,8,1
+ 528               		.comm nrk_sem_list,6,1
+ 529               		.comm _nrk_prev_timer_val,1,1
+ 530               		.comm _nrk_time_trigger,1,1
+ 531               		.comm app_timer0_callback,2,1
+ 532               		.comm app_timer0_prescale,1,1
+ 533               		.comm error_task,1,1
+ 534               		.comm error_num,1,1
+ 557               	.Letext0:
+ 558               	/* File "../../../src/kernel/hal/atmega1281/nrk_cpu.c": code  158 = 0x009e ( 137), prologues   6, e
+DEFINED SYMBOLS
+                            *ABS*:00000000 nrk_cpu.c
+     /tmp/ccmfiwPx.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccmfiwPx.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccmfiwPx.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccmfiwPx.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccmfiwPx.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccmfiwPx.s:128    .text:00000000 nrk_battery_save
+     /tmp/ccmfiwPx.s:146    .text:00000002 nrk_sleep
+     /tmp/ccmfiwPx.s:182    .text:0000001a nrk_idle
+     /tmp/ccmfiwPx.s:219    .text:00000030 nrk_task_set_entry_function
+     /tmp/ccmfiwPx.s:245    .text:00000038 nrk_task_stk_init
+     /tmp/ccmfiwPx.s:368    .text:000000b4 nrk_stack_pointer_init
+                            *COM*:00000002 nrk_kernel_stk_ptr
+     /tmp/ccmfiwPx.s:406    .text:000000d6 nrk_stack_pointer_restore
+     /tmp/ccmfiwPx.s:434    .text:000000e8 nrk_target_start
+     /tmp/ccmfiwPx.s:461    .text:000000f2 nrk_task_set_stk
+                            *COM*:00000004 _nrk_signal_list
+                            *COM*:00000080 nrk_idle_task_stk
+                            *COM*:00000063 nrk_task_TCB
+                            *COM*:00000001 nrk_wakeup_signal
+                            *COM*:00000014 _nrk_readyQ
+                            *COM*:00000002 _free_node
+                            *COM*:00000002 _head_node
+                            *COM*:00000001 nrk_cur_task_prio
+                            *COM*:00000002 nrk_cur_task_TCB
+                            *COM*:00000001 nrk_high_ready_prio
+                            *COM*:00000002 nrk_high_ready_TCB
+                            *COM*:00000001 _nrk_resource_cnt
+                            *COM*:00000008 nrk_system_time
+                            *COM*:00000006 nrk_sem_list
+                            *COM*:00000001 _nrk_prev_timer_val
+                            *COM*:00000001 _nrk_time_trigger
+                            *COM*:00000002 app_timer0_callback
+                            *COM*:00000001 app_timer0_prescale
+                            *COM*:00000001 error_task
+                            *COM*:00000001 error_num
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+_nrk_timer_tick
+_nrk_setup_timer
+nrk_int_enable
+nrk_error_add
