@@ -708,40 +708,40 @@
  710               	/* File "../../../src/kernel/source/nrk_error.c": code  234 = 0x00ea ( 227), prologues   1, epilogu
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_error.c
-     /tmp/ccGbjhpE.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccGbjhpE.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccGbjhpE.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccGbjhpE.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccGbjhpE.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccGbjhpE.s:136    .text:00000000 _nrk_errno_set
-     /tmp/ccGbjhpE.s:159    .text:0000000c nrk_errno_get
-     /tmp/ccGbjhpE.s:185    .text:0000001a nrk_error_get
+     /tmp/ccV7oqnL.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccV7oqnL.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccV7oqnL.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccV7oqnL.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccV7oqnL.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccV7oqnL.s:136    .text:00000000 _nrk_errno_set
+     /tmp/ccV7oqnL.s:159    .text:0000000c nrk_errno_get
+     /tmp/ccV7oqnL.s:185    .text:0000001a nrk_error_get
                             *COM*:00000001 error_num
                             *COM*:00000001 error_task
-     /tmp/ccGbjhpE.s:232    .text:0000003a nrk_error_print
-     /tmp/ccGbjhpE.s:666    .progmem.data:000001bc __c.2324
-     /tmp/ccGbjhpE.s:662    .progmem.data:000001b8 __c.2326
-     /tmp/ccGbjhpE.s:658    .progmem.data:00000191 __c.2329
-     /tmp/ccGbjhpE.s:654    .progmem.data:0000017d __c.2333
-     /tmp/ccGbjhpE.s:650    .progmem.data:00000167 __c.2336
-     /tmp/ccGbjhpE.s:646    .progmem.data:0000014c __c.2339
-     /tmp/ccGbjhpE.s:642    .progmem.data:00000136 __c.2342
-     /tmp/ccGbjhpE.s:638    .progmem.data:0000011e __c.2345
-     /tmp/ccGbjhpE.s:634    .progmem.data:0000010b __c.2348
-     /tmp/ccGbjhpE.s:630    .progmem.data:000000f8 __c.2351
-     /tmp/ccGbjhpE.s:626    .progmem.data:000000da __c.2354
-     /tmp/ccGbjhpE.s:622    .progmem.data:000000b5 __c.2357
-     /tmp/ccGbjhpE.s:618    .progmem.data:000000a9 __c.2360
-     /tmp/ccGbjhpE.s:614    .progmem.data:0000008e __c.2363
-     /tmp/ccGbjhpE.s:610    .progmem.data:0000007f __c.2366
-     /tmp/ccGbjhpE.s:606    .progmem.data:0000006e __c.2369
-     /tmp/ccGbjhpE.s:602    .progmem.data:0000005a __c.2372
-     /tmp/ccGbjhpE.s:598    .progmem.data:0000003a __c.2375
-     /tmp/ccGbjhpE.s:594    .progmem.data:00000022 __c.2378
-     /tmp/ccGbjhpE.s:590    .progmem.data:00000007 __c.2381
-     /tmp/ccGbjhpE.s:586    .progmem.data:00000000 __c.2384
-     /tmp/ccGbjhpE.s:528    .text:0000018a nrk_kernel_error_add
-     /tmp/ccGbjhpE.s:556    .text:00000198 nrk_error_add
+     /tmp/ccV7oqnL.s:232    .text:0000003a nrk_error_print
+     /tmp/ccV7oqnL.s:666    .progmem.data:000001bc __c.2324
+     /tmp/ccV7oqnL.s:662    .progmem.data:000001b8 __c.2326
+     /tmp/ccV7oqnL.s:658    .progmem.data:00000191 __c.2329
+     /tmp/ccV7oqnL.s:654    .progmem.data:0000017d __c.2333
+     /tmp/ccV7oqnL.s:650    .progmem.data:00000167 __c.2336
+     /tmp/ccV7oqnL.s:646    .progmem.data:0000014c __c.2339
+     /tmp/ccV7oqnL.s:642    .progmem.data:00000136 __c.2342
+     /tmp/ccV7oqnL.s:638    .progmem.data:0000011e __c.2345
+     /tmp/ccV7oqnL.s:634    .progmem.data:0000010b __c.2348
+     /tmp/ccV7oqnL.s:630    .progmem.data:000000f8 __c.2351
+     /tmp/ccV7oqnL.s:626    .progmem.data:000000da __c.2354
+     /tmp/ccV7oqnL.s:622    .progmem.data:000000b5 __c.2357
+     /tmp/ccV7oqnL.s:618    .progmem.data:000000a9 __c.2360
+     /tmp/ccV7oqnL.s:614    .progmem.data:0000008e __c.2363
+     /tmp/ccV7oqnL.s:610    .progmem.data:0000007f __c.2366
+     /tmp/ccV7oqnL.s:606    .progmem.data:0000006e __c.2369
+     /tmp/ccV7oqnL.s:602    .progmem.data:0000005a __c.2372
+     /tmp/ccV7oqnL.s:598    .progmem.data:0000003a __c.2375
+     /tmp/ccV7oqnL.s:594    .progmem.data:00000022 __c.2378
+     /tmp/ccV7oqnL.s:590    .progmem.data:00000007 __c.2381
+     /tmp/ccV7oqnL.s:586    .progmem.data:00000000 __c.2384
+     /tmp/ccV7oqnL.s:528    .text:0000018a nrk_kernel_error_add
+     /tmp/ccV7oqnL.s:556    .text:00000198 nrk_error_add
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000002 nrk_kernel_stk_ptr

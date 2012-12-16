@@ -37,7 +37,7 @@
                            
 
 #define NRK_TASK_IDLE_STK_SIZE         128  
-#define NRK_APP_STACKSIZE              256
+#define NRK_APP_STACKSIZE              128
 #define NRK_KERNEL_STACKSIZE           128 
 
 // Enable buffered and signal controlled serial RX

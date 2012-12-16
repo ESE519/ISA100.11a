@@ -8,7 +8,8 @@
 #include <isa.h>
 #include <nrk_error.h>
 #include <slip.h>
-
+#include <command-interpreter.h>
+#include <inttypes.h>
 //#include <sys/time.h>
 
 
@@ -30,12 +31,13 @@ NRK_STK Stack1[NRK_APP_STACKSIZE];
 nrk_task_type TaskOne;
 void Task1(void);
 
+/*
 NRK_STK Stack2[NRK_APP_STACKSIZE];
 nrk_task_type TaskTwo;
 void Task2 (void);
-
+*/
 void nrk_create_taskset();
-void packet_measurement_better(uint8_t * local_rx_buf);
+//void packet_measurement_better(uint8_t * local_rx_buf);
 
 /*Buffers*/
 uint8_t tx_buf[RF_MAX_PAYLOAD_SIZE];
@@ -56,7 +58,7 @@ uint8_t send_node;
 /* signal related declaration */
 int8_t pkt_record_done_signal;
 
-
+extern uint64_t isa_slot;
 
 int8_t pkt_record_check()
 {
@@ -92,6 +94,60 @@ int main ()
   
   nrk_create_taskset ();
 
+  isa_set_channel_pattern(1); // must before isa_init
+  isa_init (ISA_GATEWAY, MY_ID, MY_ID);//change
+
+  //isa_set_channel(MY_CHANNEL);
+   dlmoInit(); 	//Initialize the Data Link Management Object
+/*
+   addNeighbor(2,0,0,0,false,0,0,0);
+   addNeighbor(3,0,0,0,false,0,0,0);
+   addNeighbor(4,0,0,0,false,0,0,0);
+   addGraph(1,2,3,4,0);//graph
+   addLink(1,3,1,1,2);
+   addLink(2,4,1,1,2);
+   addLink(3,2,0,1,0);*/
+//   addLink(23,0,0,4,0);//advertisement
+//   addLink(4,0,0,8,0);
+   //addLink(5,0,0,8,0);
+   //addLink(6,0,0,8,0);
+//   addLink(10,0,0,4,0);
+   //addGraph(1,3,2,3,4);
+   //addLink(1,2,1,1,2);
+//   addLink(2,2,1,8,2);
+  //Tx slots
+   addNeighbor(2,0,0,0,false,0,0,0);//neighbor 2
+   addNeighbor(3,0,0,0,false,0,0,0);//neighbor 3
+   addNeighbor(4,0,0,0,false,0,0,0);//neighbor 4
+   addGraph(1,2,3,4,0);//Graph
+   addLink(25,0,0,4,0);//ad on 16
+
+  addLink(1,3,1,1,2);//transmit to 3 on 1
+   addLink(2,4,1,1,2);//transmit to 4 on 2
+   addLink(3,2,0,1,0);//transmit to 2 on 3, direct Neighbor not on a Graph
+   addLink(4,0,0,8,0);//receive link on 2
+   addLink(5,0,0,8,0);//transmit to 3 on 3
+   addLink(6,0,0,8,0);
+   addLink(26,0,0,8,0);//Ad
+
+   /*
+
+   configureSlot(1, 2, TX_NO_ADV, false,1,3,2,3,4, GRAPH_NEIGHBOR);
+   configureSlot(3, 3, TX_NO_ADV, false,1,0,0,0,0, GRAPH_NEIGHBOR);
+   configureSlot(5, 4, TX_NO_ADV, false,1,0,0,0,0, GRAPH_NEIGHBOR);
+
+  // Receive slots
+  configureSlot(2,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(4,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(6,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(19,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(20,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(21,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(22,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(23,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(24,0, RX, false,0,0,0,0,0, NEIGHBOR);
+*/
+
   nrk_start();
   
   return 0;
@@ -101,11 +157,15 @@ int main ()
 
 void transmitCallback1(ISA_QUEUE *entry , bool status){
 uint8_t length;
-	 isaFreePacket(entry);
-	  sprintf( &tx_buf[PKT_DATA_START],"node" );
-	  length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
-
-	  	sendPacket(4, length, tx_buf, transmitCallback1);
+MESSAGE *message;
+DLMO_DROUT *dRout;
+dRout = &entry->tx_buf[DROUT_INDEX];
+message = &tx_buf[PKT_DATA_START];
+message->type = DUMMY_PAYLOAD;
+sprintf( &message->data,"node" );
+length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+2;
+sendPacket(entry->tx_buf[DEST_INDEX],dRout->GraphId, length, tx_buf, transmitCallback1);
+isaFreePacket(entry);
 }
 
 //*****************************************************************************************
@@ -127,22 +187,29 @@ void Task1()
   uint8_t cnt=0;
   //char c = -1;
   nrk_sig_t uart_rx_signal;
+  nrk_sig_mask_t sm;
   uint8_t finished = 0;
 
   printf( "Task1 PID=%d\r\n",nrk_get_pid());
-  printf("Gateway");
+  printf("Gateway\r\n");
 
   nrk_led_set(RED_LED);
   nrk_led_set(BLUE_LED);
   
-  isa_set_channel_pattern(1); // must before isa_init
-  isa_init (ISA_GATEWAY, MY_ID, MY_ID);//change
-  //isa_set_schedule(ISA_GATEWAY, MY_ID);
-  isa_set_channel(MY_CHANNEL);
-  dlmoInit(); 	//Initialize the Data Link Management Object
 
-  configureSlot(3,3, RX, false);
-  configureSlot(2, 4, TX_NO_ADV, false);
+  //isa_set_schedule(ISA_GATEWAY, MY_ID);
+
+//configureSlot(slotNumber, neighborId, linkType,clockSource,graphId,neighborCount,n1,n2,n3,graphType)
+
+  /*
+   * If configured for a graph, it will first wait for the first preference from the neighbors on that graph to send
+   * after which it sends on any neighbor slot that becomes avaiable
+   * If the dest is directly available it will send it on that slot though
+   */
+  //configureSlot(2, 2, TX_NO_ADV, false,0,0,0,0,0, NEIGHBOR);
+
+
+
 
   //configAdvDAUX(1, 0, 25, 1, NULL, NULL, NULL, 2, NULL, NULL, NULL);
 
@@ -166,6 +233,10 @@ void Task1()
 	return NRK_ERROR;
     }  
 
+    uart_rx_signal=nrk_uart_rx_signal_get();
+     // Register your task to wakeup on RX Data
+     if(uart_rx_signal==NRK_ERROR) nrk_kprintf( PSTR("Get Signal ERROR!\r\n") );
+     nrk_signal_register(uart_rx_signal);
 
   while(1){
 
@@ -183,7 +254,7 @@ void Task1()
 	    //for(i=PKT_DATA_START; i<length-1; i++ )
 	    	//printf( "node %c,%d\r\n",local_rx_buf[PKT_DATA_START+5],local_rx_buf[PKT_DATA_START+7]);
 	    //packet_measurement(local_rx_buf,length);
- 	    packet_measurement_better(local_rx_buf);
+ 	  //  packet_measurement_better(local_rx_buf);
 
 	    //printf( "%c",local_rx_buf[PKT_DATA_START]);
 
@@ -198,18 +269,28 @@ void Task1()
 	//else{
 if (cnt ==0 )
 {
-	sprintf( &tx_buf[PKT_DATA_START],"node %d,%c",MY_ID,cnt++);
-  	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
-  	sendPacket(4, length, tx_buf, transmitCallback1);
+	MESSAGE *message;
+	message = &tx_buf[PKT_DATA_START];
+	message->type = DUMMY_PAYLOAD;
+	sprintf( &message->data,"node %d,%c",MY_ID,cnt++);
+  	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+2; //1 for \0 + 1 for message->type
+  	//sendPacket(2,0, length, tx_buf, transmitCallback1);
+  //	sendPacket(3,0, length, tx_buf, transmitCallback1);
+  //	sendPacket(4,0, length, tx_buf, transmitCallback1);
+  	//sendPacket(9,1, length, tx_buf, transmitCallback1);
+  //	sendPacket(2,0, length, tx_buf, transmitCallback1);
 
 }
 
-  	//isa_tx_pkt(tx_buf,length,configDHDR(0),MY_TX_SLOT);
-	//printf("Len:%d\r\n",length);
-  	//printf("Hello world is sent.\n\r");
-  	//}
 
-nrk_terminate_task();
+emberProcessCommandInput(0);
+//printf ("After that shit");
+sm=nrk_event_wait(SIG(uart_rx_signal));
+if(sm != SIG(uart_rx_signal))
+nrk_kprintf( PSTR("RX signal error") );
+
+
+//nrk_terminate_task();
 //	isa_wait_until_rx_or_tx ();
 
 
@@ -218,7 +299,7 @@ nrk_terminate_task();
 
 }
 
-
+/*
 void Task2 ()
 {
 
@@ -257,7 +338,7 @@ void Task2 ()
 }
 
 
-
+*/
 void
 nrk_create_taskset()
 {
@@ -276,6 +357,7 @@ nrk_create_taskset()
   TaskOne.offset.nano_secs= 60*NANOS_PER_MS;
   nrk_activate_task (&TaskOne);
 	
+  /*
   TaskTwo.task = Task2;
   nrk_task_set_stk( &TaskTwo, Stack2, NRK_APP_STACKSIZE);
   TaskTwo.prio = 3;
@@ -289,10 +371,12 @@ nrk_create_taskset()
   TaskTwo.offset.secs = 0;
   TaskTwo.offset.nano_secs = 100*NANOS_PER_MS;
   nrk_activate_task (&TaskTwo);
+  */
 
   nrk_kprintf( PSTR("Create Done\r\n") );
 }
 
+/*
 void packet_measurement_better(uint8_t * local_rx_buf)
 {
 	uint8_t i,length;
@@ -333,9 +417,9 @@ void packet_measurement_better(uint8_t * local_rx_buf)
 		}	
 
 		if(frame_cnt[current_node]>=NUM_OF_TEST_SET){
-		  /*for(i=0;i<NUM_OF_TEST_SET;i++){
+		  for(i=0;i<NUM_OF_TEST_SET;i++){
 		    printf("pkt: %x\r\n",pkt_measure[current_node][i]);
-		  }*/
+		  }
 		  //printf("KO %d\r\n",current_node);
 		  // reboot buffer for further test
 		  frame_cnt[current_node]=0;
@@ -343,9 +427,9 @@ void packet_measurement_better(uint8_t * local_rx_buf)
 		  send_node=current_node;
 		  nrk_event_signal (pkt_record_done_signal);
 		  //nrk_spin_wait_us(3000);
-		  /*for(i=0;i<NUM_OF_TEST_SET;i++){
+		  for(i=0;i<NUM_OF_TEST_SET;i++){
 		    pkt_measure[current_node][i]=0;
-		  }*/
+		  }
  		}
 
 		
@@ -353,3 +437,4 @@ void packet_measurement_better(uint8_t * local_rx_buf)
 
 }
 
+*/

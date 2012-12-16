@@ -35,7 +35,8 @@
 #include <nrk.h>
 #include <nrk_cfg.h>
 #include <dlmo.h>
-
+#include <dmo.h>
+#include <isa_messagetypes.h>
 /*For isa link define */
 #define MAX_ISA_GLOBAL_SLOTS 100
 #define ISA_STACK_SIZE 128 
@@ -134,4 +135,10 @@ int8_t isa_tx_pkt_check(uint8_t slot);
 int8_t isa_set_schedule (isa_node_mode_t isa_node_mode, uint8_t clk_src_id);
 int8_t isa_get_schedule (uint8_t slot);
 
+/***********************Advertistment Helper Functions******************/
+DLMO_DAUX* isa_create_advertisement();
+
+
+/****************************Extern variables***************************/
+extern DMO dmo;
 #endif

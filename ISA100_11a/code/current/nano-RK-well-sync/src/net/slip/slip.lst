@@ -137,64 +137,58 @@
  124:../../../src/net/slip/slip.c **** {
  135               	.LM0:
  136               	.LFBB1:
- 137               	/* prologue: frame size=0 */
- 138               	/* prologue end (size=0) */
- 139 0000 8091 0000 		lds r24,_slip_started
+ 137               	/* prologue: function */
+ 138               	/* frame size = 0 */
  125:../../../src/net/slip/slip.c ****   return _slip_started;
  126:../../../src/net/slip/slip.c **** }
- 141               	.LM1:
- 142 0004 9927      		clr r25
- 143 0006 87FD      		sbrc r24,7
- 144 0008 9095      		com r25
- 145               	/* epilogue: frame size=0 */
- 146 000a 0895      		ret
- 147               	/* epilogue end (size=1) */
- 148               	/* function slip_started size 6 (5) */
- 150               	.Lscope1:
- 152               		.stabd	78,0,0
- 154               	.global	get_byte
- 156               	get_byte:
- 157               		.stabd	46,0,0
- 159               	.LM2:
- 160               	.LFBB2:
- 161               	/* prologue: frame size=0 */
- 162               	/* prologue end (size=0) */
- 164               	.LM3:
- 165 000c 8091 0000 		lds r24,g_dv_in
- 166 0010 9091 0000 		lds r25,(g_dv_in)+1
- 167 0014 0E94 0000 		call fgetc
- 169               	.LM4:
- 170 0018 9927      		clr r25
- 171               	/* epilogue: frame size=0 */
- 172 001a 0895      		ret
- 173               	/* epilogue end (size=1) */
- 174               	/* function get_byte size 8 (7) */
- 176               	.Lscope2:
- 178               		.stabd	78,0,0
- 182               	.global	slip_rx
- 184               	slip_rx:
- 185               		.stabd	46,0,0
+ 140               	.LM1:
+ 141 0000 8091 0000 		lds r24,_slip_started
+ 142               	/* epilogue start */
+ 143 0004 0895      		ret
+ 145               	.Lscope1:
+ 147               		.stabd	78,0,0
+ 149               	.global	get_byte
+ 151               	get_byte:
+ 152               		.stabd	46,0,0
+  70:../../../src/net/slip/slip.c **** {
+ 154               	.LM2:
+ 155               	.LFBB2:
+ 156               	/* prologue: function */
+ 157               	/* frame size = 0 */
+  71:../../../src/net/slip/slip.c ****   return fgetc (g_dv_in);
+ 159               	.LM3:
+ 160 0006 8091 0000 		lds r24,g_dv_in
+ 161 000a 9091 0000 		lds r25,(g_dv_in)+1
+ 162 000e 0E94 0000 		call fgetc
+ 163               	/* epilogue start */
+  72:../../../src/net/slip/slip.c **** }
+ 165               	.LM4:
+ 166 0012 0895      		ret
+ 168               	.Lscope2:
+ 170               		.stabd	78,0,0
+ 174               	.global	slip_rx
+ 176               	slip_rx:
+ 177               		.stabd	46,0,0
  127:../../../src/net/slip/slip.c **** 
  128:../../../src/net/slip/slip.c **** int8_t slip_rx (uint8_t * buf, uint8_t max_len)
  129:../../../src/net/slip/slip.c **** {
- 187               	.LM5:
- 188               	.LFBB3:
- 189               	/* prologue: frame size=0 */
- 190 001c 8F92      		push r8
- 191 001e 9F92      		push r9
- 192 0020 AF92      		push r10
- 193 0022 BF92      		push r11
- 194 0024 CF92      		push r12
- 195 0026 DF92      		push r13
- 196 0028 EF92      		push r14
- 197 002a FF92      		push r15
- 198 002c 0F93      		push r16
- 199 002e 1F93      		push r17
- 200 0030 CF93      		push r28
- 201 0032 DF93      		push r29
- 202               	/* prologue end (size=12) */
- 203 0034 EC01      		movw r28,r24
- 204 0036 862E      		mov r8,r22
+ 179               	.LM5:
+ 180               	.LFBB3:
+ 181 0014 9F92      		push r9
+ 182 0016 AF92      		push r10
+ 183 0018 BF92      		push r11
+ 184 001a CF92      		push r12
+ 185 001c DF92      		push r13
+ 186 001e EF92      		push r14
+ 187 0020 FF92      		push r15
+ 188 0022 0F93      		push r16
+ 189 0024 1F93      		push r17
+ 190 0026 CF93      		push r28
+ 191 0028 DF93      		push r29
+ 192               	/* prologue: function */
+ 193               	/* frame size = 0 */
+ 194 002a EC01      		movw r28,r24
+ 195 002c 962E      		mov r9,r22
  130:../../../src/net/slip/slip.c ****   uint8_t c;
  131:../../../src/net/slip/slip.c ****   uint8_t index, last_c;
  132:../../../src/net/slip/slip.c ****   uint8_t received, checksum, size;
@@ -203,35 +197,33 @@
  135:../../../src/net/slip/slip.c ****   nrk_sig_mask_t sm;
  136:../../../src/net/slip/slip.c **** 
  137:../../../src/net/slip/slip.c **** my_uart_rx_signal=nrk_uart_rx_signal_get();
- 206               	.LM6:
- 207 0038 0E94 0000 		call nrk_uart_rx_signal_get
- 208 003c D82E      		mov r13,r24
+ 197               	.LM6:
+ 198 002e 0E94 0000 		call nrk_uart_rx_signal_get
+ 199 0032 182F      		mov r17,r24
  138:../../../src/net/slip/slip.c **** // Register your task to wakeup on RX Data
  139:../../../src/net/slip/slip.c ****   if (my_uart_rx_signal == NRK_ERROR)
- 210               	.LM7:
- 211 003e 8FEF      		ldi r24,lo8(-1)
- 212 0040 D816      		cp r13,r24
- 213 0042 01F4      		brne .L6
+ 201               	.LM7:
+ 202 0034 8F3F      		cpi r24,lo8(-1)
+ 203 0036 01F4      		brne .L6
  140:../../../src/net/slip/slip.c ****     nrk_kprintf (PSTR ("SLIP RX error: Get Signal\r\n"));
- 215               	.LM8:
- 216 0044 80E0      		ldi r24,lo8(__c.2338)
- 217 0046 90E0      		ldi r25,hi8(__c.2338)
- 218 0048 0E94 0000 		call nrk_kprintf
- 219               	.L6:
+ 205               	.LM8:
+ 206 0038 80E0      		ldi r24,lo8(__c.2075)
+ 207 003a 90E0      		ldi r25,hi8(__c.2075)
+ 208 003c 0E94 0000 		call nrk_kprintf
+ 209               	.L6:
  141:../../../src/net/slip/slip.c ****   
  142:../../../src/net/slip/slip.c ****    v=nrk_signal_register (my_uart_rx_signal);
- 221               	.LM9:
- 222 004c 8D2D      		mov r24,r13
- 223 004e 0E94 0000 		call nrk_signal_register
+ 211               	.LM9:
+ 212 0040 812F      		mov r24,r17
+ 213 0042 0E94 0000 		call nrk_signal_register
  143:../../../src/net/slip/slip.c ****    if(v==NRK_ERROR) nrk_kprintf( PSTR( "SLIP RX error: nrk_signal_register\r\n" ));
- 225               	.LM10:
- 226 0052 8F3F      		cpi r24,lo8(-1)
- 227 0054 01F4      		brne .L31
- 228 0056 80E0      		ldi r24,lo8(__c.2340)
- 229 0058 90E0      		ldi r25,hi8(__c.2340)
- 230 005a 0E94 0000 		call nrk_kprintf
- 231 005e 00C0      		rjmp .L31
- 232               	.L10:
+ 215               	.LM10:
+ 216 0046 8F3F      		cpi r24,lo8(-1)
+ 217 0048 01F4      		brne .L7
+ 218 004a 80E0      		ldi r24,lo8(__c.2077)
+ 219 004c 90E0      		ldi r25,hi8(__c.2077)
+ 220 004e 0E94 0000 		call nrk_kprintf
+ 221               	.L7:
  144:../../../src/net/slip/slip.c **** 
  145:../../../src/net/slip/slip.c ****   received = 0;
  146:../../../src/net/slip/slip.c **** 
@@ -241,86 +233,87 @@
  150:../../../src/net/slip/slip.c ****     while (nrk_uart_data_ready (NRK_DEFAULT_UART) != 0) {
  151:../../../src/net/slip/slip.c ****       // Read Character
  152:../../../src/net/slip/slip.c ****       c = getchar ();
- 234               	.LM11:
- 235 0060 8091 0000 		lds r24,__iob
- 236 0064 9091 0000 		lds r25,(__iob)+1
- 237 0068 0E94 0000 		call fgetc
  153:../../../src/net/slip/slip.c ****       if (c == START)
- 239               	.LM12:
- 240 006c 813C      		cpi r24,lo8(-63)
- 241 006e 01F0      		breq .L11
- 242 0070 00C0      		rjmp .L37
- 243               	.L31:
  154:../../../src/net/slip/slip.c ****         break;
  155:../../../src/net/slip/slip.c ****     }
  156:../../../src/net/slip/slip.c ****     sm = nrk_event_wait (SIG (my_uart_rx_signal));
- 245               	.LM13:
- 246 0072 81E0      		ldi r24,lo8(1)
- 247 0074 E82E      		mov r14,r24
- 248 0076 F12C      		mov r15,__zero_reg__
- 249 0078 012D      		mov r16,__zero_reg__
- 250 007a 112D      		mov r17,__zero_reg__
- 251 007c 00C0      		rjmp 2f
- 252 007e EE0C      	1:	lsl r14
- 253 0080 FF1C      		rol r15
- 254 0082 001F      		rol r16
- 255 0084 111F      		rol r17
- 256 0086 DA94      	2:	dec r13
- 257 0088 02F4      		brpl 1b
- 258               	.L37:
- 260               	.LM14:
- 261 008a 81E0      		ldi r24,lo8(1)
- 262 008c 0E94 0000 		call nrk_uart_data_ready
- 263 0090 8823      		tst r24
- 264 0092 01F4      		brne .L10
- 265               	.L11:
- 267               	.LM15:
- 268 0094 5701      		movw r10,r14
- 269 0096 6801      		movw r12,r16
- 270 0098 C801      		movw r24,r16
- 271 009a B701      		movw r22,r14
- 272 009c 0E94 0000 		call nrk_event_wait
+ 223               	.LM11:
+ 224 0052 81E0      		ldi r24,lo8(1)
+ 225 0054 C82E      		mov r12,r24
+ 226 0056 D12C      		mov r13,__zero_reg__
+ 227 0058 E12C      		mov r14,__zero_reg__
+ 228 005a F12C      		mov r15,__zero_reg__
+ 229 005c 00C0      		rjmp 2f
+ 230 005e CC0C      	1:	lsl r12
+ 231 0060 DD1C      		rol r13
+ 232 0062 EE1C      		rol r14
+ 233 0064 FF1C      		rol r15
+ 234 0066 1A95      	2:	dec r17
+ 235 0068 02F4      		brpl 1b
+ 236 006a 00C0      		rjmp .L23
+ 237               	.L10:
+ 152:../../../src/net/slip/slip.c ****       c = getchar ();
+ 239               	.LM12:
+ 240 006c 8091 0000 		lds r24,__iob
+ 241 0070 9091 0000 		lds r25,(__iob)+1
+ 242 0074 0E94 0000 		call fgetc
+ 153:../../../src/net/slip/slip.c ****       if (c == START)
+ 244               	.LM13:
+ 245 0078 813C      		cpi r24,lo8(-63)
+ 246 007a 01F0      		breq .L9
+ 247               	.L23:
+ 150:../../../src/net/slip/slip.c ****     while (nrk_uart_data_ready (NRK_DEFAULT_UART) != 0) {
+ 249               	.LM14:
+ 250 007c 81E0      		ldi r24,lo8(1)
+ 251 007e 0E94 0000 		call nrk_uart_data_ready
+ 252 0082 8823      		tst r24
+ 253 0084 01F4      		brne .L10
+ 254               	.L9:
+ 256               	.LM15:
+ 257 0086 C701      		movw r24,r14
+ 258 0088 B601      		movw r22,r12
+ 259 008a 0E94 0000 		call nrk_event_wait
  157:../../../src/net/slip/slip.c ****     c = getchar ();
- 274               	.LM16:
- 275 00a0 8091 0000 		lds r24,__iob
- 276 00a4 9091 0000 		lds r25,(__iob)+1
- 277 00a8 0E94 0000 		call fgetc
- 278 00ac 982E      		mov r9,r24
+ 261               	.LM16:
+ 262 008e 8091 0000 		lds r24,__iob
+ 263 0092 9091 0000 		lds r25,(__iob)+1
+ 264 0096 0E94 0000 		call fgetc
+ 265 009a 082F      		mov r16,r24
  158:../../../src/net/slip/slip.c ****     if (c == START)
- 280               	.LM17:
- 281 00ae 81EC      		ldi r24,lo8(-63)
- 282 00b0 9816      		cp r9,r24
- 283 00b2 01F4      		brne .L37
+ 267               	.LM17:
+ 268 009c 813C      		cpi r24,lo8(-63)
+ 269 009e 01F4      		brne .L23
  159:../../../src/net/slip/slip.c ****       break;
  160:../../../src/net/slip/slip.c ****   }
  161:../../../src/net/slip/slip.c **** 
  162:../../../src/net/slip/slip.c ****   size = get_byte ();
- 285               	.LM18:
- 286 00b4 0E94 0000 		call get_byte
- 287 00b8 F82E      		mov r15,r24
- 288 00ba 10E0      		ldi r17,lo8(0)
- 289 00bc 00E0      		ldi r16,lo8(0)
- 290 00be 00C0      		rjmp .L38
- 291               	.L14:
+ 271               	.LM18:
+ 272 00a0 0E94 0000 		call get_byte
+ 273 00a4 A82E      		mov r10,r24
+ 274 00a6 BB24      		clr r11
+ 275 00a8 10E0      		ldi r17,lo8(0)
+ 276 00aa 00C0      		rjmp .L24
+ 277               	.L19:
  163:../../../src/net/slip/slip.c ****   checksum = 0;
  164:../../../src/net/slip/slip.c ****   while (1) {
  165:../../../src/net/slip/slip.c ****     while (nrk_uart_data_ready (NRK_DEFAULT_UART) != 0) {
  166:../../../src/net/slip/slip.c ****       last_c = c;
  167:../../../src/net/slip/slip.c ****       c = getchar ();
- 293               	.LM19:
- 294 00c0 8091 0000 		lds r24,__iob
- 295 00c4 9091 0000 		lds r25,(__iob)+1
- 296 00c8 0E94 0000 		call fgetc
+ 279               	.LM19:
+ 280 00ac 8091 0000 		lds r24,__iob
+ 281 00b0 9091 0000 		lds r25,(__iob)+1
+ 282 00b4 0E94 0000 		call fgetc
+ 283 00b8 982F      		mov r25,r24
  168:../../../src/net/slip/slip.c **** 
  169:../../../src/net/slip/slip.c ****       // handle bytestuffing if necessary
  170:../../../src/net/slip/slip.c ****       switch (c) {
- 298               	.LM20:
- 299 00cc 803C      		cpi r24,lo8(-64)
- 300 00ce 01F0      		breq .L16
- 301 00d0 8B3D      		cpi r24,lo8(-37)
- 302 00d2 01F0      		breq .L17
- 303 00d4 00C0      		rjmp .L36
- 304               	.L16:
+ 285               	.LM20:
+ 286 00ba 903C      		cpi r25,lo8(-64)
+ 287 00bc 01F0      		breq .L13
+ 288 00be 9B3D      		cpi r25,lo8(-37)
+ 289 00c0 01F4      		brne .L12
+ 290 00c2 00C0      		rjmp .L27
+ 291               	.L13:
  171:../../../src/net/slip/slip.c **** 
  172:../../../src/net/slip/slip.c ****         // if it's an END character then we're done with
  173:../../../src/net/slip/slip.c ****         // the packet
@@ -332,24 +325,22 @@
  179:../../../src/net/slip/slip.c ****         // duplicate END characters which are in
  180:../../../src/net/slip/slip.c ****         // turn sent to try to detect line noise.
  181:../../../src/net/slip/slip.c ****         if (received) {
- 306               	.LM21:
- 307 00d6 1123      		tst r17
- 308 00d8 01F0      		breq .L19
+ 293               	.LM21:
+ 294 00c4 1123      		tst r17
+ 295 00c6 01F0      		breq .L15
  182:../../../src/net/slip/slip.c **** 	
  183:../../../src/net/slip/slip.c ****           checksum &= 0x7f;
  184:../../../src/net/slip/slip.c ****           if (last_c == checksum)
- 310               	.LM22:
- 311 00da 0F77      		andi r16,lo8(127)
- 312 00dc 9016      		cp r9,r16
- 313 00de 01F4      		brne .L19
+ 297               	.LM22:
+ 298 00c8 8B2D      		mov r24,r11
+ 299 00ca 8F77      		andi r24,lo8(127)
+ 300 00cc 0817      		cp r16,r24
+ 301 00ce 01F4      		brne .L15
  185:../../../src/net/slip/slip.c ****             return received;
- 315               	.LM23:
- 316 00e0 812F      		mov r24,r17
- 317 00e2 9927      		clr r25
- 318 00e4 87FD      		sbrc r24,7
- 319 00e6 9095      		com r25
- 320 00e8 00C0      		rjmp .L22
- 321               	.L17:
+ 303               	.LM23:
+ 304 00d0 812F      		mov r24,r17
+ 305 00d2 00C0      		rjmp .L16
+ 306               	.L27:
  186:../../../src/net/slip/slip.c ****         }
  187:../../../src/net/slip/slip.c ****         return NRK_ERROR;
  188:../../../src/net/slip/slip.c ****         break;
@@ -361,22 +352,21 @@
  194:../../../src/net/slip/slip.c ****         // FIXME: Need to sleep here
  195:../../../src/net/slip/slip.c ****         last_c = c;
  196:../../../src/net/slip/slip.c ****     	if( nrk_uart_data_ready (NRK_DEFAULT_UART)==0 )	
- 323               	.LM24:
- 324 00ea 81E0      		ldi r24,lo8(1)
- 325 00ec 0E94 0000 		call nrk_uart_data_ready
- 326 00f0 8823      		tst r24
- 327 00f2 01F4      		brne .L23
+ 308               	.LM24:
+ 309 00d4 81E0      		ldi r24,lo8(1)
+ 310 00d6 0E94 0000 		call nrk_uart_data_ready
+ 311 00da 8823      		tst r24
+ 312 00dc 01F4      		brne .L17
  197:../../../src/net/slip/slip.c **** 		sm = nrk_event_wait (SIG (my_uart_rx_signal));
- 329               	.LM25:
- 330 00f4 C601      		movw r24,r12
- 331 00f6 B501      		movw r22,r10
- 332 00f8 0E94 0000 		call nrk_event_wait
- 333               	.L23:
+ 314               	.LM25:
+ 315 00de C701      		movw r24,r14
+ 316 00e0 B601      		movw r22,r12
+ 317 00e2 0E94 0000 		call nrk_event_wait
+ 318               	.L17:
  198:../../../src/net/slip/slip.c ****         c = get_byte ();
- 335               	.LM26:
- 336 00fc 0E94 0000 		call get_byte
- 337               	.L36:
- 338 0100 982E      		mov r9,r24
+ 320               	.LM26:
+ 321 00e6 0E94 0000 		call get_byte
+ 322               	.L12:
  199:../../../src/net/slip/slip.c ****         // if "c" is not one of these two, then we
  200:../../../src/net/slip/slip.c ****         // have a protocol violation.  The best bet
  201:../../../src/net/slip/slip.c ****         // seems to be to leave the byte alone and
@@ -394,317 +384,363 @@
  213:../../../src/net/slip/slip.c ****         // it store the character for us
  214:../../../src/net/slip/slip.c ****       default:
  215:../../../src/net/slip/slip.c ****         if (received < max_len && received < size) {
- 340               	.LM27:
- 341 0102 1815      		cp r17,r8
- 342 0104 00F4      		brsh .L38
- 343 0106 1F15      		cp r17,r15
- 344 0108 00F4      		brsh .L38
+ 324               	.LM27:
+ 325 00ea 1915      		cp r17,r9
+ 326 00ec 00F4      		brsh .L18
+ 327 00ee 1A15      		cp r17,r10
+ 328 00f0 00F4      		brsh .L18
  216:../../../src/net/slip/slip.c ****           buf[received++] = c;
- 346               	.LM28:
- 347 010a FE01      		movw r30,r28
- 348 010c E10F      		add r30,r17
- 349 010e F11D      		adc r31,__zero_reg__
- 350 0110 8083      		st Z,r24
- 351 0112 1F5F      		subi r17,lo8(-(1))
+ 330               	.LM28:
+ 331 00f2 FE01      		movw r30,r28
+ 332 00f4 E10F      		add r30,r17
+ 333 00f6 F11D      		adc r31,__zero_reg__
+ 334 00f8 8083      		st Z,r24
+ 335 00fa 1F5F      		subi r17,lo8(-(1))
  217:../../../src/net/slip/slip.c ****           checksum += c;
- 353               	.LM29:
- 354 0114 080F      		add r16,r24
- 355               	.L38:
- 357               	.LM30:
- 358 0116 81E0      		ldi r24,lo8(1)
- 359 0118 0E94 0000 		call nrk_uart_data_ready
- 360 011c 8823      		tst r24
- 361 011e 01F4      		brne .L14
+ 337               	.LM29:
+ 338 00fc B80E      		add r11,r24
+ 339               	.L18:
+ 340 00fe 082F      		mov r16,r24
+ 341               	.L24:
+ 165:../../../src/net/slip/slip.c ****     while (nrk_uart_data_ready (NRK_DEFAULT_UART) != 0) {
+ 343               	.LM30:
+ 344 0100 81E0      		ldi r24,lo8(1)
+ 345 0102 0E94 0000 		call nrk_uart_data_ready
+ 346 0106 8823      		tst r24
+ 347 0108 01F4      		brne .L19
  218:../../../src/net/slip/slip.c ****         }
  219:../../../src/net/slip/slip.c ****       }
  220:../../../src/net/slip/slip.c ****     }
  221:../../../src/net/slip/slip.c ****     sm = nrk_event_wait (SIG (my_uart_rx_signal));
- 363               	.LM31:
- 364 0120 C601      		movw r24,r12
- 365 0122 B501      		movw r22,r10
- 366 0124 0E94 0000 		call nrk_event_wait
- 367 0128 00C0      		rjmp .L38
- 368               	.L19:
+ 349               	.LM31:
+ 350 010a C701      		movw r24,r14
+ 351 010c B601      		movw r22,r12
+ 352 010e 0E94 0000 		call nrk_event_wait
+ 353 0112 00C0      		rjmp .L24
+ 354               	.L15:
  222:../../../src/net/slip/slip.c ****   }
- 370               	.LM32:
- 371 012a 8FEF      		ldi r24,lo8(-1)
- 372 012c 9FEF      		ldi r25,hi8(-1)
- 373               	.L22:
- 374               	/* epilogue: frame size=0 */
- 375 012e DF91      		pop r29
- 376 0130 CF91      		pop r28
- 377 0132 1F91      		pop r17
- 378 0134 0F91      		pop r16
- 379 0136 FF90      		pop r15
- 380 0138 EF90      		pop r14
- 381 013a DF90      		pop r13
- 382 013c CF90      		pop r12
- 383 013e BF90      		pop r11
- 384 0140 AF90      		pop r10
- 385 0142 9F90      		pop r9
- 386 0144 8F90      		pop r8
- 387 0146 0895      		ret
- 388               	/* epilogue end (size=13) */
- 389               	/* function slip_rx size 151 (126) */
- 398               	.Lscope3:
- 400               		.stabd	78,0,0
- 403               	.global	put_byte
- 405               	put_byte:
- 406               		.stabd	46,0,0
- 408               	.LM33:
- 409               	.LFBB4:
- 410               	/* prologue: frame size=0 */
- 411 0148 1F93      		push r17
- 412               	/* prologue end (size=1) */
- 413 014a 182F      		mov r17,r24
- 415               	.LM34:
- 416 014c 2091 0000 		lds r18,g_delay
- 417 0150 2223      		tst r18
- 418 0152 01F0      		breq .L40
- 420               	.LM35:
- 421 0154 3327      		clr r19
- 422 0156 88EE      		ldi r24,lo8(1000)
- 423 0158 93E0      		ldi r25,hi8(1000)
- 424 015a AC01      		movw r20,r24
- 425 015c 249F      		mul r18,r20
- 426 015e C001      		movw r24,r0
- 427 0160 259F      		mul r18,r21
- 428 0162 900D      		add r25,r0
- 429 0164 349F      		mul r19,r20
- 430 0166 900D      		add r25,r0
- 431 0168 1124      		clr r1
- 432 016a 0E94 0000 		call nrk_spin_wait_us
- 433               	.L40:
- 435               	.LM36:
- 436 016e 6091 0000 		lds r22,g_dv_out
- 437 0172 7091 0000 		lds r23,(g_dv_out)+1
- 438 0176 812F      		mov r24,r17
- 439 0178 9927      		clr r25
- 440 017a 0E94 0000 		call fputc
- 441               	/* epilogue: frame size=0 */
- 442 017e 1F91      		pop r17
- 443 0180 0895      		ret
- 444               	/* epilogue end (size=2) */
- 445               	/* function put_byte size 29 (26) */
- 447               	.Lscope4:
- 449               		.stabd	78,0,0
- 453               	.global	slip_tx
- 455               	slip_tx:
- 456               		.stabd	46,0,0
- 458               	.LM37:
- 459               	.LFBB5:
- 460               	/* prologue: frame size=0 */
- 461 0182 FF92      		push r15
- 462 0184 0F93      		push r16
- 463 0186 1F93      		push r17
- 464 0188 CF93      		push r28
- 465 018a DF93      		push r29
- 466               	/* prologue end (size=5) */
- 467 018c EC01      		movw r28,r24
- 468 018e 162F      		mov r17,r22
- 470               	.LM38:
- 471 0190 6138      		cpi r22,lo8(-127)
- 472 0192 00F0      		brlo .L44
- 474               	.LM39:
- 475 0194 83E0      		ldi r24,lo8(3)
- 476 0196 00C0      		rjmp .L58
- 477               	.L44:
- 479               	.LM40:
- 480 0198 8091 0000 		lds r24,slip_tx_sem
- 481 019c 9091 0000 		lds r25,(slip_tx_sem)+1
- 482 01a0 0E94 0000 		call nrk_sem_pend
- 484               	.LM41:
- 485 01a4 8F3F      		cpi r24,lo8(-1)
- 486 01a6 01F4      		brne .L47
- 488               	.LM42:
- 489 01a8 80E0      		ldi r24,lo8(__c.2304)
- 490 01aa 90E0      		ldi r25,hi8(__c.2304)
- 491 01ac 0E94 0000 		call nrk_kprintf
- 493               	.LM43:
- 494 01b0 81E0      		ldi r24,lo8(1)
- 495 01b2 00C0      		rjmp .L58
- 496               	.L47:
- 498               	.LM44:
- 499 01b4 81EC      		ldi r24,lo8(-63)
- 500 01b6 0E94 0000 		call put_byte
- 502               	.LM45:
- 503 01ba 812F      		mov r24,r17
- 504 01bc 0E94 0000 		call put_byte
- 505 01c0 FF24      		clr r15
- 506 01c2 00E0      		ldi r16,lo8(0)
- 507 01c4 00C0      		rjmp .L49
- 508               	.L50:
- 510               	.LM46:
- 511 01c6 8881      		ld r24,Y
- 512 01c8 803C      		cpi r24,lo8(-64)
- 513 01ca 01F0      		breq .L51
- 514 01cc 8B3D      		cpi r24,lo8(-37)
- 515 01ce 01F4      		brne .L53
- 516               	.L51:
- 518               	.LM47:
- 519 01d0 8BED      		ldi r24,lo8(-37)
+ 356               	.LM32:
+ 357 0114 8FEF      		ldi r24,lo8(-1)
+ 358               	.L16:
+ 359               	/* epilogue start */
+ 223:../../../src/net/slip/slip.c **** 
+ 224:../../../src/net/slip/slip.c **** 
+ 225:../../../src/net/slip/slip.c **** }
+ 361               	.LM33:
+ 362 0116 DF91      		pop r29
+ 363 0118 CF91      		pop r28
+ 364 011a 1F91      		pop r17
+ 365 011c 0F91      		pop r16
+ 366 011e FF90      		pop r15
+ 367 0120 EF90      		pop r14
+ 368 0122 DF90      		pop r13
+ 369 0124 CF90      		pop r12
+ 370 0126 BF90      		pop r11
+ 371 0128 AF90      		pop r10
+ 372 012a 9F90      		pop r9
+ 373 012c 0895      		ret
+ 382               	.Lscope3:
+ 384               		.stabd	78,0,0
+ 387               	.global	put_byte
+ 389               	put_byte:
+ 390               		.stabd	46,0,0
+  60:../../../src/net/slip/slip.c **** {
+ 392               	.LM34:
+ 393               	.LFBB4:
+ 394 012e 1F93      		push r17
+ 395               	/* prologue: function */
+ 396               	/* frame size = 0 */
+ 397 0130 182F      		mov r17,r24
+  61:../../../src/net/slip/slip.c ****   if (g_delay > 0)
+ 399               	.LM35:
+ 400 0132 8091 0000 		lds r24,g_delay
+ 401 0136 8823      		tst r24
+ 402 0138 01F0      		breq .L29
+  62:../../../src/net/slip/slip.c ****     nrk_spin_wait_us (g_delay * 1000);
+ 404               	.LM36:
+ 405 013a 90E0      		ldi r25,lo8(0)
+ 406 013c 28EE      		ldi r18,lo8(1000)
+ 407 013e 33E0      		ldi r19,hi8(1000)
+ 408 0140 AC01      		movw r20,r24
+ 409 0142 429F      		mul r20,r18
+ 410 0144 C001      		movw r24,r0
+ 411 0146 439F      		mul r20,r19
+ 412 0148 900D      		add r25,r0
+ 413 014a 529F      		mul r21,r18
+ 414 014c 900D      		add r25,r0
+ 415 014e 1124      		clr r1
+ 416 0150 0E94 0000 		call nrk_spin_wait_us
+ 417               	.L29:
+  63:../../../src/net/slip/slip.c ****   fputc (c, g_dv_out);
+ 419               	.LM37:
+ 420 0154 6091 0000 		lds r22,g_dv_out
+ 421 0158 7091 0000 		lds r23,(g_dv_out)+1
+ 422 015c 812F      		mov r24,r17
+ 423 015e 90E0      		ldi r25,lo8(0)
+ 424 0160 0E94 0000 		call fputc
+ 425               	/* epilogue start */
+  67:../../../src/net/slip/slip.c **** }
+ 427               	.LM38:
+ 428 0164 1F91      		pop r17
+ 429 0166 0895      		ret
+ 431               	.Lscope4:
+ 433               		.stabd	78,0,0
+ 436               	.global	slip_tx
+ 438               	slip_tx:
+ 439               		.stabd	46,0,0
+  75:../../../src/net/slip/slip.c **** {
+ 441               	.LM39:
+ 442               	.LFBB5:
+ 443 0168 CF92      		push r12
+ 444 016a DF92      		push r13
+ 445 016c FF92      		push r15
+ 446 016e 0F93      		push r16
+ 447 0170 1F93      		push r17
+ 448 0172 CF93      		push r28
+ 449 0174 DF93      		push r29
+ 450               	/* prologue: function */
+ 451               	/* frame size = 0 */
+ 452 0176 182F      		mov r17,r24
+ 453 0178 092F      		mov r16,r25
+ 454 017a F62E      		mov r15,r22
+  82:../../../src/net/slip/slip.c ****   if (size > 128) {
+ 456               	.LM40:
+ 457 017c 90E8      		ldi r25,lo8(-128)
+ 458 017e C92E      		mov r12,r25
+ 459 0180 C616      		cp r12,r22
+ 460 0182 00F4      		brsh .L32
+  83:../../../src/net/slip/slip.c ****     _nrk_errno_set (3);
+ 462               	.LM41:
+ 463 0184 83E0      		ldi r24,lo8(3)
+ 464 0186 00C0      		rjmp .L41
+ 465               	.L32:
+  87:../../../src/net/slip/slip.c ****   v = nrk_sem_pend (slip_tx_sem);
+ 467               	.LM42:
+ 468 0188 8091 0000 		lds r24,slip_tx_sem
+ 469 018c 9091 0000 		lds r25,(slip_tx_sem)+1
+ 470 0190 0E94 0000 		call nrk_sem_pend
+  88:../../../src/net/slip/slip.c ****   if (v == NRK_ERROR) {
+ 472               	.LM43:
+ 473 0194 8F3F      		cpi r24,lo8(-1)
+ 474 0196 01F4      		brne .L34
+  89:../../../src/net/slip/slip.c ****     nrk_kprintf (PSTR ("SLIP TX ERROR:  Access to semaphore failed\r\n"));
+ 476               	.LM44:
+ 477 0198 80E0      		ldi r24,lo8(__c.2036)
+ 478 019a 90E0      		ldi r25,hi8(__c.2036)
+ 479 019c 0E94 0000 		call nrk_kprintf
+  90:../../../src/net/slip/slip.c ****     _nrk_errno_set (1);
+ 481               	.LM45:
+ 482 01a0 81E0      		ldi r24,lo8(1)
+ 483 01a2 00C0      		rjmp .L41
+ 484               	.L34:
+  95:../../../src/net/slip/slip.c ****   put_byte (START);
+ 486               	.LM46:
+ 487 01a4 81EC      		ldi r24,lo8(-63)
+ 488 01a6 0E94 0000 		call put_byte
+  96:../../../src/net/slip/slip.c ****   put_byte (size);
+ 490               	.LM47:
+ 491 01aa 8F2D      		mov r24,r15
+ 492 01ac 0E94 0000 		call put_byte
+ 493 01b0 C801      		movw r24,r16
+ 494 01b2 292F      		mov r18,r25
+ 495 01b4 E901      		movw r28,r18
+ 496 01b6 6E01      		movw r12,r28
+ 497 01b8 D82E      		mov r13,r24
+ 498 01ba E601      		movw r28,r12
+ 499 01bc 00E0      		ldi r16,lo8(0)
+ 101:../../../src/net/slip/slip.c ****   for (i = 0; i < size; i++) {
+ 501               	.LM48:
+ 502 01be 00C0      		rjmp .L35
+ 503               	.L38:
+ 102:../../../src/net/slip/slip.c ****     if (buf[i] == END || buf[i] == ESC)
+ 505               	.LM49:
+ 506 01c0 8881      		ld r24,Y
+ 507 01c2 803C      		cpi r24,lo8(-64)
+ 508 01c4 01F0      		breq .L36
+ 509 01c6 8B3D      		cpi r24,lo8(-37)
+ 510 01c8 01F4      		brne .L37
+ 511               	.L36:
+ 103:../../../src/net/slip/slip.c ****       put_byte (ESC);
+ 513               	.LM50:
+ 514 01ca 8BED      		ldi r24,lo8(-37)
+ 515 01cc 0E94 0000 		call put_byte
+ 516               	.L37:
+ 104:../../../src/net/slip/slip.c ****     put_byte (buf[i]);
+ 518               	.LM51:
+ 519 01d0 8881      		ld r24,Y
  520 01d2 0E94 0000 		call put_byte
- 521               	.L53:
- 523               	.LM48:
- 524 01d6 8881      		ld r24,Y
- 525 01d8 0E94 0000 		call put_byte
- 527               	.LM49:
- 528 01dc 8991      		ld r24,Y+
- 529 01de 080F      		add r16,r24
- 531               	.LM50:
- 532 01e0 F394      		inc r15
- 533               	.L49:
- 534 01e2 F116      		cp r15,r17
- 535 01e4 01F4      		brne .L50
- 537               	.LM51:
- 538 01e6 802F      		mov r24,r16
- 539 01e8 8F77      		andi r24,lo8(127)
- 540 01ea 0E94 0000 		call put_byte
- 542               	.LM52:
- 543 01ee 80EC      		ldi r24,lo8(-64)
- 544 01f0 0E94 0000 		call put_byte
- 546               	.LM53:
- 547 01f4 8091 0000 		lds r24,slip_tx_sem
- 548 01f8 9091 0000 		lds r25,(slip_tx_sem)+1
- 549 01fc 0E94 0000 		call nrk_sem_post
- 551               	.LM54:
- 552 0200 8F3F      		cpi r24,lo8(-1)
- 553 0202 01F0      		breq .L55
- 554 0204 81E0      		ldi r24,lo8(1)
- 555 0206 90E0      		ldi r25,hi8(1)
- 556 0208 00C0      		rjmp .L46
- 557               	.L55:
- 559               	.LM55:
- 560 020a 80E0      		ldi r24,lo8(__c.2309)
- 561 020c 90E0      		ldi r25,hi8(__c.2309)
- 562 020e 0E94 0000 		call nrk_kprintf
- 564               	.LM56:
- 565 0212 82E0      		ldi r24,lo8(2)
- 566               	.L58:
- 567 0214 0E94 0000 		call _nrk_errno_set
- 568 0218 8FEF      		ldi r24,lo8(-1)
- 569 021a 9FEF      		ldi r25,hi8(-1)
- 570               	.L46:
- 571               	/* epilogue: frame size=0 */
- 572 021c DF91      		pop r29
- 573 021e CF91      		pop r28
- 574 0220 1F91      		pop r17
- 575 0222 0F91      		pop r16
- 576 0224 FF90      		pop r15
- 577 0226 0895      		ret
- 578               	/* epilogue end (size=6) */
- 579               	/* function slip_tx size 83 (72) */
- 585               	.Lscope5:
- 587               		.stabd	78,0,0
- 593               	.global	slip_init
- 595               	slip_init:
- 596               		.stabd	46,0,0
- 598               	.LM57:
- 599               	.LFBB6:
- 600               	/* prologue: frame size=0 */
- 601               	/* prologue end (size=0) */
- 603               	.LM58:
- 604 0228 9093 0000 		sts (g_dv_in)+1,r25
- 605 022c 8093 0000 		sts g_dv_in,r24
- 607               	.LM59:
- 608 0230 7093 0000 		sts (g_dv_out)+1,r23
- 609 0234 6093 0000 		sts g_dv_out,r22
- 611               	.LM60:
- 612 0238 4093 0000 		sts g_echo,r20
- 614               	.LM61:
- 615 023c 2093 0000 		sts g_delay,r18
- 617               	.LM62:
- 618 0240 6FEF      		ldi r22,lo8(-1)
- 619 0242 81E0      		ldi r24,lo8(1)
- 620 0244 0E94 0000 		call nrk_sem_create
- 621 0248 9093 0000 		sts (slip_tx_sem)+1,r25
- 622 024c 8093 0000 		sts slip_tx_sem,r24
- 624               	.LM63:
- 625 0250 8F5F      		subi r24,lo8(-1)
- 626 0252 9F4F      		sbci r25,hi8(-1)
- 627 0254 01F4      		brne .L60
- 629               	.LM64:
- 630 0256 0E94 0000 		call nrk_get_pid
- 631 025a 682F      		mov r22,r24
- 632 025c 8FE0      		ldi r24,lo8(15)
- 633 025e 0E94 0000 		call nrk_kernel_error_add
- 634               	.L60:
- 636               	.LM65:
- 637 0262 81E0      		ldi r24,lo8(1)
- 638 0264 8093 0000 		sts _slip_started,r24
- 640               	.LM66:
- 641 0268 81E0      		ldi r24,lo8(1)
- 642 026a 90E0      		ldi r25,hi8(1)
- 643               	/* epilogue: frame size=0 */
- 644 026c 0895      		ret
- 645               	/* epilogue end (size=1) */
- 646               	/* function slip_init size 36 (35) */
- 648               	.Lscope6:
- 650               		.stabd	78,0,0
- 651               	.global	_slip_started
- 652               		.data
- 655               	_slip_started:
- 656 0000 FF        		.byte	-1
- 657               		.section	.progmem.data,"a",@progbits
- 660               	__c.2340:
- 661 0000 534C 4950 		.string	"SLIP RX error: nrk_signal_register\r\n"
- 661      2052 5820 
- 661      6572 726F 
- 661      723A 206E 
- 661      726B 5F73 
- 664               	__c.2338:
- 665 0025 534C 4950 		.string	"SLIP RX error: Get Signal\r\n"
- 665      2052 5820 
- 665      6572 726F 
- 665      723A 2047 
- 665      6574 2053 
- 668               	__c.2309:
- 669 0041 534C 4950 		.string	"SLIP TX ERROR:  Release of semaphore failed\r\n"
- 669      2054 5820 
- 669      4552 524F 
- 669      523A 2020 
- 669      5265 6C65 
- 672               	__c.2304:
- 673 006f 534C 4950 		.string	"SLIP TX ERROR:  Access to semaphore failed\r\n"
- 673      2054 5820 
- 673      4552 524F 
- 673      523A 2020 
- 673      4163 6365 
- 674               		.comm _nrk_signal_list,4,1
- 675               		.comm nrk_idle_task_stk,128,1
- 676               		.comm nrk_kernel_stk_ptr,2,1
- 677               		.comm error_task,1,1
- 678               		.comm error_num,1,1
- 679               		.comm g_dv_in,2,1
- 680               		.comm g_dv_out,2,1
- 681               		.comm g_echo,1,1
- 682               		.comm g_delay,1,1
- 683               		.comm slip_tx_sem,2,1
- 699               		.text
- 701               	.Letext0:
- 702               	/* File "../../../src/net/slip/slip.c": code  313 = 0x0139 ( 271), prologues  18, epilogues  24 */
+ 105:../../../src/net/slip/slip.c ****     checksum += buf[i];
+ 522               	.LM52:
+ 523 01d6 8991      		ld r24,Y+
+ 524 01d8 080F      		add r16,r24
+ 525               	.L35:
+ 101:../../../src/net/slip/slip.c ****   for (i = 0; i < size; i++) {
+ 527               	.LM53:
+ 528 01da 6E01      		movw r12,r28
+ 529 01dc C11A      		sub r12,r17
+ 530 01de CF14      		cp r12,r15
+ 531 01e0 00F0      		brlo .L38
+ 112:../../../src/net/slip/slip.c ****   put_byte (checksum);
+ 533               	.LM54:
+ 534 01e2 802F      		mov r24,r16
+ 535 01e4 8F77      		andi r24,lo8(127)
+ 536 01e6 0E94 0000 		call put_byte
+ 113:../../../src/net/slip/slip.c ****   put_byte (END);
+ 538               	.LM55:
+ 539 01ea 80EC      		ldi r24,lo8(-64)
+ 540 01ec 0E94 0000 		call put_byte
+ 114:../../../src/net/slip/slip.c ****   v = nrk_sem_post (slip_tx_sem);
+ 542               	.LM56:
+ 543 01f0 8091 0000 		lds r24,slip_tx_sem
+ 544 01f4 9091 0000 		lds r25,(slip_tx_sem)+1
+ 545 01f8 0E94 0000 		call nrk_sem_post
+ 115:../../../src/net/slip/slip.c ****   if (v == NRK_ERROR) {
+ 547               	.LM57:
+ 548 01fc 8F3F      		cpi r24,lo8(-1)
+ 549 01fe 01F0      		breq .L39
+ 550 0200 81E0      		ldi r24,lo8(1)
+ 551 0202 00C0      		rjmp .L33
+ 552               	.L39:
+ 116:../../../src/net/slip/slip.c ****     nrk_kprintf (PSTR ("SLIP TX ERROR:  Release of semaphore failed\r\n"));
+ 554               	.LM58:
+ 555 0204 80E0      		ldi r24,lo8(__c.2041)
+ 556 0206 90E0      		ldi r25,hi8(__c.2041)
+ 557 0208 0E94 0000 		call nrk_kprintf
+ 117:../../../src/net/slip/slip.c ****     _nrk_errno_set (2);
+ 559               	.LM59:
+ 560 020c 82E0      		ldi r24,lo8(2)
+ 561               	.L41:
+ 562 020e 0E94 0000 		call _nrk_errno_set
+ 563 0212 8FEF      		ldi r24,lo8(-1)
+ 564               	.L33:
+ 565               	/* epilogue start */
+ 121:../../../src/net/slip/slip.c **** }
+ 567               	.LM60:
+ 568 0214 DF91      		pop r29
+ 569 0216 CF91      		pop r28
+ 570 0218 1F91      		pop r17
+ 571 021a 0F91      		pop r16
+ 572 021c FF90      		pop r15
+ 573 021e DF90      		pop r13
+ 574 0220 CF90      		pop r12
+ 575 0222 0895      		ret
+ 580               	.Lscope5:
+ 582               		.stabd	78,0,0
+ 588               	.global	slip_init
+ 590               	slip_init:
+ 591               		.stabd	46,0,0
+  41:../../../src/net/slip/slip.c **** {
+ 593               	.LM61:
+ 594               	.LFBB6:
+ 595               	/* prologue: function */
+ 596               	/* frame size = 0 */
+  42:../../../src/net/slip/slip.c ****   g_dv_in = device_in;
+ 598               	.LM62:
+ 599 0224 9093 0000 		sts (g_dv_in)+1,r25
+ 600 0228 8093 0000 		sts g_dv_in,r24
+  43:../../../src/net/slip/slip.c ****   g_dv_out = device_out;
+ 602               	.LM63:
+ 603 022c 7093 0000 		sts (g_dv_out)+1,r23
+ 604 0230 6093 0000 		sts g_dv_out,r22
+  44:../../../src/net/slip/slip.c ****   g_echo = echo;
+ 606               	.LM64:
+ 607 0234 4093 0000 		sts g_echo,r20
+  45:../../../src/net/slip/slip.c ****   g_delay = delay;
+ 609               	.LM65:
+ 610 0238 2093 0000 		sts g_delay,r18
+  51:../../../src/net/slip/slip.c ****   slip_tx_sem = nrk_sem_create (1, UART_PCP_CEILING);
+ 612               	.LM66:
+ 613 023c 81E0      		ldi r24,lo8(1)
+ 614 023e 6FEF      		ldi r22,lo8(-1)
+ 615 0240 0E94 0000 		call nrk_sem_create
+ 616 0244 9093 0000 		sts (slip_tx_sem)+1,r25
+ 617 0248 8093 0000 		sts slip_tx_sem,r24
+  52:../../../src/net/slip/slip.c ****   if (slip_tx_sem == NRK_ERROR)
+ 619               	.LM67:
+ 620 024c 2FEF      		ldi r18,hi8(-1)
+ 621 024e 8F3F      		cpi r24,lo8(-1)
+ 622 0250 9207      		cpc r25,r18
+ 623 0252 01F4      		brne .L43
+  53:../../../src/net/slip/slip.c ****     nrk_kernel_error_add (NRK_SEMAPHORE_CREATE_ERROR, nrk_get_pid ());
+ 625               	.LM68:
+ 626 0254 0E94 0000 		call nrk_get_pid
+ 627 0258 682F      		mov r22,r24
+ 628 025a 8FE0      		ldi r24,lo8(15)
+ 629 025c 0E94 0000 		call nrk_kernel_error_add
+ 630               	.L43:
+  55:../../../src/net/slip/slip.c ****   _slip_started = NRK_OK;
+ 632               	.LM69:
+ 633 0260 81E0      		ldi r24,lo8(1)
+ 634 0262 8093 0000 		sts _slip_started,r24
+ 635               	/* epilogue start */
+  57:../../../src/net/slip/slip.c **** }
+ 637               	.LM70:
+ 638 0266 0895      		ret
+ 640               	.Lscope6:
+ 642               		.stabd	78,0,0
+ 643               	.global	_slip_started
+ 644               		.data
+ 647               	_slip_started:
+ 648 0000 FF        		.byte	-1
+ 649               		.section	.progmem.data,"a",@progbits
+ 652               	__c.2077:
+ 653 0000 534C 4950 		.string	"SLIP RX error: nrk_signal_register\r\n"
+ 653      2052 5820 
+ 653      6572 726F 
+ 653      723A 206E 
+ 653      726B 5F73 
+ 656               	__c.2075:
+ 657 0025 534C 4950 		.string	"SLIP RX error: Get Signal\r\n"
+ 657      2052 5820 
+ 657      6572 726F 
+ 657      723A 2047 
+ 657      6574 2053 
+ 660               	__c.2041:
+ 661 0041 534C 4950 		.string	"SLIP TX ERROR:  Release of semaphore failed\r\n"
+ 661      2054 5820 
+ 661      4552 524F 
+ 661      523A 2020 
+ 661      5265 6C65 
+ 664               	__c.2036:
+ 665 006f 534C 4950 		.string	"SLIP TX ERROR:  Access to semaphore failed\r\n"
+ 665      2054 5820 
+ 665      4552 524F 
+ 665      523A 2020 
+ 665      4163 6365 
+ 666               		.comm _nrk_signal_list,4,1
+ 667               		.comm nrk_idle_task_stk,128,1
+ 668               		.comm nrk_kernel_stk_ptr,2,1
+ 669               		.comm error_task,1,1
+ 670               		.comm error_num,1,1
+ 671               		.comm g_dv_in,2,1
+ 672               		.comm g_dv_out,2,1
+ 673               		.comm g_echo,1,1
+ 674               		.comm g_delay,1,1
+ 675               		.comm slip_tx_sem,2,1
+ 687               		.text
+ 689               	.Letext0:
 DEFINED SYMBOLS
                             *ABS*:00000000 slip.c
-     /tmp/cceYN8zt.s:2      *ABS*:0000003f __SREG__
-     /tmp/cceYN8zt.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cceYN8zt.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cceYN8zt.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cceYN8zt.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cceYN8zt.s:132    .text:00000000 slip_started
-     /tmp/cceYN8zt.s:655    .data:00000000 _slip_started
-     /tmp/cceYN8zt.s:156    .text:0000000c get_byte
+     /tmp/cco9vvmC.s:2      *ABS*:0000003f __SREG__
+     /tmp/cco9vvmC.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cco9vvmC.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cco9vvmC.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cco9vvmC.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cco9vvmC.s:132    .text:00000000 slip_started
+     /tmp/cco9vvmC.s:647    .data:00000000 _slip_started
+     /tmp/cco9vvmC.s:151    .text:00000006 get_byte
                             *COM*:00000002 g_dv_in
-     /tmp/cceYN8zt.s:184    .text:0000001c slip_rx
-     /tmp/cceYN8zt.s:664    .progmem.data:00000025 __c.2338
-     /tmp/cceYN8zt.s:660    .progmem.data:00000000 __c.2340
-     /tmp/cceYN8zt.s:405    .text:00000148 put_byte
+     /tmp/cco9vvmC.s:176    .text:00000014 slip_rx
+     /tmp/cco9vvmC.s:656    .progmem.data:00000025 __c.2075
+     /tmp/cco9vvmC.s:652    .progmem.data:00000000 __c.2077
+     /tmp/cco9vvmC.s:389    .text:0000012e put_byte
                             *COM*:00000001 g_delay
                             *COM*:00000002 g_dv_out
-     /tmp/cceYN8zt.s:455    .text:00000182 slip_tx
+     /tmp/cco9vvmC.s:438    .text:00000168 slip_tx
                             *COM*:00000002 slip_tx_sem
-     /tmp/cceYN8zt.s:672    .progmem.data:0000006f __c.2304
-     /tmp/cceYN8zt.s:668    .progmem.data:00000041 __c.2309
-     /tmp/cceYN8zt.s:595    .text:00000228 slip_init
+     /tmp/cco9vvmC.s:664    .progmem.data:0000006f __c.2036
+     /tmp/cco9vvmC.s:660    .progmem.data:00000041 __c.2041
+     /tmp/cco9vvmC.s:590    .text:00000224 slip_init
                             *COM*:00000001 g_echo
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk

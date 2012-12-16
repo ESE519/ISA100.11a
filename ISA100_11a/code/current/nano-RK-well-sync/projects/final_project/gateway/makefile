@@ -35,6 +35,7 @@ SRC += $(ROOT_DIR)/src/net/isa/dlmo.c
 SRC += $(ROOT_DIR)/src/net/isa/isa.c
 #SRC += $(ROOT_DIR)/src/net/isa/isa_scheduler.c
 SRC += $(ROOT_DIR)/src/drivers/platform/$(PLATFORM_TYPE)/source/ff_basic_sensor.c 
+SRC += $(ROOT_DIR)/src/net/isa/uart/command-interpreter.c
 
 # Add extra includes files. 
 # For example:
@@ -42,6 +43,7 @@ SRC += $(ROOT_DIR)/src/drivers/platform/$(PLATFORM_TYPE)/source/ff_basic_sensor.
 EXTRAINCDIRS =
 #EXTRAINCDIRS += $(ROOT_DIR)/src/net/rt_link/
 EXTRAINCDIRS += $(ROOT_DIR)/src/net/isa/
+EXTRAINCDIRS += $(ROOT_DIR)/src/net/isa/uart/
 #EXTRAINCDIRS += $(ROOT_DIR)/src/net/rt_link/platform/$(PLATFORM_TYPE)/
 EXTRAINCDIRS += $(ROOT_DIR)/src/net/isa/platform/$(PLATFORM_TYPE)/
 EXTRAINCDIRS += $(ROOT_DIR)/src/net/slip

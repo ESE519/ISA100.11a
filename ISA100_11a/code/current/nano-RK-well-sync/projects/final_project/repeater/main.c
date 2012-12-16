@@ -7,10 +7,10 @@
 #include <isa.h>
 #include <nrk_error.h>
 //#include <sys/time.h>
-
+#include <spi_matrix.h>
 
 #define MY_CHANNEL 19 
-#define MY_ID 4 //change
+	 2//change
 
 //#define MY_TX_SLOT_SYNC  2
 //#define s  17
@@ -19,7 +19,7 @@
 //#define MY_TX_SLOT1  8
 
 
-#define MY_CLK_SRC_ID  3
+#define MY_CLK_SRC_ID  1
 
 NRK_STK Stack1[NRK_APP_STACKSIZE];
 nrk_task_type TaskOne;
@@ -41,10 +41,14 @@ nrk_time_t timeout;
 
 void transmitCallback1(ISA_QUEUE *entry , bool status){
 uint8_t length;
-	 isaFreePacket(entry);
-	  sprintf( &tx_buf[PKT_DATA_START],"node" );
-	  length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
-	  	sendPacket(3, length, tx_buf, transmitCallback1);
+MESSAGE *message;
+DLMO_DROUT *dRout;
+	 	message = &tx_buf[PKT_DATA_START];
+	 	message->type = DUMMY_PAYLOAD;
+	  sprintf( &message->data,"node" );
+	  length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+2;
+	  sendPacket(entry->tx_buf[DEST_INDEX],dRout->GraphId, length, tx_buf, transmitCallback1);
+	  	isaFreePacket(entry);
 }
 //*******************************************************************************
 
@@ -61,11 +65,89 @@ int main ()
   nrk_led_clr(1);
   nrk_led_clr(2);
   nrk_led_clr(3);
-  
   nrk_time_set(0,0);
   
   isa_task_config();
+  isa_set_channel_pattern(1);
+  isa_init (ISA_REPEATER, MY_ID, MY_CLK_SRC_ID);//change
   
+  dlmoInit(); 	//Initialize the Data Link Management Object
+
+  addNeighbor(1,0,0,0,true,0,0,0);
+  addNeighbor(5,0,0,0,false,0,0,0);
+  addNeighbor(6,0,0,0,false,0,0,0);
+  addNeighbor(7,0,0,0,false,0,0,0);
+  addNeighbor(8,0,0,0,false,0,0,0);
+  addNeighbor(9,0,0,0,false,0,0,0);
+
+  addLink(26,0,0,4,0);//ad
+  addLink(4,1,0,1,0);
+  addLink(7,5,0,1,0);
+  addLink(8,6,0,1,0);
+  addLink(9,7,0,1,0);
+  addLink(10,8,0,1,0);
+  addLink(11,9,0,1,0);
+  addLink(12,0,0,8,0);//receive from 5
+  addLink(13,0,0,8,0);//6
+  addLink(14,0,0,8,0);//7
+  addLink(15,0,0,8,0);//8
+  addLink(16,0,0,8,0);//9
+  addLink(3,0,0,8,0);//1
+  addLink(25,0,0,8,0);
+  addLink(27,0,0,8,0);//Ad
+
+
+  /*addLink(17,0,0,4,0);//transmit ad
+  addLink(40,0,0,8,0);//receive ad
+  addLink(18,0,0,8,0);
+  addLink(19,0,0,8,0);
+  addLink(20,0,0,8,0);
+  addLink(21,0,0,8,0);
+
+  addLink(41,0,0,8,0);//receive from 1
+  addLink(42,1,0,1,0);//transmit to 1
+  addGraph(1,1,4,0,0);//graph
+  addLink(5,4,1,1,2);//transmit to 4
+  addLink(6,0,0,8,0);//receive from 4*/
+  //addLink(26,0,0,4,0);
+
+ /* addLink(7,5,0,1,0);
+  addLink(8,6,0,1,0);
+  addLink(9,7,0,1,0);
+  addLink(10,8,0,1,0);
+  addLink(11,9,0,1,0);
+
+  addLink(12,0,0,8,0);
+  addLink(13,0,0,8,0);
+  addLink(14,0,0,8,0);
+  addLink(15,0,0,8,0);
+  addLink(16,0,0,8,0);
+  addLink(3,0,0,8,0);
+  */
+
+  //addGraph(1,3,5,3,4);
+ // addLink(2,1,1,1,0);//transmitting on slot 2
+ // addLink(10,1,1,8,0); //receiving on slot 10
+ // addLink(1,1,1,8,0);//receiving on slot 1
+
+/*
+  configureSlot(2, 1, TX_NO_ADV, true,0,0,0,0,0,NEIGHBOR);
+  configureSlot(7,5,TX_NO_ADV,false,1,1,5,0,0,GRAPH_NEIGHBOR);
+ // configureSlot(5, 1, TX_NO_ADV, true,0,0,0,0,0, NEIGHBOR);
+  //configureSlot(2,3, RX, false,0,0,0,0,0, NEIGHBOR);
+  //configureSlot(7,10,ADV,false,0,0,0,0,0, NEIGHBOR);
+  //configureSlot(6,3, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(11,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(8,0, RX, false,0,0,0,0,0, NEIGHBOR);
+
+  configureSlot(19,0,ADV,false,0,0,0,0,0,NEIGHBOR);
+  configureSlot(20,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(21,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(22,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(23,0, RX, false,0,0,0,0,0, NEIGHBOR);
+  configureSlot(24,0, RX, false,0,0,0,0,0, NEIGHBOR);
+*/
+
   nrk_create_taskset ();
 
   nrk_start();
@@ -96,16 +178,9 @@ void Task1()
   
   nrk_led_set(RED_LED);
   
-  isa_set_channel_pattern(1);
 
-  isa_init (ISA_REPEATER, MY_ID, MY_CLK_SRC_ID);//change
-  
-  dlmoInit(); 	//Initialize the Data Link Management Object
 
-  configureSlot(8,1, RX, false);
-  //configureSlot(9,1, RX, false);
-  configureSlot(9, 3, TX_NO_ADV, true);
-  //configureSlot(8, 4, TX_NO_ADV, false);
+
  // isa_set_schedule(ISA_REPEATER, MY_CLK_SRC_ID);
 
  // isa_set_channel(MY_CHANNEL);
@@ -175,11 +250,14 @@ void Task1()
 	isa_tx_pkt(rx_buf,length,configDHDR(),MY_TX_SLOT);
 	isa_wait_until_rx_or_tx ();*/
     	   if (cnt ==0 ){
-
-
-	sprintf( &tx_buf[PKT_DATA_START],"2");
-	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+1;
-	sendPacket(3, length, tx_buf, transmitCallback1);
+    		   MESSAGE *message;
+    		   	message = &tx_buf[PKT_DATA_START];
+    		   	message->type = DUMMY_PAYLOAD;
+	sprintf( &message->data,"2");
+	length=strlen(&tx_buf[PKT_DATA_START])+PKT_DATA_START+2;
+	sendPacket(1,0, length, tx_buf, transmitCallback1);
+	//sendPacket(5,0, length, tx_buf, transmitCallback1);
+	//sendPacket(6, length, tx_buf, transmitCallback1);
     	cnt++;
     	   }
 
@@ -187,9 +265,10 @@ void Task1()
 	length=strlen(&tx_buf2[PKT_DATA_START])+PKT_DATA_START+1;
 	isa_tx_pkt(tx_buf2,length,configDHDR(),2);
 	isa_wait_until_rx_or_tx ();*/
-
+    	   setMatrix();
+    	     	  nrk_wait_until_next_period();
     //   }
-    	   nrk_terminate_task();
+    //	   nrk_terminate_task();
      //  isa_wait_until_rx_or_tx ();
       // 	putchar('\n');
       // 	putchar('\r');
@@ -197,6 +276,7 @@ void Task1()
   
 
 }
+
 
 
 void
@@ -210,7 +290,7 @@ nrk_create_taskset()
   TaskOne.Type = BASIC_TASK;
   TaskOne.SchType = PREEMPTIVE;
   TaskOne.period.secs = 0;
-  TaskOne.period.nano_secs = 20*NANOS_PER_MS;
+  TaskOne.period.nano_secs = 10*NANOS_PER_MS;
   TaskOne.cpu_reserve.secs = 0;
   TaskOne.cpu_reserve.nano_secs = 20*NANOS_PER_MS;
   TaskOne.offset.secs = 0;

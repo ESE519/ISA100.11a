@@ -91,105 +91,137 @@
  167      4D41 585F 
  167      5041 594C 
  168               	.LC4:
- 169 0095 556E 6B6E 		.string	"Unknown ISA_ERROR"
- 169      6F77 6E20 
- 169      4953 415F 
+ 169 0095 4953 415F 		.string	"ISA_ERROR : CANDIDATE CAPACITY ERROR\n\r"
  169      4552 524F 
- 169      5200 
- 170               		.text
- 172               	.global	printIsaError
- 174               	printIsaError:
- 175               		.stabd	46,0,0
+ 169      5220 3A20 
+ 169      4341 4E44 
+ 169      4944 4154 
+ 170               	.LC5:
+ 171 00bc 4953 415F 		.string	"ISA_ERROR : GRAPH CAPACITY ERROR\n\r"
+ 171      4552 524F 
+ 171      5220 3A20 
+ 171      4752 4150 
+ 171      4820 4341 
+ 172               	.LC6:
+ 173 00df 556E 6B6E 		.string	"Unknown ISA_ERROR"
+ 173      6F77 6E20 
+ 173      4953 415F 
+ 173      4552 524F 
+ 173      5200 
+ 174               		.text
+ 176               	.global	printIsaError
+ 178               	printIsaError:
+ 179               		.stabd	46,0,0
   27:../../../src/net/isa/isa_error.c **** 
   28:../../../src/net/isa/isa_error.c **** void printIsaError()
   29:../../../src/net/isa/isa_error.c **** {
- 177               	.LM4:
- 178               	.LFBB3:
- 179               	/* prologue: frame size=0 */
- 180               	/* prologue end (size=0) */
+ 181               	.LM4:
+ 182               	.LFBB3:
+ 183               	/* prologue: frame size=0 */
+ 184               	/* prologue end (size=0) */
   30:../../../src/net/isa/isa_error.c **** 	switch(isaError)
- 182               	.LM5:
- 183 000e 8091 0000 		lds r24,isaError
- 184 0012 8230      		cpi r24,lo8(2)
- 185 0014 01F0      		breq .L8
- 187               	.LM6:
- 188 0016 8330      		cpi r24,lo8(3)
- 189 0018 00F4      		brsh .L11
- 190 001a 8130      		cpi r24,lo8(1)
- 191 001c 01F4      		brne .L6
- 192 001e 00C0      		rjmp .L7
- 193               	.L11:
- 194 0020 8330      		cpi r24,lo8(3)
- 195 0022 01F0      		breq .L9
- 196 0024 8430      		cpi r24,lo8(4)
- 197 0026 01F4      		brne .L6
- 198 0028 00C0      		rjmp .L10
- 199               	.L7:
+ 186               	.LM5:
+ 187 000e 8091 0000 		lds r24,isaError
+ 188 0012 8330      		cpi r24,lo8(3)
+ 189 0014 01F0      		breq .L9
+ 191               	.LM6:
+ 192 0016 8430      		cpi r24,lo8(4)
+ 193 0018 00F4      		brsh .L13
+ 194 001a 8130      		cpi r24,lo8(1)
+ 195 001c 01F0      		breq .L7
+ 196 001e 8230      		cpi r24,lo8(2)
+ 197 0020 01F4      		brne .L6
+ 198 0022 00C0      		rjmp .L8
+ 199               	.L13:
+ 200 0024 8530      		cpi r24,lo8(5)
+ 201 0026 01F0      		breq .L11
+ 202 0028 8530      		cpi r24,lo8(5)
+ 203 002a 00F0      		brlo .L10
+ 204 002c 8630      		cpi r24,lo8(6)
+ 205 002e 01F4      		brne .L6
+ 206 0030 00C0      		rjmp .L12
+ 207               	.L7:
   31:../../../src/net/isa/isa_error.c **** 	{
   32:../../../src/net/isa/isa_error.c **** 	case LINK_CAPACITY_ERROR :
   33:../../../src/net/isa/isa_error.c **** 	printf ("ISA_ERROR : LINK_CAPACITY_ERROR \n\r" );
- 201               	.LM7:
- 202 002a 80E0      		ldi r24,lo8(.LC0)
- 203 002c 90E0      		ldi r25,hi8(.LC0)
- 204 002e 00C0      		rjmp .L14
- 205               	.L8:
+ 209               	.LM7:
+ 210 0032 80E0      		ldi r24,lo8(.LC0)
+ 211 0034 90E0      		ldi r25,hi8(.LC0)
+ 212 0036 00C0      		rjmp .L16
+ 213               	.L8:
   34:../../../src/net/isa/isa_error.c **** 	break;
   35:../../../src/net/isa/isa_error.c **** 	case NEIGHBOR_CAPACITY_ERROR :
   36:../../../src/net/isa/isa_error.c **** 		printf ("ISA_ERROR : NEIGHBOR_CAPACITY_ERROR\n\r" );
- 207               	.LM8:
- 208 0030 80E0      		ldi r24,lo8(.LC1)
- 209 0032 90E0      		ldi r25,hi8(.LC1)
- 210 0034 00C0      		rjmp .L14
- 211               	.L9:
+ 215               	.LM8:
+ 216 0038 80E0      		ldi r24,lo8(.LC1)
+ 217 003a 90E0      		ldi r25,hi8(.LC1)
+ 218 003c 00C0      		rjmp .L16
+ 219               	.L9:
   37:../../../src/net/isa/isa_error.c **** 		break;
   38:../../../src/net/isa/isa_error.c **** 	case TRANSMIT_QUEUE_CAPACITY_ERROR :
   39:../../../src/net/isa/isa_error.c **** 		printf ("ISA_ERROR : TRANSMIT_QUEUE_CAPACITY_ERROR\n\r" );
- 213               	.LM9:
- 214 0036 80E0      		ldi r24,lo8(.LC2)
- 215 0038 90E0      		ldi r25,hi8(.LC2)
- 216 003a 00C0      		rjmp .L14
- 217               	.L10:
+ 221               	.LM9:
+ 222 003e 80E0      		ldi r24,lo8(.LC2)
+ 223 0040 90E0      		ldi r25,hi8(.LC2)
+ 224 0042 00C0      		rjmp .L16
+ 225               	.L10:
   40:../../../src/net/isa/isa_error.c **** 		break;
   41:../../../src/net/isa/isa_error.c **** 	case MAX_PAYLOAD_ERROR :
   42:../../../src/net/isa/isa_error.c **** 		printf ("ISA_ERROR : MAX_PAYLOAD_ERROR\n\r");
- 219               	.LM10:
- 220 003c 80E0      		ldi r24,lo8(.LC3)
- 221 003e 90E0      		ldi r25,hi8(.LC3)
- 222 0040 00C0      		rjmp .L14
- 223               	.L6:
+ 227               	.LM10:
+ 228 0044 80E0      		ldi r24,lo8(.LC3)
+ 229 0046 90E0      		ldi r25,hi8(.LC3)
+ 230 0048 00C0      		rjmp .L16
+ 231               	.L11:
   43:../../../src/net/isa/isa_error.c **** 		break;
-  44:../../../src/net/isa/isa_error.c **** 	default: printf ("Unknown ISA_ERROR");
- 225               	.LM11:
- 226 0042 80E0      		ldi r24,lo8(.LC4)
- 227 0044 90E0      		ldi r25,hi8(.LC4)
- 228               	.L14:
- 229 0046 9F93      		push r25
- 230 0048 8F93      		push r24
- 231 004a 0E94 0000 		call printf
- 232 004e 0F90      		pop __tmp_reg__
- 233 0050 0F90      		pop __tmp_reg__
- 234 0052 0895      		ret
- 235               	/* epilogue: frame size=0 */
- 236               	/* epilogue: noreturn */
- 237               	/* epilogue end (size=0) */
- 238               	/* function printIsaError size 35 (35) */
- 240               	.Lscope3:
- 242               		.stabd	78,0,0
- 243               		.lcomm isaError,1
- 244               		.comm _nrk_signal_list,4,1
- 248               	.Letext0:
- 249               	/* File "../../../src/net/isa/isa_error.c": code   42 = 0x002a (  40), prologues   0, epilogues   2
+  44:../../../src/net/isa/isa_error.c **** 	case CANDIDATE_CAPACITY_ERROR :
+  45:../../../src/net/isa/isa_error.c **** 		printf ("ISA_ERROR : CANDIDATE CAPACITY ERROR\n\r");
+ 233               	.LM11:
+ 234 004a 80E0      		ldi r24,lo8(.LC4)
+ 235 004c 90E0      		ldi r25,hi8(.LC4)
+ 236 004e 00C0      		rjmp .L16
+ 237               	.L12:
+  46:../../../src/net/isa/isa_error.c **** 		break;
+  47:../../../src/net/isa/isa_error.c **** 	case GRAPH_CAPACITY_ERROR :
+  48:../../../src/net/isa/isa_error.c **** 			printf ("ISA_ERROR : GRAPH CAPACITY ERROR\n\r");
+ 239               	.LM12:
+ 240 0050 80E0      		ldi r24,lo8(.LC5)
+ 241 0052 90E0      		ldi r25,hi8(.LC5)
+ 242 0054 00C0      		rjmp .L16
+ 243               	.L6:
+  49:../../../src/net/isa/isa_error.c **** 			break;
+  50:../../../src/net/isa/isa_error.c **** 	default: printf ("Unknown ISA_ERROR");
+ 245               	.LM13:
+ 246 0056 80E0      		ldi r24,lo8(.LC6)
+ 247 0058 90E0      		ldi r25,hi8(.LC6)
+ 248               	.L16:
+ 249 005a 9F93      		push r25
+ 250 005c 8F93      		push r24
+ 251 005e 0E94 0000 		call printf
+ 252 0062 0F90      		pop __tmp_reg__
+ 253 0064 0F90      		pop __tmp_reg__
+ 254 0066 0895      		ret
+ 255               	/* epilogue: frame size=0 */
+ 256               	/* epilogue: noreturn */
+ 257               	/* epilogue end (size=0) */
+ 258               	/* function printIsaError size 45 (45) */
+ 260               	.Lscope3:
+ 262               		.stabd	78,0,0
+ 263               		.lcomm isaError,1
+ 264               		.comm _nrk_signal_list,4,1
+ 268               	.Letext0:
+ 269               	/* File "../../../src/net/isa/isa_error.c": code   52 = 0x0034 (  50), prologues   0, epilogues   2
 DEFINED SYMBOLS
                             *ABS*:00000000 isa_error.c
-     /tmp/cc71C3TN.s:2      *ABS*:0000003f __SREG__
-     /tmp/cc71C3TN.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cc71C3TN.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cc71C3TN.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cc71C3TN.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cc71C3TN.s:119    .text:00000000 setIsaError
+     /tmp/ccT04e8L.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccT04e8L.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccT04e8L.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccT04e8L.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccT04e8L.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccT04e8L.s:119    .text:00000000 setIsaError
                              .bss:00000000 isaError
-     /tmp/cc71C3TN.s:140    .text:00000006 getIsaError
-     /tmp/cc71C3TN.s:174    .text:0000000e printIsaError
+     /tmp/ccT04e8L.s:140    .text:00000006 getIsaError
+     /tmp/ccT04e8L.s:178    .text:0000000e printIsaError
                             *COM*:00000004 _nrk_signal_list
 
 UNDEFINED SYMBOLS

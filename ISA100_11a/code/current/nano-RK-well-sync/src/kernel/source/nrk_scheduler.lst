@@ -921,12 +921,12 @@
  815               	/* File "../../../src/kernel/source/nrk_scheduler.c": code  506 = 0x01fa ( 481), prologues  12, epi
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_scheduler.c
-     /tmp/ccTSkFcU.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccTSkFcU.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccTSkFcU.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccTSkFcU.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccTSkFcU.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccTSkFcU.s:128    .text:00000000 _nrk_scheduler
+     /tmp/cchrH5wZ.s:2      *ABS*:0000003f __SREG__
+     /tmp/cchrH5wZ.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cchrH5wZ.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cchrH5wZ.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cchrH5wZ.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cchrH5wZ.s:128    .text:00000000 _nrk_scheduler
                             *COM*:00000001 _nrk_prev_timer_val
                             *COM*:00000008 nrk_system_time
                             *COM*:00000002 nrk_cur_task_TCB

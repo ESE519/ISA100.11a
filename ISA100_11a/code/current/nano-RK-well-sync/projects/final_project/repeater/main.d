@@ -14,4 +14,5 @@ main.o main.d : main.c ../../../src/kernel/include/nrk.h \
   ../../../src/platform/firefly2_2/include/nrk_platform_time.h \
   ../../../src/kernel/include/nrk_task.h ../../../src/net/isa/isa.h \
   ../../../src/net/isa/isa_scheduler.h ../../../src/net/isa/dlmo.h \
-  ../../../src/kernel/include/nrk_error.h
+  ../../../src/net/isa/dmo.h ../../../src/net/isa/isa_messagetypes.h \
+  ../../../src/kernel/include/nrk_error.h spi_matrix.h

@@ -21,6 +21,7 @@ include $(ROOT_DIR)/include/platform.mk
 
 SRC = $(TARGET).c
 
+
 # Add extra source files. 
 # For example:
 # SRC += $(ROOT_DIR)/src/platform/$(PLATFORM_TYPE)/source/my_src1.c 
@@ -29,6 +30,7 @@ SRC = $(TARGET).c
 #SRC += $(ROOT_DIR)/src/net/rt_link/rtl_scheduler.c
 #SRC += $(ROOT_DIR)/src/net/rt_link/rtl_debug.c
 
+SRC += spi_matrix.c
 SRC += $(ROOT_DIR)/src/net/isa/isa.c
 #SRC += $(ROOT_DIR)/src/net/isa/isa_scheduler.c
 SRC += $(ROOT_DIR)/src/net/isa/isa_error.c

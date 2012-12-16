@@ -201,7 +201,7 @@ NRK_PIN( ADC_INPUT_5, ADC_INPUT_5, NRK_PORTF )
 NRK_PIN( ADC_INPUT_6, ADC_INPUT_6, NRK_PORTF )
 NRK_PIN( ADC_INPUT_7, ADC_INPUT_7, NRK_PORTF )
 
-void PORT_INIT(void) 
+void PORT_INIT(void)
 {
         MCUCR |= BM(PUD); 
         DDRB  = BM(MOSI) | BM(SCK);  
@@ -213,6 +213,8 @@ void PORT_INIT(void)
         PORTE  = BM(UART0_TXD) | BM(LED_0) | BM(LED_1) | BM(LED_2) | BM(LED_3); 
         DDRA  = BM(VREG_EN) | BM(RESET_N) | BM(DEBUG_0) | BM(DEBUG_1); 
         PORTA = BM(RESET_N); 
+        DDRF = 0xFF;
+
 } 
 
 
@@ -223,6 +225,7 @@ void PORT_INIT(void)
 int8_t nrk_gpio_set(uint8_t pin)
 {
         if (pin == NRK_INVALID_PIN_VAL) return -1;
+
         switch (pin & 0x07) {
                 case NRK_PORTA:
                         do { PORTA |= BM((pin & 0xF8) >> 3); } while(0); break; 
@@ -235,7 +238,7 @@ int8_t nrk_gpio_set(uint8_t pin)
                 case NRK_PORTE:
                         do { PORTE |= BM((pin & 0xF8) >> 3); } while(0); break; 
                 case NRK_PORTF:
-                        do { PORTF |= BM((pin & 0xF8) >> 3); } while(0); break; 
+                        do { PORTF |= BM((pin & 0xF8) >> 3); } while(0); break;
                 default: return -1;
         }
         return 1;

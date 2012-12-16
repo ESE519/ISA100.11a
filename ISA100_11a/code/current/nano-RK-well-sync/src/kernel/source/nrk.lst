@@ -1037,24 +1037,24 @@
  997               	/* File "../../../src/kernel/source/nrk.c": code  559 = 0x022f ( 507), prologues  30, epilogues  22
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk.c
-     /tmp/ccQzI9tA.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccQzI9tA.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccQzI9tA.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccQzI9tA.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccQzI9tA.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccQzI9tA.s:132    .text:00000000 nrk_int_disable
-     /tmp/ccQzI9tA.s:156    .text:00000004 nrk_int_enable
-     /tmp/ccQzI9tA.s:180    .text:00000008 nrk_version
-     /tmp/ccQzI9tA.s:202    .text:0000000e _nrk_timer_tick
-     /tmp/ccQzI9tA.s:229    .text:00000014 nrk_TCB_init
+     /tmp/cchYDGAD.s:2      *ABS*:0000003f __SREG__
+     /tmp/cchYDGAD.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cchYDGAD.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cchYDGAD.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/cchYDGAD.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/cchYDGAD.s:132    .text:00000000 nrk_int_disable
+     /tmp/cchYDGAD.s:156    .text:00000004 nrk_int_enable
+     /tmp/cchYDGAD.s:180    .text:00000008 nrk_version
+     /tmp/cchYDGAD.s:202    .text:0000000e _nrk_timer_tick
+     /tmp/cchYDGAD.s:229    .text:00000014 nrk_TCB_init
                             *COM*:00000001 nrk_task_init_cnt
                             *COM*:00000063 nrk_task_TCB
-     /tmp/ccQzI9tA.s:577    .text:00000264 nrk_start
+     /tmp/cchYDGAD.s:577    .text:00000264 nrk_start
                             *COM*:00000001 nrk_high_ready_prio
                             *COM*:00000002 nrk_cur_task_TCB
                             *COM*:00000002 nrk_high_ready_TCB
                             *COM*:00000001 nrk_cur_task_prio
-     /tmp/ccQzI9tA.s:719    .text:00000324 nrk_init
+     /tmp/cchYDGAD.s:719    .text:00000324 nrk_init
                             *COM*:00000001 nrk_wakeup_signal
                             *COM*:00000001 _nrk_resource_cnt
                             *COM*:00000006 nrk_sem_list
@@ -1062,7 +1062,7 @@ DEFINED SYMBOLS
                             *COM*:00000002 _head_node
                             *COM*:00000002 _free_node
                             *COM*:00000080 nrk_idle_task_stk
-     /tmp/ccQzI9tA.s:928    .text:00000448 nrk_halt
+     /tmp/cchYDGAD.s:928    .text:00000448 nrk_halt
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000002 nrk_kernel_stk_ptr
                             *COM*:00000008 nrk_system_time

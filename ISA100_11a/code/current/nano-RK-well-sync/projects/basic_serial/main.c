@@ -47,9 +47,12 @@ int
 main ()
 {
   uint8_t t;
+  int8_t x=0;
   nrk_setup_ports();
   nrk_setup_uart(UART_BAUDRATE_115K2);
-
+//  PORTF |= 10;
+  PORTF |= 0x20;
+  printf("%d\r\n",x);
   printf( "Starting up...\r\n" );
 
   nrk_init();
@@ -62,7 +65,6 @@ main ()
   nrk_time_set(0,0);
   nrk_create_taskset ();
   nrk_start();
-  
   return 0;
 }
 
@@ -90,7 +92,7 @@ nrk_sig_mask_t sm;
 		// Read Character
                 c=getchar();
 		printf( "%c",c);
-		if(c=='x') nrk_led_set(GREEN_LED);
+		if(c=='x') PORTF ^= 0x20;
 		else nrk_led_clr(GREEN_LED);
 		}
 	sm=nrk_event_wait(SIG(uart_rx_signal));

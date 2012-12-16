@@ -17,5 +17,6 @@ isa.o isa.d : ../../../src/net/isa/isa.c \
   ../../../src/kernel/hal/include/nrk_timer.h \
   ../../../src/kernel/include/nrk_error.h ../../../src/net/isa/isa.h \
   ../../../src/net/isa/isa_scheduler.h ../../../src/net/isa/dlmo.h \
+  ../../../src/net/isa/dmo.h ../../../src/net/isa/isa_messagetypes.h \
   ../../../src/net/isa/platform/firefly2_2/isa_defs.h \
-  ../../../src/net/isa/isa_error.h ../../../src/net/isa/dmo.h
+  ../../../src/net/isa/isa_error.h spi_matrix.h

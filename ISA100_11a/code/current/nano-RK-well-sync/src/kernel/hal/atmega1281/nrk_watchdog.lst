@@ -199,15 +199,15 @@
  288               	/* File "../../../src/kernel/hal/atmega1281/nrk_watchdog.c": code   45 = 0x002d (  42), prologues  
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_watchdog.c
-     /tmp/cco716tc.s:2      *ABS*:0000003f __SREG__
-     /tmp/cco716tc.s:3      *ABS*:0000003e __SP_H__
-     /tmp/cco716tc.s:4      *ABS*:0000003d __SP_L__
-     /tmp/cco716tc.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/cco716tc.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/cco716tc.s:125    .text:00000000 nrk_watchdog_check
-     /tmp/cco716tc.s:159    .text:00000012 nrk_watchdog_reset
-     /tmp/cco716tc.s:182    .text:00000016 nrk_watchdog_disable
-     /tmp/cco716tc.s:230    .text:00000034 nrk_watchdog_enable
+     /tmp/ccuxiHgn.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccuxiHgn.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccuxiHgn.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccuxiHgn.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccuxiHgn.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccuxiHgn.s:125    .text:00000000 nrk_watchdog_check
+     /tmp/ccuxiHgn.s:159    .text:00000012 nrk_watchdog_reset
+     /tmp/ccuxiHgn.s:182    .text:00000016 nrk_watchdog_disable
+     /tmp/ccuxiHgn.s:230    .text:00000034 nrk_watchdog_enable
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000001 error_task
                             *COM*:00000001 error_num

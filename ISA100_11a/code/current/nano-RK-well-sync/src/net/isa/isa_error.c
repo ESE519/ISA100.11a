@@ -41,6 +41,12 @@ void printIsaError()
 	case MAX_PAYLOAD_ERROR :
 		printf ("ISA_ERROR : MAX_PAYLOAD_ERROR\n\r");
 		break;
+	case CANDIDATE_CAPACITY_ERROR :
+		printf ("ISA_ERROR : CANDIDATE CAPACITY ERROR\n\r");
+		break;
+	case GRAPH_CAPACITY_ERROR :
+			printf ("ISA_ERROR : GRAPH CAPACITY ERROR\n\r");
+			break;
 	default: printf ("Unknown ISA_ERROR");
 	}
 

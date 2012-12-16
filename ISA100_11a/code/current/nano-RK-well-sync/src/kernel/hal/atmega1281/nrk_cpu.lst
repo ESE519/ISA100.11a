@@ -526,21 +526,21 @@
  558               	/* File "../../../src/kernel/hal/atmega1281/nrk_cpu.c": code  158 = 0x009e ( 137), prologues   6, e
 DEFINED SYMBOLS
                             *ABS*:00000000 nrk_cpu.c
-     /tmp/ccMelC4d.s:2      *ABS*:0000003f __SREG__
-     /tmp/ccMelC4d.s:3      *ABS*:0000003e __SP_H__
-     /tmp/ccMelC4d.s:4      *ABS*:0000003d __SP_L__
-     /tmp/ccMelC4d.s:5      *ABS*:00000000 __tmp_reg__
-     /tmp/ccMelC4d.s:6      *ABS*:00000001 __zero_reg__
-     /tmp/ccMelC4d.s:128    .text:00000000 nrk_battery_save
-     /tmp/ccMelC4d.s:146    .text:00000002 nrk_sleep
-     /tmp/ccMelC4d.s:182    .text:0000001a nrk_idle
-     /tmp/ccMelC4d.s:219    .text:00000030 nrk_task_set_entry_function
-     /tmp/ccMelC4d.s:245    .text:00000038 nrk_task_stk_init
-     /tmp/ccMelC4d.s:368    .text:000000b4 nrk_stack_pointer_init
+     /tmp/ccOTKC4o.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccOTKC4o.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccOTKC4o.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccOTKC4o.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccOTKC4o.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccOTKC4o.s:128    .text:00000000 nrk_battery_save
+     /tmp/ccOTKC4o.s:146    .text:00000002 nrk_sleep
+     /tmp/ccOTKC4o.s:182    .text:0000001a nrk_idle
+     /tmp/ccOTKC4o.s:219    .text:00000030 nrk_task_set_entry_function
+     /tmp/ccOTKC4o.s:245    .text:00000038 nrk_task_stk_init
+     /tmp/ccOTKC4o.s:368    .text:000000b4 nrk_stack_pointer_init
                             *COM*:00000002 nrk_kernel_stk_ptr
-     /tmp/ccMelC4d.s:406    .text:000000d6 nrk_stack_pointer_restore
-     /tmp/ccMelC4d.s:434    .text:000000e8 nrk_target_start
-     /tmp/ccMelC4d.s:461    .text:000000f2 nrk_task_set_stk
+     /tmp/ccOTKC4o.s:406    .text:000000d6 nrk_stack_pointer_restore
+     /tmp/ccOTKC4o.s:434    .text:000000e8 nrk_target_start
+     /tmp/ccOTKC4o.s:461    .text:000000f2 nrk_task_set_stk
                             *COM*:00000004 _nrk_signal_list
                             *COM*:00000080 nrk_idle_task_stk
                             *COM*:00000063 nrk_task_TCB

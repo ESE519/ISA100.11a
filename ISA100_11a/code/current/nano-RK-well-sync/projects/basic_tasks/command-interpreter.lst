@@ -1,0 +1,2883 @@
+   1               		.file	"command-interpreter.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 122               	.global	emberCommandReaderInit
+ 124               	emberCommandReaderInit:
+ 125               		.stabd	46,0,0
+   1:../../projects/basic_tasks/command-interpreter.c **** /**
+   2:../../projects/basic_tasks/command-interpreter.c ****  * File: command-interpreter.c
+   3:../../projects/basic_tasks/command-interpreter.c ****  * Description: processes commands incoming over the serial port.
+   4:../../projects/basic_tasks/command-interpreter.c ****  *
+   5:../../projects/basic_tasks/command-interpreter.c ****  * Culprit(s): Richard Kelsey, Matteo Paris
+   6:../../projects/basic_tasks/command-interpreter.c ****  *
+   7:../../projects/basic_tasks/command-interpreter.c ****  * Copyright 2008 by Ember Corporation.  All rights reserved.               *80*
+   8:../../projects/basic_tasks/command-interpreter.c ****  */
+   9:../../projects/basic_tasks/command-interpreter.c **** 
+  10:../../projects/basic_tasks/command-interpreter.c **** 
+  11:../../projects/basic_tasks/command-interpreter.c **** // #include "serial.h"
+  12:../../projects/basic_tasks/command-interpreter.c **** #include <include.h>
+  13:../../projects/basic_tasks/command-interpreter.c **** #include <ulib.h>
+  14:../../projects/basic_tasks/command-interpreter.c **** #include <stdio.h>
+  15:../../projects/basic_tasks/command-interpreter.c **** #include <command-interpreter.h>
+  16:../../projects/basic_tasks/command-interpreter.c **** #include <error-def.h>
+  17:../../projects/basic_tasks/command-interpreter.c **** 
+  18:../../projects/basic_tasks/command-interpreter.c **** 
+  19:../../projects/basic_tasks/command-interpreter.c **** //------------------------------------------------------------------------------
+  20:../../projects/basic_tasks/command-interpreter.c **** // Forward declarations.
+  21:../../projects/basic_tasks/command-interpreter.c **** static void callCommandAction(void);
+  22:../../projects/basic_tasks/command-interpreter.c **** static uint32_t stringToUnsignedInt(uint8_t argNum, bool swallowLeadingSign);
+  23:../../projects/basic_tasks/command-interpreter.c **** static uint8_t charDowncase(uint8_t c);
+  24:../../projects/basic_tasks/command-interpreter.c **** 
+  25:../../projects/basic_tasks/command-interpreter.c **** //------------------------------------------------------------------------------
+  26:../../projects/basic_tasks/command-interpreter.c **** // Command parsing state
+  27:../../projects/basic_tasks/command-interpreter.c **** 
+  28:../../projects/basic_tasks/command-interpreter.c **** typedef struct {
+  29:../../projects/basic_tasks/command-interpreter.c **** 
+  30:../../projects/basic_tasks/command-interpreter.c ****   // Finite-state machine's current state.
+  31:../../projects/basic_tasks/command-interpreter.c ****   uint8_t state;
+  32:../../projects/basic_tasks/command-interpreter.c **** 
+  33:../../projects/basic_tasks/command-interpreter.c ****   // The command line is stored in this buffer.
+  34:../../projects/basic_tasks/command-interpreter.c ****   // Spaces and trailing '"' and '}' characters are removed,
+  35:../../projects/basic_tasks/command-interpreter.c ****   // and hex strings are converted to bytes.
+  36:../../projects/basic_tasks/command-interpreter.c ****   uint8_t buffer[EMBER_COMMAND_BUFFER_LENGTH];
+  37:../../projects/basic_tasks/command-interpreter.c **** 
+  38:../../projects/basic_tasks/command-interpreter.c ****   // Indices of the tokens (command(s) and arguments) in the above buffer.
+  39:../../projects/basic_tasks/command-interpreter.c ****   // The (+ 1) lets us store the ending index.
+  40:../../projects/basic_tasks/command-interpreter.c ****   uint8_t tokenIndices[MAX_TOKEN_COUNT + 1];
+  41:../../projects/basic_tasks/command-interpreter.c **** 
+  42:../../projects/basic_tasks/command-interpreter.c ****   // The number of tokens read in, including the command(s).
+  43:../../projects/basic_tasks/command-interpreter.c ****   uint8_t tokenCount;
+  44:../../projects/basic_tasks/command-interpreter.c **** 
+  45:../../projects/basic_tasks/command-interpreter.c ****   // Used while reading in the command line.
+  46:../../projects/basic_tasks/command-interpreter.c ****   uint8_t index;
+  47:../../projects/basic_tasks/command-interpreter.c **** 
+  48:../../projects/basic_tasks/command-interpreter.c ****   // First error found in this command.
+  49:../../projects/basic_tasks/command-interpreter.c ****   uint8_t error;
+  50:../../projects/basic_tasks/command-interpreter.c **** 
+  51:../../projects/basic_tasks/command-interpreter.c ****   // Storage for reading in a hex string. A value of 0xFF means unused.
+  52:../../projects/basic_tasks/command-interpreter.c ****   uint8_t hexHighNibble;
+  53:../../projects/basic_tasks/command-interpreter.c **** 
+  54:../../projects/basic_tasks/command-interpreter.c ****   // The token number of the first true argument after possible nested commands.
+  55:../../projects/basic_tasks/command-interpreter.c ****   uint8_t argOffset;
+  56:../../projects/basic_tasks/command-interpreter.c **** 
+  57:../../projects/basic_tasks/command-interpreter.c **** } EmberCommandState;
+  58:../../projects/basic_tasks/command-interpreter.c **** 
+  59:../../projects/basic_tasks/command-interpreter.c **** static EmberCommandState commandState;
+  60:../../projects/basic_tasks/command-interpreter.c **** 
+  61:../../projects/basic_tasks/command-interpreter.c **** // Remember the previous character seen by emberProcessCommandString() to ignore
+  62:../../projects/basic_tasks/command-interpreter.c **** // an LF following a CR.
+  63:../../projects/basic_tasks/command-interpreter.c **** static uint8_t previousCharacter = 0;
+  64:../../projects/basic_tasks/command-interpreter.c **** 
+  65:../../projects/basic_tasks/command-interpreter.c **** EmberCommandEntry *emberCurrentCommand;
+  66:../../projects/basic_tasks/command-interpreter.c **** 
+  67:../../projects/basic_tasks/command-interpreter.c **** enum {
+  68:../../projects/basic_tasks/command-interpreter.c ****   CMD_AWAITING_ARGUMENT,
+  69:../../projects/basic_tasks/command-interpreter.c ****   CMD_READING_ARGUMENT,
+  70:../../projects/basic_tasks/command-interpreter.c ****   CMD_READING_STRING,                  // have read opening " but not closing "
+  71:../../projects/basic_tasks/command-interpreter.c ****   CMD_READING_HEX_STRING,              // have read opening { but not closing }
+  72:../../projects/basic_tasks/command-interpreter.c ****   CMD_READING_TO_EOL                   // clean up after error
+  73:../../projects/basic_tasks/command-interpreter.c **** };
+  74:../../projects/basic_tasks/command-interpreter.c **** 
+  75:../../projects/basic_tasks/command-interpreter.c **** // This byte is used to toggle certain internal features on or off.
+  76:../../projects/basic_tasks/command-interpreter.c **** // By default all are off.
+  77:../../projects/basic_tasks/command-interpreter.c **** uint8_t emberCommandInterpreter2Configuration = 0x00;
+  78:../../projects/basic_tasks/command-interpreter.c **** 
+  79:../../projects/basic_tasks/command-interpreter.c **** 
+  80:../../projects/basic_tasks/command-interpreter.c **** void printTempCommand(void){
+  81:../../projects/basic_tasks/command-interpreter.c **** 	uint8_t arg1;
+  82:../../projects/basic_tasks/command-interpreter.c **** 	uint8_t arg2;
+  83:../../projects/basic_tasks/command-interpreter.c **** 	arg1 = emberUnsignedCommandArgument(0);
+  84:../../projects/basic_tasks/command-interpreter.c **** 	arg2 = emberUnsignedCommandArgument(1);
+  85:../../projects/basic_tasks/command-interpreter.c **** 	printf ("Came to temp command\r\n");
+  86:../../projects/basic_tasks/command-interpreter.c **** 	printf ("Arg1:%d  Arg2:%d\n\r", arg1, arg2);
+  87:../../projects/basic_tasks/command-interpreter.c **** }
+  88:../../projects/basic_tasks/command-interpreter.c **** 
+  89:../../projects/basic_tasks/command-interpreter.c **** 
+  90:../../projects/basic_tasks/command-interpreter.c **** EmberCommandEntry printCommands[] = {
+  91:../../projects/basic_tasks/command-interpreter.c **** 		  {"temp", printTempCommand, "uu"},
+  92:../../projects/basic_tasks/command-interpreter.c **** 		  {"command", emberPrintCommandTable, ""},
+  93:../../projects/basic_tasks/command-interpreter.c **** 		  { NULL }
+  94:../../projects/basic_tasks/command-interpreter.c **** 		};
+  95:../../projects/basic_tasks/command-interpreter.c **** 
+  96:../../projects/basic_tasks/command-interpreter.c **** 
+  97:../../projects/basic_tasks/command-interpreter.c **** EmberCommandEntry emberCommandTable[] = {
+  98:../../projects/basic_tasks/command-interpreter.c **** 
+  99:../../projects/basic_tasks/command-interpreter.c **** 	    {"print",            NULL,                             (PGM_P)printCommands},
+ 100:../../projects/basic_tasks/command-interpreter.c ****   {NULL,               NULL,                             NULL}, // terminator
+ 101:../../projects/basic_tasks/command-interpreter.c **** };
+ 102:../../projects/basic_tasks/command-interpreter.c **** 
+ 103:../../projects/basic_tasks/command-interpreter.c **** /**
+ 104:../../projects/basic_tasks/command-interpreter.c ****  * @addtogroup cli
+ 105:../../projects/basic_tasks/command-interpreter.c ****  * @{
+ 106:../../projects/basic_tasks/command-interpreter.c ****  */
+ 107:../../projects/basic_tasks/command-interpreter.c **** /**
+ 108:../../projects/basic_tasks/command-interpreter.c ****  * @brief
+ 109:../../projects/basic_tasks/command-interpreter.c ****  *        <b>debugprint status</b>
+ 110:../../projects/basic_tasks/command-interpreter.c ****  *        - <i>Displays the current status of debug printing on the
+ 111:../../projects/basic_tasks/command-interpreter.c ****  *          application.</i>
+ 112:../../projects/basic_tasks/command-interpreter.c ****  *
+ 113:../../projects/basic_tasks/command-interpreter.c ****  *        <b>debugprint all_on</b>
+ 114:../../projects/basic_tasks/command-interpreter.c ****  *        - <i>Turns on all debug printing
+ 115:../../projects/basic_tasks/command-interpreter.c ****  *        for printing options which are compiled into the application.</i>
+ 116:../../projects/basic_tasks/command-interpreter.c ****  *
+ 117:../../projects/basic_tasks/command-interpreter.c ****  *        <b>debugprint all_off</b>
+ 118:../../projects/basic_tasks/command-interpreter.c ****  *        - <i>Turns off all debug printing for printing options which are compiled
+ 119:../../projects/basic_tasks/command-interpreter.c ****  *        into the application.</i>
+ 120:../../projects/basic_tasks/command-interpreter.c ****  *
+ 121:../../projects/basic_tasks/command-interpreter.c ****  *        <b>debugprint on &lt;area&gt;</b>
+ 122:../../projects/basic_tasks/command-interpreter.c ****  *        - <i>Turns on debug printing for a specific area
+ 123:../../projects/basic_tasks/command-interpreter.c ****  *           - area - two byte value indicating the area to turn on</i>
+ 124:../../projects/basic_tasks/command-interpreter.c ****  *
+ 125:../../projects/basic_tasks/command-interpreter.c ****  *        <b>debugprint off &lt;area&gt;</b>
+ 126:../../projects/basic_tasks/command-interpreter.c ****  *        - <i>Turns off debug printing for a specific area
+ 127:../../projects/basic_tasks/command-interpreter.c ****  *           - area - two byte value indicating the area to turn off</i>
+ 128:../../projects/basic_tasks/command-interpreter.c ****  */
+ 129:../../projects/basic_tasks/command-interpreter.c **** 
+ 130:../../projects/basic_tasks/command-interpreter.c **** 
+ 131:../../projects/basic_tasks/command-interpreter.c **** 
+ 132:../../projects/basic_tasks/command-interpreter.c **** 
+ 133:../../projects/basic_tasks/command-interpreter.c **** 
+ 134:../../projects/basic_tasks/command-interpreter.c **** 
+ 135:../../projects/basic_tasks/command-interpreter.c **** //----------------------------------------------------------------
+ 136:../../projects/basic_tasks/command-interpreter.c **** // Initialize the state machine.
+ 137:../../projects/basic_tasks/command-interpreter.c **** 
+ 138:../../projects/basic_tasks/command-interpreter.c **** void emberCommandReaderInit(void)
+ 139:../../projects/basic_tasks/command-interpreter.c **** {
+ 127               	.LM0:
+ 128               	.LFBB1:
+ 129               	/* prologue: frame size=0 */
+ 130               	/* prologue end (size=0) */
+ 140:../../projects/basic_tasks/command-interpreter.c ****   commandState.state = CMD_AWAITING_ARGUMENT;
+ 132               	.LM1:
+ 133 0000 1092 0000 		sts commandState,__zero_reg__
+ 141:../../projects/basic_tasks/command-interpreter.c ****   commandState.index = 0;
+ 135               	.LM2:
+ 136 0004 1092 0000 		sts commandState+114,__zero_reg__
+ 142:../../projects/basic_tasks/command-interpreter.c ****   commandState.tokenIndices[0] = 0;
+ 138               	.LM3:
+ 139 0008 1092 0000 		sts commandState+101,__zero_reg__
+ 143:../../projects/basic_tasks/command-interpreter.c ****   commandState.tokenCount = 0;
+ 141               	.LM4:
+ 142 000c 1092 0000 		sts commandState+113,__zero_reg__
+ 144:../../projects/basic_tasks/command-interpreter.c ****   commandState.error = EMBER_CMD_SUCCESS;
+ 144               	.LM5:
+ 145 0010 1092 0000 		sts commandState+115,__zero_reg__
+ 145:../../projects/basic_tasks/command-interpreter.c ****   commandState.hexHighNibble = 0xFF;
+ 147               	.LM6:
+ 148 0014 8FEF      		ldi r24,lo8(-1)
+ 149 0016 8093 0000 		sts commandState+116,r24
+ 146:../../projects/basic_tasks/command-interpreter.c ****   commandState.argOffset = 0;
+ 151               	.LM7:
+ 152 001a 1092 0000 		sts commandState+117,__zero_reg__
+ 147:../../projects/basic_tasks/command-interpreter.c ****   emberCurrentCommand = NULL;
+ 154               	.LM8:
+ 155 001e 1092 0000 		sts (emberCurrentCommand)+1,__zero_reg__
+ 156 0022 1092 0000 		sts emberCurrentCommand,__zero_reg__
+ 157               	/* epilogue: frame size=0 */
+ 158 0026 0895      		ret
+ 159               	/* epilogue end (size=1) */
+ 160               	/* function emberCommandReaderInit size 20 (19) */
+ 162               	.Lscope1:
+ 164               		.stabd	78,0,0
+ 168               	hexToInt:
+ 169               		.stabd	46,0,0
+ 148:../../projects/basic_tasks/command-interpreter.c **** }
+ 149:../../projects/basic_tasks/command-interpreter.c **** 
+ 150:../../projects/basic_tasks/command-interpreter.c **** // Returns a value > 15 if ch is not a hex digit.
+ 151:../../projects/basic_tasks/command-interpreter.c **** static uint8_t hexToInt(uint8_t ch)
+ 152:../../projects/basic_tasks/command-interpreter.c **** {
+ 171               	.LM9:
+ 172               	.LFBB2:
+ 173               	/* prologue: frame size=0 */
+ 174               	/* prologue end (size=0) */
+ 153:../../projects/basic_tasks/command-interpreter.c ****   return ch - (ch >= 'a' ? 'a' - 10
+ 176               	.LM10:
+ 177 0028 8136      		cpi r24,lo8(97)
+ 178 002a 00F0      		brlo .L4
+ 180               	.LM11:
+ 181 002c 97E5      		ldi r25,lo8(87)
+ 182 002e 00C0      		rjmp .L6
+ 183               	.L4:
+ 184 0030 8134      		cpi r24,lo8(65)
+ 185 0032 00F0      		brlo .L7
+ 186 0034 97E3      		ldi r25,lo8(55)
+ 187 0036 00C0      		rjmp .L6
+ 188               	.L7:
+ 189 0038 8A33      		cpi r24,lo8(58)
+ 190 003a 00F4      		brsh .L9
+ 191 003c 90E3      		ldi r25,lo8(48)
+ 192 003e 00C0      		rjmp .L6
+ 193               	.L9:
+ 194 0040 90E0      		ldi r25,lo8(0)
+ 195               	.L6:
+ 196 0042 891B      		sub r24,r25
+ 154:../../projects/basic_tasks/command-interpreter.c ****                : (ch >= 'A' ? 'A' - 10
+ 155:../../projects/basic_tasks/command-interpreter.c ****                   : (ch <= '9' ? '0'
+ 156:../../projects/basic_tasks/command-interpreter.c ****                      : 0)));
+ 157:../../projects/basic_tasks/command-interpreter.c **** }
+ 198               	.LM12:
+ 199 0044 9927      		clr r25
+ 200               	/* epilogue: frame size=0 */
+ 201 0046 0895      		ret
+ 202               	/* epilogue end (size=1) */
+ 203               	/* function hexToInt size 16 (15) */
+ 205               	.Lscope2:
+ 207               		.stabd	78,0,0
+ 212               	getNestedCommand:
+ 213               		.stabd	46,0,0
+ 158:../../projects/basic_tasks/command-interpreter.c **** 
+ 159:../../projects/basic_tasks/command-interpreter.c **** static uint8_t tokenLength(uint8_t num)
+ 160:../../projects/basic_tasks/command-interpreter.c **** {
+ 161:../../projects/basic_tasks/command-interpreter.c ****   return (commandState.tokenIndices[num + 1]
+ 162:../../projects/basic_tasks/command-interpreter.c ****           - commandState.tokenIndices[num]);
+ 163:../../projects/basic_tasks/command-interpreter.c **** }
+ 164:../../projects/basic_tasks/command-interpreter.c **** 
+ 165:../../projects/basic_tasks/command-interpreter.c **** static uint8_t *tokenPointer(int8_t tokenNum)
+ 166:../../projects/basic_tasks/command-interpreter.c **** {
+ 167:../../projects/basic_tasks/command-interpreter.c ****   return commandState.buffer + commandState.tokenIndices[tokenNum];
+ 168:../../projects/basic_tasks/command-interpreter.c **** }
+ 169:../../projects/basic_tasks/command-interpreter.c **** 
+ 170:../../projects/basic_tasks/command-interpreter.c **** EmberStatus emberSerialReadByte(uint8_t *dataByte)
+ 171:../../projects/basic_tasks/command-interpreter.c **** {
+ 172:../../projects/basic_tasks/command-interpreter.c ****   int8_t ch=-1;
+ 173:../../projects/basic_tasks/command-interpreter.c **** 	if (nrk_uart_data_ready(NRK_DEFAULT_UART)!=0)
+ 174:../../projects/basic_tasks/command-interpreter.c ****   ch = getchar();
+ 175:../../projects/basic_tasks/command-interpreter.c **** 
+ 176:../../projects/basic_tasks/command-interpreter.c ****   if(ch<0) {
+ 177:../../projects/basic_tasks/command-interpreter.c ****     return EMBER_SERIAL_RX_EMPTY;
+ 178:../../projects/basic_tasks/command-interpreter.c ****   }
+ 179:../../projects/basic_tasks/command-interpreter.c ****   *dataByte = (uint8_t)ch;
+ 180:../../projects/basic_tasks/command-interpreter.c ****   return EMBER_SUCCESS;
+ 181:../../projects/basic_tasks/command-interpreter.c **** }
+ 182:../../projects/basic_tasks/command-interpreter.c **** 
+ 183:../../projects/basic_tasks/command-interpreter.c **** //----------------------------------------------------------------
+ 184:../../projects/basic_tasks/command-interpreter.c **** // This is a state machine for parsing commands.  If 'input' is NULL
+ 185:../../projects/basic_tasks/command-interpreter.c **** // 'sizeOrPort' is treated as a port and characters are read from there.
+ 186:../../projects/basic_tasks/command-interpreter.c **** //
+ 187:../../projects/basic_tasks/command-interpreter.c **** // Goto's are used where one parse state naturally falls into another,
+ 188:../../projects/basic_tasks/command-interpreter.c **** // and to save flash.
+ 189:../../projects/basic_tasks/command-interpreter.c **** 
+ 190:../../projects/basic_tasks/command-interpreter.c **** bool emberProcessCommandString(uint8_t *input, uint8_t sizeOrPort)
+ 191:../../projects/basic_tasks/command-interpreter.c **** {
+ 192:../../projects/basic_tasks/command-interpreter.c ****   bool isEol = FALSE;
+ 193:../../projects/basic_tasks/command-interpreter.c ****   bool isSpace, isQuote;
+ 194:../../projects/basic_tasks/command-interpreter.c **** 
+ 195:../../projects/basic_tasks/command-interpreter.c ****   while (TRUE) {
+ 196:../../projects/basic_tasks/command-interpreter.c ****     uint8_t next;
+ 197:../../projects/basic_tasks/command-interpreter.c **** 
+ 198:../../projects/basic_tasks/command-interpreter.c ****     if (input == NULL) {
+ 199:../../projects/basic_tasks/command-interpreter.c ****       switch (emberSerialReadByte(&next)) {
+ 200:../../projects/basic_tasks/command-interpreter.c ****       case EMBER_SUCCESS:
+ 201:../../projects/basic_tasks/command-interpreter.c ****         break;
+ 202:../../projects/basic_tasks/command-interpreter.c ****       case EMBER_SERIAL_RX_EMPTY:
+ 203:../../projects/basic_tasks/command-interpreter.c ****         return isEol;
+ 204:../../projects/basic_tasks/command-interpreter.c ****       default:
+ 205:../../projects/basic_tasks/command-interpreter.c ****         commandState.error = EMBER_CMD_ERR_PORT_PROBLEM;
+ 206:../../projects/basic_tasks/command-interpreter.c ****         goto READING_TO_EOL;
+ 207:../../projects/basic_tasks/command-interpreter.c ****       }
+ 208:../../projects/basic_tasks/command-interpreter.c ****     } else if (sizeOrPort == 0) {
+ 209:../../projects/basic_tasks/command-interpreter.c ****       return isEol;
+ 210:../../projects/basic_tasks/command-interpreter.c ****     } else {
+ 211:../../projects/basic_tasks/command-interpreter.c ****       next = *input;
+ 212:../../projects/basic_tasks/command-interpreter.c ****       input += 1;
+ 213:../../projects/basic_tasks/command-interpreter.c ****       sizeOrPort -= 1;
+ 214:../../projects/basic_tasks/command-interpreter.c ****     }
+ 215:../../projects/basic_tasks/command-interpreter.c **** 
+ 216:../../projects/basic_tasks/command-interpreter.c ****     //   fprintf(stderr, "[processing '%c' (%s)]\n", next, stateNames[commandState.state]);
+ 217:../../projects/basic_tasks/command-interpreter.c **** 
+ 218:../../projects/basic_tasks/command-interpreter.c ****     if (previousCharacter == '\r' && next == '\n') {
+ 219:../../projects/basic_tasks/command-interpreter.c ****       previousCharacter = next;
+ 220:../../projects/basic_tasks/command-interpreter.c ****       continue;
+ 221:../../projects/basic_tasks/command-interpreter.c ****     }
+ 222:../../projects/basic_tasks/command-interpreter.c ****     previousCharacter = next;
+ 223:../../projects/basic_tasks/command-interpreter.c ****     isEol = ((next == '\r') || (next == '\n'));
+ 224:../../projects/basic_tasks/command-interpreter.c ****     isSpace = (next == ' ');
+ 225:../../projects/basic_tasks/command-interpreter.c ****     isQuote = (next == '"');
+ 226:../../projects/basic_tasks/command-interpreter.c **** 
+ 227:../../projects/basic_tasks/command-interpreter.c **** 
+ 228:../../projects/basic_tasks/command-interpreter.c ****     switch (commandState.state) {
+ 229:../../projects/basic_tasks/command-interpreter.c **** 
+ 230:../../projects/basic_tasks/command-interpreter.c ****     case CMD_AWAITING_ARGUMENT:
+ 231:../../projects/basic_tasks/command-interpreter.c ****       if (isEol) {
+ 232:../../projects/basic_tasks/command-interpreter.c ****         callCommandAction();
+ 233:../../projects/basic_tasks/command-interpreter.c ****       } else if (! isSpace) {
+ 234:../../projects/basic_tasks/command-interpreter.c ****         if (isQuote) {
+ 235:../../projects/basic_tasks/command-interpreter.c ****           commandState.state = CMD_READING_STRING;
+ 236:../../projects/basic_tasks/command-interpreter.c ****         } else if (next == '{') {
+ 237:../../projects/basic_tasks/command-interpreter.c ****           commandState.state = CMD_READING_HEX_STRING;
+ 238:../../projects/basic_tasks/command-interpreter.c ****         } else {
+ 239:../../projects/basic_tasks/command-interpreter.c ****           commandState.state = CMD_READING_ARGUMENT;
+ 240:../../projects/basic_tasks/command-interpreter.c ****         }
+ 241:../../projects/basic_tasks/command-interpreter.c ****         goto WRITE_TO_BUFFER;
+ 242:../../projects/basic_tasks/command-interpreter.c ****       }
+ 243:../../projects/basic_tasks/command-interpreter.c ****       break;
+ 244:../../projects/basic_tasks/command-interpreter.c **** 
+ 245:../../projects/basic_tasks/command-interpreter.c ****     case CMD_READING_ARGUMENT:
+ 246:../../projects/basic_tasks/command-interpreter.c ****       if (isEol || isSpace) {
+ 247:../../projects/basic_tasks/command-interpreter.c ****         goto END_ARGUMENT;
+ 248:../../projects/basic_tasks/command-interpreter.c ****       } else {
+ 249:../../projects/basic_tasks/command-interpreter.c ****         goto WRITE_TO_BUFFER;
+ 250:../../projects/basic_tasks/command-interpreter.c ****       }
+ 251:../../projects/basic_tasks/command-interpreter.c **** 
+ 252:../../projects/basic_tasks/command-interpreter.c ****     case CMD_READING_STRING:
+ 253:../../projects/basic_tasks/command-interpreter.c ****       if (isQuote) {
+ 254:../../projects/basic_tasks/command-interpreter.c ****         goto END_ARGUMENT;
+ 255:../../projects/basic_tasks/command-interpreter.c ****       } else if (isEol) {
+ 256:../../projects/basic_tasks/command-interpreter.c ****         commandState.error = EMBER_CMD_ERR_ARGUMENT_SYNTAX_ERROR;
+ 257:../../projects/basic_tasks/command-interpreter.c ****         goto READING_TO_EOL;
+ 258:../../projects/basic_tasks/command-interpreter.c ****       } else {
+ 259:../../projects/basic_tasks/command-interpreter.c ****         goto WRITE_TO_BUFFER;
+ 260:../../projects/basic_tasks/command-interpreter.c ****       }
+ 261:../../projects/basic_tasks/command-interpreter.c **** 
+ 262:../../projects/basic_tasks/command-interpreter.c ****     case CMD_READING_HEX_STRING: {
+ 263:../../projects/basic_tasks/command-interpreter.c ****       bool waitingForLowNibble = (commandState.hexHighNibble != 0xFF);
+ 264:../../projects/basic_tasks/command-interpreter.c ****       if (next == '}') {
+ 265:../../projects/basic_tasks/command-interpreter.c ****         if (waitingForLowNibble) {
+ 266:../../projects/basic_tasks/command-interpreter.c ****           commandState.error = EMBER_CMD_ERR_ARGUMENT_SYNTAX_ERROR;
+ 267:../../projects/basic_tasks/command-interpreter.c ****           goto READING_TO_EOL;
+ 268:../../projects/basic_tasks/command-interpreter.c ****         }
+ 269:../../projects/basic_tasks/command-interpreter.c ****         goto END_ARGUMENT;
+ 270:../../projects/basic_tasks/command-interpreter.c ****       } else {
+ 271:../../projects/basic_tasks/command-interpreter.c ****         uint8_t value = hexToInt(next);
+ 272:../../projects/basic_tasks/command-interpreter.c ****         if (value < 16) {
+ 273:../../projects/basic_tasks/command-interpreter.c ****           if (waitingForLowNibble) {
+ 274:../../projects/basic_tasks/command-interpreter.c ****             next = (commandState.hexHighNibble << 4) + value;
+ 275:../../projects/basic_tasks/command-interpreter.c ****             commandState.hexHighNibble = 0xFF;
+ 276:../../projects/basic_tasks/command-interpreter.c ****             goto WRITE_TO_BUFFER;
+ 277:../../projects/basic_tasks/command-interpreter.c ****           } else {
+ 278:../../projects/basic_tasks/command-interpreter.c ****             commandState.hexHighNibble = value;
+ 279:../../projects/basic_tasks/command-interpreter.c ****           }
+ 280:../../projects/basic_tasks/command-interpreter.c ****         } else if (! isSpace) {
+ 281:../../projects/basic_tasks/command-interpreter.c ****           commandState.error = EMBER_CMD_ERR_ARGUMENT_SYNTAX_ERROR;
+ 282:../../projects/basic_tasks/command-interpreter.c ****           goto READING_TO_EOL;
+ 283:../../projects/basic_tasks/command-interpreter.c ****         }
+ 284:../../projects/basic_tasks/command-interpreter.c ****       }
+ 285:../../projects/basic_tasks/command-interpreter.c ****       break;
+ 286:../../projects/basic_tasks/command-interpreter.c ****     }
+ 287:../../projects/basic_tasks/command-interpreter.c **** 
+ 288:../../projects/basic_tasks/command-interpreter.c ****     READING_TO_EOL:
+ 289:../../projects/basic_tasks/command-interpreter.c ****       commandState.state = CMD_READING_TO_EOL;
+ 290:../../projects/basic_tasks/command-interpreter.c **** 
+ 291:../../projects/basic_tasks/command-interpreter.c ****     case CMD_READING_TO_EOL:
+ 292:../../projects/basic_tasks/command-interpreter.c ****       if (isEol) {
+ 293:../../projects/basic_tasks/command-interpreter.c ****         if (commandState.error != EMBER_CMD_SUCCESS) {
+ 294:../../projects/basic_tasks/command-interpreter.c ****           emberCommandErrorHandler(commandState.error);
+ 295:../../projects/basic_tasks/command-interpreter.c ****         }
+ 296:../../projects/basic_tasks/command-interpreter.c ****         emberCommandReaderInit();
+ 297:../../projects/basic_tasks/command-interpreter.c ****       }
+ 298:../../projects/basic_tasks/command-interpreter.c ****       break;
+ 299:../../projects/basic_tasks/command-interpreter.c **** 
+ 300:../../projects/basic_tasks/command-interpreter.c ****     END_ARGUMENT:
+ 301:../../projects/basic_tasks/command-interpreter.c ****       if (commandState.tokenCount == MAX_TOKEN_COUNT) {
+ 302:../../projects/basic_tasks/command-interpreter.c ****         commandState.error = EMBER_CMD_ERR_WRONG_NUMBER_OF_ARGUMENTS;
+ 303:../../projects/basic_tasks/command-interpreter.c ****         goto READING_TO_EOL;
+ 304:../../projects/basic_tasks/command-interpreter.c ****       }
+ 305:../../projects/basic_tasks/command-interpreter.c ****       commandState.tokenCount += 1;
+ 306:../../projects/basic_tasks/command-interpreter.c ****       commandState.tokenIndices[commandState.tokenCount] = commandState.index;
+ 307:../../projects/basic_tasks/command-interpreter.c ****       commandState.state = CMD_AWAITING_ARGUMENT;
+ 308:../../projects/basic_tasks/command-interpreter.c ****       if (isEol) {
+ 309:../../projects/basic_tasks/command-interpreter.c ****         callCommandAction();
+ 310:../../projects/basic_tasks/command-interpreter.c ****       }
+ 311:../../projects/basic_tasks/command-interpreter.c ****       break;
+ 312:../../projects/basic_tasks/command-interpreter.c **** 
+ 313:../../projects/basic_tasks/command-interpreter.c ****     WRITE_TO_BUFFER:
+ 314:../../projects/basic_tasks/command-interpreter.c ****       if (commandState.index == EMBER_COMMAND_BUFFER_LENGTH) {
+ 315:../../projects/basic_tasks/command-interpreter.c ****         commandState.error = EMBER_CMD_ERR_STRING_TOO_LONG;
+ 316:../../projects/basic_tasks/command-interpreter.c ****         goto READING_TO_EOL;
+ 317:../../projects/basic_tasks/command-interpreter.c ****       }
+ 318:../../projects/basic_tasks/command-interpreter.c ****       if (commandState.state == CMD_READING_ARGUMENT) {
+ 319:../../projects/basic_tasks/command-interpreter.c ****         next = charDowncase(next);
+ 320:../../projects/basic_tasks/command-interpreter.c ****       }
+ 321:../../projects/basic_tasks/command-interpreter.c ****       commandState.buffer[commandState.index] = next;
+ 322:../../projects/basic_tasks/command-interpreter.c ****       commandState.index += 1;
+ 323:../../projects/basic_tasks/command-interpreter.c ****       break;
+ 324:../../projects/basic_tasks/command-interpreter.c **** 
+ 325:../../projects/basic_tasks/command-interpreter.c ****     default: {
+ 326:../../projects/basic_tasks/command-interpreter.c ****     }
+ 327:../../projects/basic_tasks/command-interpreter.c ****     } //close switch.
+ 328:../../projects/basic_tasks/command-interpreter.c ****   }
+ 329:../../projects/basic_tasks/command-interpreter.c **** }
+ 330:../../projects/basic_tasks/command-interpreter.c **** 
+ 331:../../projects/basic_tasks/command-interpreter.c **** //----------------------------------------------------------------
+ 332:../../projects/basic_tasks/command-interpreter.c **** // Command lookup and processing
+ 333:../../projects/basic_tasks/command-interpreter.c **** 
+ 334:../../projects/basic_tasks/command-interpreter.c **** // Returs true if entry is a nested command, and in this case
+ 335:../../projects/basic_tasks/command-interpreter.c **** // it populates the nestedCommand pointer.
+ 336:../../projects/basic_tasks/command-interpreter.c **** // Otherwise it returns false, and does nothing with nestedCommand
+ 337:../../projects/basic_tasks/command-interpreter.c **** //
+ 338:../../projects/basic_tasks/command-interpreter.c **** // Nested commands are implemented by setting the action
+ 339:../../projects/basic_tasks/command-interpreter.c **** // field to NULL, and the argumentTypes field is a pointer
+ 340:../../projects/basic_tasks/command-interpreter.c **** // to a nested EmberCommandEntry array. The older mechanism is
+ 341:../../projects/basic_tasks/command-interpreter.c **** // to set argumentTypes to "n" and then the action field
+ 342:../../projects/basic_tasks/command-interpreter.c **** // contains the EmberCommandEntry, but that approach has a problem
+ 343:../../projects/basic_tasks/command-interpreter.c **** // on AVR128, therefore it is technically deprecated. If you have
+ 344:../../projects/basic_tasks/command-interpreter.c **** // a choice, put NULL for action and a table under argumentTypes.
+ 345:../../projects/basic_tasks/command-interpreter.c **** static bool getNestedCommand(EmberCommandEntry *entry,
+ 346:../../projects/basic_tasks/command-interpreter.c ****                                 EmberCommandEntry **nestedCommand) {
+ 215               	.LM13:
+ 216               	.LFBB3:
+ 217               	/* prologue: frame size=0 */
+ 218               	/* prologue end (size=0) */
+ 219 0048 FC01      		movw r30,r24
+ 220 004a DB01      		movw r26,r22
+ 347:../../projects/basic_tasks/command-interpreter.c ****   if ( entry -> action == NULL ) {
+ 222               	.LM14:
+ 223 004c 2281      		ldd r18,Z+2
+ 224 004e 3381      		ldd r19,Z+3
+ 225 0050 0480      		ldd __tmp_reg__,Z+4
+ 226 0052 F581      		ldd r31,Z+5
+ 227 0054 E02D      		mov r30,__tmp_reg__
+ 228 0056 2115      		cp r18,__zero_reg__
+ 229 0058 3105      		cpc r19,__zero_reg__
+ 230 005a 01F4      		brne .L13
+ 348:../../projects/basic_tasks/command-interpreter.c ****     *nestedCommand = (EmberCommandEntry*)entry->argumentTypes;
+ 232               	.LM15:
+ 233 005c ED93      		st X+,r30
+ 234 005e FC93      		st X,r31
+ 235 0060 81E0      		ldi r24,lo8(1)
+ 236 0062 90E0      		ldi r25,hi8(1)
+ 237 0064 0895      		ret
+ 238               	.L13:
+ 349:../../projects/basic_tasks/command-interpreter.c ****     return TRUE;
+ 350:../../projects/basic_tasks/command-interpreter.c ****   } else if ( entry -> argumentTypes[0] == 'n' ) {
+ 240               	.LM16:
+ 241 0066 8081      		ld r24,Z
+ 242 0068 8E36      		cpi r24,lo8(110)
+ 243 006a 01F0      		breq .L16
+ 244 006c 80E0      		ldi r24,lo8(0)
+ 245 006e 90E0      		ldi r25,hi8(0)
+ 246 0070 0895      		ret
+ 247               	.L16:
+ 351:../../projects/basic_tasks/command-interpreter.c ****     *nestedCommand = (EmberCommandEntry*)(void*)entry->action;
+ 249               	.LM17:
+ 250 0072 2D93      		st X+,r18
+ 251 0074 3C93      		st X,r19
+ 252 0076 81E0      		ldi r24,lo8(1)
+ 253 0078 90E0      		ldi r25,hi8(1)
+ 352:../../projects/basic_tasks/command-interpreter.c ****     return TRUE;
+ 353:../../projects/basic_tasks/command-interpreter.c ****   } else {
+ 354:../../projects/basic_tasks/command-interpreter.c ****     return FALSE;
+ 355:../../projects/basic_tasks/command-interpreter.c ****   }
+ 356:../../projects/basic_tasks/command-interpreter.c **** }
+ 255               	.LM18:
+ 256 007a 0895      		ret
+ 257               	/* epilogue: frame size=0 */
+ 258               	/* epilogue: noreturn */
+ 259               	/* epilogue end (size=0) */
+ 260               	/* function getNestedCommand size 26 (26) */
+ 262               	.Lscope3:
+ 264               		.stabd	78,0,0
+ 266               	.global	emberCommandArgumentCount
+ 268               	emberCommandArgumentCount:
+ 269               		.stabd	46,0,0
+ 357:../../projects/basic_tasks/command-interpreter.c **** 
+ 358:../../projects/basic_tasks/command-interpreter.c **** static uint8_t charDowncase(uint8_t c)
+ 359:../../projects/basic_tasks/command-interpreter.c **** {
+ 360:../../projects/basic_tasks/command-interpreter.c ****   if ('A' <= c && c <= 'Z')
+ 361:../../projects/basic_tasks/command-interpreter.c ****     return c + 'a' - 'A';
+ 362:../../projects/basic_tasks/command-interpreter.c ****   else
+ 363:../../projects/basic_tasks/command-interpreter.c ****     return c;
+ 364:../../projects/basic_tasks/command-interpreter.c **** }
+ 365:../../projects/basic_tasks/command-interpreter.c **** 
+ 366:../../projects/basic_tasks/command-interpreter.c **** static uint8_t firstByteOfArg(uint8_t argNum)
+ 367:../../projects/basic_tasks/command-interpreter.c **** {
+ 368:../../projects/basic_tasks/command-interpreter.c ****   uint8_t tokenNum = argNum + commandState.argOffset;
+ 369:../../projects/basic_tasks/command-interpreter.c ****   return commandState.buffer[commandState.tokenIndices[tokenNum]];
+ 370:../../projects/basic_tasks/command-interpreter.c **** }
+ 371:../../projects/basic_tasks/command-interpreter.c **** 
+ 372:../../projects/basic_tasks/command-interpreter.c **** // To support existing lazy-typer functionality in the app framework,
+ 373:../../projects/basic_tasks/command-interpreter.c **** // we allow the user to shorten the entered command so long as the
+ 374:../../projects/basic_tasks/command-interpreter.c **** // substring matches no more than one command in the table.
+ 375:../../projects/basic_tasks/command-interpreter.c **** //
+ 376:../../projects/basic_tasks/command-interpreter.c **** // To allow CONST savings by storing abbreviated command names, we also
+ 377:../../projects/basic_tasks/command-interpreter.c **** // allow matching if the input command is longer than the stored command.
+ 378:../../projects/basic_tasks/command-interpreter.c **** // To reduce complexity, we do not handle multiple inexact matches.
+ 379:../../projects/basic_tasks/command-interpreter.c **** // For example, if there are commands 'A' and 'AB', and the user enters
+ 380:../../projects/basic_tasks/command-interpreter.c **** // 'ABC', nothing will match.
+ 381:../../projects/basic_tasks/command-interpreter.c **** 
+ 382:../../projects/basic_tasks/command-interpreter.c **** static EmberCommandEntry *commandLookup(EmberCommandEntry *commandFinger,
+ 383:../../projects/basic_tasks/command-interpreter.c ****                                         uint8_t tokenNum)
+ 384:../../projects/basic_tasks/command-interpreter.c **** {
+ 385:../../projects/basic_tasks/command-interpreter.c ****   EmberCommandEntry *inexactMatch = NULL;
+ 386:../../projects/basic_tasks/command-interpreter.c ****   uint8_t *inputCommand = tokenPointer(tokenNum);
+ 387:../../projects/basic_tasks/command-interpreter.c ****   uint8_t inputLength = tokenLength(tokenNum);
+ 388:../../projects/basic_tasks/command-interpreter.c ****   bool multipleMatches = FALSE;
+ 389:../../projects/basic_tasks/command-interpreter.c **** 
+ 390:../../projects/basic_tasks/command-interpreter.c ****   for (; commandFinger->name != NULL; commandFinger++) {
+ 391:../../projects/basic_tasks/command-interpreter.c ****     PGM_P entryFinger = commandFinger->name;
+ 392:../../projects/basic_tasks/command-interpreter.c ****     uint8_t *inputFinger = inputCommand;
+ 393:../../projects/basic_tasks/command-interpreter.c ****     for (;; entryFinger++, inputFinger++) {
+ 394:../../projects/basic_tasks/command-interpreter.c ****       bool endInput = (inputFinger - inputCommand == inputLength);
+ 395:../../projects/basic_tasks/command-interpreter.c ****       bool endEntry = (*entryFinger == 0);
+ 396:../../projects/basic_tasks/command-interpreter.c ****       if (endInput && endEntry) {
+ 397:../../projects/basic_tasks/command-interpreter.c ****         return commandFinger;  // Exact match.
+ 398:../../projects/basic_tasks/command-interpreter.c ****       } else if (endInput || endEntry) {
+ 399:../../projects/basic_tasks/command-interpreter.c ****         if (inexactMatch != NULL) {
+ 400:../../projects/basic_tasks/command-interpreter.c ****           multipleMatches = TRUE;  // Multiple matches.
+ 401:../../projects/basic_tasks/command-interpreter.c ****           break;
+ 402:../../projects/basic_tasks/command-interpreter.c ****         } else {
+ 403:../../projects/basic_tasks/command-interpreter.c ****           inexactMatch = commandFinger;
+ 404:../../projects/basic_tasks/command-interpreter.c ****           break;
+ 405:../../projects/basic_tasks/command-interpreter.c ****         }
+ 406:../../projects/basic_tasks/command-interpreter.c ****       } else if (charDowncase(*inputFinger) != charDowncase(*entryFinger)) {
+ 407:../../projects/basic_tasks/command-interpreter.c ****         break;
+ 408:../../projects/basic_tasks/command-interpreter.c ****       }
+ 409:../../projects/basic_tasks/command-interpreter.c ****     }
+ 410:../../projects/basic_tasks/command-interpreter.c ****   }
+ 411:../../projects/basic_tasks/command-interpreter.c ****   return (multipleMatches || false ? NULL : inexactMatch);
+ 412:../../projects/basic_tasks/command-interpreter.c **** }
+ 413:../../projects/basic_tasks/command-interpreter.c **** 
+ 414:../../projects/basic_tasks/command-interpreter.c **** EmberStatus emberSerialWriteData(uint8_t *data, uint8_t length)
+ 415:../../projects/basic_tasks/command-interpreter.c **** {
+ 416:../../projects/basic_tasks/command-interpreter.c ****   while(length--) {
+ 417:../../projects/basic_tasks/command-interpreter.c ****     putchar(*data);
+ 418:../../projects/basic_tasks/command-interpreter.c ****     data++;
+ 419:../../projects/basic_tasks/command-interpreter.c ****   }
+ 420:../../projects/basic_tasks/command-interpreter.c ****   return EMBER_SUCCESS;
+ 421:../../projects/basic_tasks/command-interpreter.c **** }
+ 422:../../projects/basic_tasks/command-interpreter.c **** 
+ 423:../../projects/basic_tasks/command-interpreter.c **** static void echoPrint(void)
+ 424:../../projects/basic_tasks/command-interpreter.c **** {
+ 425:../../projects/basic_tasks/command-interpreter.c ****   uint8_t tokenNum = 0;
+ 426:../../projects/basic_tasks/command-interpreter.c ****   for ( ; tokenNum < commandState.tokenCount; tokenNum++ ) {
+ 427:../../projects/basic_tasks/command-interpreter.c ****     uint8_t *ptr = tokenPointer(tokenNum);
+ 428:../../projects/basic_tasks/command-interpreter.c ****     uint8_t len = tokenLength(tokenNum);
+ 429:../../projects/basic_tasks/command-interpreter.c ****     emberSerialWriteData(ptr, len);
+ 430:../../projects/basic_tasks/command-interpreter.c ****     printf(" ");
+ 431:../../projects/basic_tasks/command-interpreter.c ****   }
+ 432:../../projects/basic_tasks/command-interpreter.c ****   printf("\r\n");
+ 433:../../projects/basic_tasks/command-interpreter.c **** }
+ 434:../../projects/basic_tasks/command-interpreter.c **** 
+ 435:../../projects/basic_tasks/command-interpreter.c **** static void callCommandAction(void)
+ 436:../../projects/basic_tasks/command-interpreter.c **** {
+ 437:../../projects/basic_tasks/command-interpreter.c ****   EmberCommandEntry *commandFinger = emberCommandTable;
+ 438:../../projects/basic_tasks/command-interpreter.c ****   uint8_t tokenNum = 0;
+ 439:../../projects/basic_tasks/command-interpreter.c ****   // We need a separate argTypeNum index because of the '*' arg type.
+ 440:../../projects/basic_tasks/command-interpreter.c ****   uint8_t argTypeNum, argNum;
+ 441:../../projects/basic_tasks/command-interpreter.c **** 
+ 442:../../projects/basic_tasks/command-interpreter.c ****   if (commandState.tokenCount == 0) {
+ 443:../../projects/basic_tasks/command-interpreter.c ****     goto kickout2;
+ 444:../../projects/basic_tasks/command-interpreter.c ****   }
+ 445:../../projects/basic_tasks/command-interpreter.c **** 
+ 446:../../projects/basic_tasks/command-interpreter.c ****   // If we have echo, we echo here.
+ 447:../../projects/basic_tasks/command-interpreter.c ****   if ( emberCommandInterpreterIsEchoOn() ) {
+ 448:../../projects/basic_tasks/command-interpreter.c ****     echoPrint();
+ 449:../../projects/basic_tasks/command-interpreter.c ****   }
+ 450:../../projects/basic_tasks/command-interpreter.c **** 
+ 451:../../projects/basic_tasks/command-interpreter.c ****   // Lookup the command.
+ 452:../../projects/basic_tasks/command-interpreter.c ****   while (TRUE) {
+ 453:../../projects/basic_tasks/command-interpreter.c ****     commandFinger = commandLookup(commandFinger, tokenNum);
+ 454:../../projects/basic_tasks/command-interpreter.c ****     if (commandFinger == NULL) {
+ 455:../../projects/basic_tasks/command-interpreter.c ****       commandState.error = EMBER_CMD_ERR_NO_SUCH_COMMAND;
+ 456:../../projects/basic_tasks/command-interpreter.c ****       goto kickout;
+ 457:../../projects/basic_tasks/command-interpreter.c ****     } else {
+ 458:../../projects/basic_tasks/command-interpreter.c ****       emberCurrentCommand = commandFinger;
+ 459:../../projects/basic_tasks/command-interpreter.c ****       tokenNum += 1;
+ 460:../../projects/basic_tasks/command-interpreter.c ****       commandState.argOffset += 1;
+ 461:../../projects/basic_tasks/command-interpreter.c **** 
+ 462:../../projects/basic_tasks/command-interpreter.c ****       if ( getNestedCommand(commandFinger, &commandFinger) ) {
+ 463:../../projects/basic_tasks/command-interpreter.c ****         if (tokenNum >= commandState.tokenCount) {
+ 464:../../projects/basic_tasks/command-interpreter.c ****           commandState.error = EMBER_CMD_ERR_WRONG_NUMBER_OF_ARGUMENTS;
+ 465:../../projects/basic_tasks/command-interpreter.c ****           goto kickout;
+ 466:../../projects/basic_tasks/command-interpreter.c ****         }
+ 467:../../projects/basic_tasks/command-interpreter.c ****       } else {
+ 468:../../projects/basic_tasks/command-interpreter.c ****         break;
+ 469:../../projects/basic_tasks/command-interpreter.c ****       }
+ 470:../../projects/basic_tasks/command-interpreter.c ****     }
+ 471:../../projects/basic_tasks/command-interpreter.c ****   }
+ 472:../../projects/basic_tasks/command-interpreter.c **** 
+ 473:../../projects/basic_tasks/command-interpreter.c ****   // If you put '?' as the first character
+ 474:../../projects/basic_tasks/command-interpreter.c ****   // of the argument format string, then you effectivelly
+ 475:../../projects/basic_tasks/command-interpreter.c ****   // prevent the argument validation, and the command gets executed.
+ 476:../../projects/basic_tasks/command-interpreter.c ****   // At that point it is down to the command to deal with whatever
+ 477:../../projects/basic_tasks/command-interpreter.c ****   // arguments it got.
+ 478:../../projects/basic_tasks/command-interpreter.c ****   if ( commandFinger->argumentTypes[0] == '?' )
+ 479:../../projects/basic_tasks/command-interpreter.c ****     goto kickout;
+ 480:../../projects/basic_tasks/command-interpreter.c **** 
+ 481:../../projects/basic_tasks/command-interpreter.c ****   // Validate the arguments.
+ 482:../../projects/basic_tasks/command-interpreter.c ****   for(argTypeNum = 0, argNum = 0;
+ 483:../../projects/basic_tasks/command-interpreter.c ****       tokenNum < commandState.tokenCount;
+ 484:../../projects/basic_tasks/command-interpreter.c ****       tokenNum++, argNum++) {
+ 485:../../projects/basic_tasks/command-interpreter.c ****     uint8_t type = commandFinger->argumentTypes[argTypeNum];
+ 486:../../projects/basic_tasks/command-interpreter.c ****     uint8_t firstChar = firstByteOfArg(argNum);
+ 487:../../projects/basic_tasks/command-interpreter.c ****     switch(type) {
+ 488:../../projects/basic_tasks/command-interpreter.c **** 
+ 489:../../projects/basic_tasks/command-interpreter.c ****     // Integers
+ 490:../../projects/basic_tasks/command-interpreter.c ****     case 'u':
+ 491:../../projects/basic_tasks/command-interpreter.c ****     case 'v':
+ 492:../../projects/basic_tasks/command-interpreter.c ****     case 'w':
+ 493:../../projects/basic_tasks/command-interpreter.c ****     case 's': {
+ 494:../../projects/basic_tasks/command-interpreter.c ****       uint32_t limit = (type == 'u' ? 0xFF
+ 495:../../projects/basic_tasks/command-interpreter.c ****                       : (type == 'v' ? 0xFFFF
+ 496:../../projects/basic_tasks/command-interpreter.c ****                          : (type =='s' ? 0x7F : 0xFFFFFFFFUL)));
+ 497:../../projects/basic_tasks/command-interpreter.c ****       if (stringToUnsignedInt(argNum, true) > limit) {
+ 498:../../projects/basic_tasks/command-interpreter.c ****         commandState.error = EMBER_CMD_ERR_ARGUMENT_OUT_OF_RANGE;
+ 499:../../projects/basic_tasks/command-interpreter.c ****       }
+ 500:../../projects/basic_tasks/command-interpreter.c ****       break;
+ 501:../../projects/basic_tasks/command-interpreter.c ****     }
+ 502:../../projects/basic_tasks/command-interpreter.c **** 
+ 503:../../projects/basic_tasks/command-interpreter.c ****     // String
+ 504:../../projects/basic_tasks/command-interpreter.c ****     case 'b':
+ 505:../../projects/basic_tasks/command-interpreter.c ****       if (firstChar != '"' && firstChar != '{') {
+ 506:../../projects/basic_tasks/command-interpreter.c ****         commandState.error = EMBER_CMD_ERR_ARGUMENT_SYNTAX_ERROR;
+ 507:../../projects/basic_tasks/command-interpreter.c ****       }
+ 508:../../projects/basic_tasks/command-interpreter.c ****       break;
+ 509:../../projects/basic_tasks/command-interpreter.c **** 
+ 510:../../projects/basic_tasks/command-interpreter.c ****     case 0:
+ 511:../../projects/basic_tasks/command-interpreter.c ****       commandState.error = EMBER_CMD_ERR_WRONG_NUMBER_OF_ARGUMENTS;
+ 512:../../projects/basic_tasks/command-interpreter.c ****       break;
+ 513:../../projects/basic_tasks/command-interpreter.c **** 
+ 514:../../projects/basic_tasks/command-interpreter.c ****     default:
+ 515:../../projects/basic_tasks/command-interpreter.c ****       commandState.error = EMBER_CMD_ERR_INVALID_ARGUMENT_TYPE;
+ 516:../../projects/basic_tasks/command-interpreter.c ****       break;
+ 517:../../projects/basic_tasks/command-interpreter.c ****     }
+ 518:../../projects/basic_tasks/command-interpreter.c **** 
+ 519:../../projects/basic_tasks/command-interpreter.c ****     if (commandFinger->argumentTypes[argTypeNum + 1] != '*') {
+ 520:../../projects/basic_tasks/command-interpreter.c ****       argTypeNum += 1;
+ 521:../../projects/basic_tasks/command-interpreter.c ****     }
+ 522:../../projects/basic_tasks/command-interpreter.c **** 
+ 523:../../projects/basic_tasks/command-interpreter.c ****     if (commandState.error != EMBER_CMD_SUCCESS) {
+ 524:../../projects/basic_tasks/command-interpreter.c ****       goto kickout;
+ 525:../../projects/basic_tasks/command-interpreter.c ****     }
+ 526:../../projects/basic_tasks/command-interpreter.c ****   }
+ 527:../../projects/basic_tasks/command-interpreter.c **** 
+ 528:../../projects/basic_tasks/command-interpreter.c ****   if (! (commandFinger->argumentTypes[argTypeNum] == 0
+ 529:../../projects/basic_tasks/command-interpreter.c ****          || commandFinger->argumentTypes[argTypeNum + 1] == '*')) {
+ 530:../../projects/basic_tasks/command-interpreter.c ****     commandState.error = EMBER_CMD_ERR_WRONG_NUMBER_OF_ARGUMENTS;
+ 531:../../projects/basic_tasks/command-interpreter.c ****   }
+ 532:../../projects/basic_tasks/command-interpreter.c **** 
+ 533:../../projects/basic_tasks/command-interpreter.c ****  kickout:
+ 534:../../projects/basic_tasks/command-interpreter.c **** 
+ 535:../../projects/basic_tasks/command-interpreter.c ****   if (commandState.error == EMBER_CMD_SUCCESS) {
+ 536:../../projects/basic_tasks/command-interpreter.c ****     (commandFinger->action)();
+ 537:../../projects/basic_tasks/command-interpreter.c ****   } else {
+ 538:../../projects/basic_tasks/command-interpreter.c ****     emberCommandErrorHandler(commandState.error);
+ 539:../../projects/basic_tasks/command-interpreter.c ****   }
+ 540:../../projects/basic_tasks/command-interpreter.c **** 
+ 541:../../projects/basic_tasks/command-interpreter.c ****  kickout2:
+ 542:../../projects/basic_tasks/command-interpreter.c **** 
+ 543:../../projects/basic_tasks/command-interpreter.c ****   emberCommandReaderInit();
+ 544:../../projects/basic_tasks/command-interpreter.c **** }
+ 545:../../projects/basic_tasks/command-interpreter.c **** 
+ 546:../../projects/basic_tasks/command-interpreter.c **** 
+ 547:../../projects/basic_tasks/command-interpreter.c **** //----------------------------------------------------------------
+ 548:../../projects/basic_tasks/command-interpreter.c **** // Retrieving arguments
+ 549:../../projects/basic_tasks/command-interpreter.c **** 
+ 550:../../projects/basic_tasks/command-interpreter.c **** uint8_t emberCommandArgumentCount(void)
+ 551:../../projects/basic_tasks/command-interpreter.c **** {
+ 271               	.LM19:
+ 272               	.LFBB4:
+ 273               	/* prologue: frame size=0 */
+ 274               	/* prologue end (size=0) */
+ 275 007c 8091 0000 		lds r24,commandState+113
+ 276 0080 9091 0000 		lds r25,commandState+117
+ 277 0084 891B      		sub r24,r25
+ 552:../../projects/basic_tasks/command-interpreter.c ****   return (commandState.tokenCount - commandState.argOffset);
+ 553:../../projects/basic_tasks/command-interpreter.c **** }
+ 279               	.LM20:
+ 280 0086 9927      		clr r25
+ 281               	/* epilogue: frame size=0 */
+ 282 0088 0895      		ret
+ 283               	/* epilogue end (size=1) */
+ 284               	/* function emberCommandArgumentCount size 7 (6) */
+ 286               	.Lscope4:
+ 288               		.stabd	78,0,0
+ 293               	stringToUnsignedInt:
+ 294               		.stabd	46,0,0
+ 554:../../projects/basic_tasks/command-interpreter.c **** 
+ 555:../../projects/basic_tasks/command-interpreter.c **** static uint32_t stringToUnsignedInt(uint8_t argNum, bool swallowLeadingSign)
+ 556:../../projects/basic_tasks/command-interpreter.c **** {
+ 296               	.LM21:
+ 297               	.LFBB5:
+ 298               	/* prologue: frame size=0 */
+ 299 008a 7F92      		push r7
+ 300 008c 8F92      		push r8
+ 301 008e 9F92      		push r9
+ 302 0090 AF92      		push r10
+ 303 0092 BF92      		push r11
+ 304 0094 CF92      		push r12
+ 305 0096 DF92      		push r13
+ 306 0098 EF92      		push r14
+ 307 009a FF92      		push r15
+ 308 009c 0F93      		push r16
+ 309 009e 1F93      		push r17
+ 310 00a0 CF93      		push r28
+ 311 00a2 DF93      		push r29
+ 312               	/* prologue end (size=13) */
+ 313 00a4 762E      		mov r7,r22
+ 557:../../projects/basic_tasks/command-interpreter.c ****   uint8_t tokenNum = argNum + commandState.argOffset;
+ 558:../../projects/basic_tasks/command-interpreter.c ****   uint8_t *string = commandState.buffer + commandState.tokenIndices[tokenNum];
+ 315               	.LM22:
+ 316 00a6 E091 0000 		lds r30,commandState+117
+ 317 00aa E80F      		add r30,r24
+ 318 00ac FF27      		clr r31
+ 319 00ae E050      		subi r30,lo8(-(commandState))
+ 320 00b0 F040      		sbci r31,hi8(-(commandState))
+ 321 00b2 EB59      		subi r30,lo8(-(101))
+ 322 00b4 FF4F      		sbci r31,hi8(-(101))
+ 323 00b6 8191      		ld r24,Z+
+ 324               	.LBB34:
+ 325               	.LBB35:
+ 327               	.LM23:
+ 328 00b8 C080      		ld r12,Z
+ 329 00ba C81A      		sub r12,r24
+ 330 00bc C82F      		mov r28,r24
+ 331 00be DD27      		clr r29
+ 332 00c0 C050      		subi r28,lo8(-(commandState+1))
+ 333 00c2 D040      		sbci r29,hi8(-(commandState+1))
+ 334 00c4 EE24      		clr r14
+ 335 00c6 FF24      		clr r15
+ 336 00c8 8701      		movw r16,r14
+ 337 00ca 9AE0      		ldi r25,lo8(10)
+ 338 00cc 892E      		mov r8,r25
+ 339 00ce 9924      		clr r9
+ 340 00d0 AA24      		clr r10
+ 341 00d2 BB24      		clr r11
+ 342 00d4 00C0      		rjmp .L22
+ 343               	.L23:
+ 344               	.LBE35:
+ 345               	.LBE34:
+ 346               	.LBB36:
+ 559:../../projects/basic_tasks/command-interpreter.c ****   uint8_t length = tokenLength(tokenNum);
+ 560:../../projects/basic_tasks/command-interpreter.c ****   uint32_t result = 0;
+ 561:../../projects/basic_tasks/command-interpreter.c ****   uint8_t base = 10;
+ 562:../../projects/basic_tasks/command-interpreter.c ****   uint8_t i;
+ 563:../../projects/basic_tasks/command-interpreter.c ****   for (i = 0; i < length; i++) {
+ 564:../../projects/basic_tasks/command-interpreter.c ****     uint8_t next = string[i];
+ 348               	.LM24:
+ 349 00d6 9881      		ld r25,Y
+ 565:../../projects/basic_tasks/command-interpreter.c ****     if (swallowLeadingSign && i == 0 && next == '-') {
+ 351               	.LM25:
+ 352 00d8 7720      		tst r7
+ 353 00da 01F0      		breq .L24
+ 354 00dc AA20      		tst r10
+ 355 00de 01F4      		brne .L24
+ 356 00e0 9D32      		cpi r25,lo8(45)
+ 357 00e2 01F0      		breq .L27
+ 358               	.L24:
+ 566:../../projects/basic_tasks/command-interpreter.c ****       // do nothing
+ 567:../../projects/basic_tasks/command-interpreter.c ****     } else if ((next == 'x' || next == 'X')
+ 360               	.LM26:
+ 361 00e4 9837      		cpi r25,lo8(120)
+ 362 00e6 01F0      		breq .L28
+ 363 00e8 9835      		cpi r25,lo8(88)
+ 364 00ea 01F4      		brne .L30
+ 365               	.L28:
+ 366 00ec E114      		cp r14,__zero_reg__
+ 367 00ee F104      		cpc r15,__zero_reg__
+ 368 00f0 0105      		cpc r16,__zero_reg__
+ 369 00f2 1105      		cpc r17,__zero_reg__
+ 370 00f4 01F4      		brne .L30
+ 371 00f6 8A2D      		mov r24,r10
+ 372 00f8 8150      		subi r24,lo8(-(-1))
+ 373 00fa 8230      		cpi r24,lo8(2)
+ 374 00fc 00F0      		brlo .L32
+ 375               	.L30:
+ 376               	.LBB37:
+ 568:../../projects/basic_tasks/command-interpreter.c ****                && result == 0
+ 569:../../projects/basic_tasks/command-interpreter.c ****                && (i == 1 || i == 2)) {
+ 570:../../projects/basic_tasks/command-interpreter.c ****       base = 16;
+ 571:../../projects/basic_tasks/command-interpreter.c ****     } else {
+ 572:../../projects/basic_tasks/command-interpreter.c ****       uint8_t value = hexToInt(next);
+ 378               	.LM27:
+ 379 00fe 892F      		mov r24,r25
+ 380 0100 0E94 0000 		call hexToInt
+ 381 0104 D82E      		mov r13,r24
+ 573:../../projects/basic_tasks/command-interpreter.c ****       if (value < base) {
+ 383               	.LM28:
+ 384 0106 8815      		cp r24,r8
+ 385 0108 00F4      		brsh .L33
+ 574:../../projects/basic_tasks/command-interpreter.c ****         result = result * base + value;
+ 387               	.LM29:
+ 388 010a 682D      		mov r22,r8
+ 389 010c 7727      		clr r23
+ 390 010e 8827      		clr r24
+ 391 0110 9927      		clr r25
+ 392 0112 A801      		movw r20,r16
+ 393 0114 9701      		movw r18,r14
+ 394 0116 0E94 0000 		call __mulsi3
+ 395 011a 7B01      		movw r14,r22
+ 396 011c 8C01      		movw r16,r24
+ 397 011e ED0C      		add r14,r13
+ 398 0120 F11C      		adc r15,__zero_reg__
+ 399 0122 011D      		adc r16,__zero_reg__
+ 400 0124 111D      		adc r17,__zero_reg__
+ 401 0126 00C0      		rjmp .L27
+ 402               	.L33:
+ 575:../../projects/basic_tasks/command-interpreter.c ****       } else {
+ 576:../../projects/basic_tasks/command-interpreter.c ****         commandState.error = EMBER_CMD_ERR_ARGUMENT_SYNTAX_ERROR;
+ 404               	.LM30:
+ 405 0128 85E0      		ldi r24,lo8(5)
+ 406 012a 8093 0000 		sts commandState+115,r24
+ 407 012e EE24      		clr r14
+ 408 0130 FF24      		clr r15
+ 409 0132 8701      		movw r16,r14
+ 410 0134 00C0      		rjmp .L35
+ 411               	.L32:
+ 577:../../projects/basic_tasks/command-interpreter.c ****         return 0;
+ 413               	.LM31:
+ 414 0136 80E1      		ldi r24,lo8(16)
+ 415 0138 882E      		mov r8,r24
+ 416               	.L27:
+ 417               	.LBE37:
+ 418               	.LBE36:
+ 420               	.LM32:
+ 421 013a 9394      		inc r9
+ 422 013c 0894      		sec
+ 423 013e A11C      		adc r10,__zero_reg__
+ 424 0140 B11C      		adc r11,__zero_reg__
+ 425 0142 2196      		adiw r28,1
+ 426               	.L22:
+ 427 0144 9C14      		cp r9,r12
+ 428 0146 01F4      		brne .L23
+ 429               	.L35:
+ 578:../../projects/basic_tasks/command-interpreter.c ****       }
+ 579:../../projects/basic_tasks/command-interpreter.c ****     }
+ 580:../../projects/basic_tasks/command-interpreter.c ****   }
+ 581:../../projects/basic_tasks/command-interpreter.c ****   return result;
+ 582:../../projects/basic_tasks/command-interpreter.c **** }
+ 431               	.LM33:
+ 432 0148 C801      		movw r24,r16
+ 433 014a B701      		movw r22,r14
+ 434               	/* epilogue: frame size=0 */
+ 435 014c DF91      		pop r29
+ 436 014e CF91      		pop r28
+ 437 0150 1F91      		pop r17
+ 438 0152 0F91      		pop r16
+ 439 0154 FF90      		pop r15
+ 440 0156 EF90      		pop r14
+ 441 0158 DF90      		pop r13
+ 442 015a CF90      		pop r12
+ 443 015c BF90      		pop r11
+ 444 015e AF90      		pop r10
+ 445 0160 9F90      		pop r9
+ 446 0162 8F90      		pop r8
+ 447 0164 7F90      		pop r7
+ 448 0166 0895      		ret
+ 449               	/* epilogue end (size=14) */
+ 450               	/* function stringToUnsignedInt size 111 (84) */
+ 463               	.Lscope5:
+ 465               		.stabd	78,0,0
+ 468               	.global	emberUnsignedCommandArgument
+ 470               	emberUnsignedCommandArgument:
+ 471               		.stabd	46,0,0
+ 583:../../projects/basic_tasks/command-interpreter.c **** 
+ 584:../../projects/basic_tasks/command-interpreter.c **** uint32_t emberUnsignedCommandArgument(uint8_t argNum)
+ 585:../../projects/basic_tasks/command-interpreter.c **** {
+ 473               	.LM34:
+ 474               	.LFBB6:
+ 475               	/* prologue: frame size=0 */
+ 476               	/* prologue end (size=0) */
+ 586:../../projects/basic_tasks/command-interpreter.c ****   return stringToUnsignedInt(argNum, false);
+ 478               	.LM35:
+ 479 0168 60E0      		ldi r22,lo8(0)
+ 480 016a 0E94 0000 		call stringToUnsignedInt
+ 481               	/* epilogue: frame size=0 */
+ 482 016e 0895      		ret
+ 483               	/* epilogue end (size=1) */
+ 484               	/* function emberUnsignedCommandArgument size 4 (3) */
+ 486               	.Lscope6:
+ 488               		.stabd	78,0,0
+ 491               	.global	emberSignedCommandArgument
+ 493               	emberSignedCommandArgument:
+ 494               		.stabd	46,0,0
+ 587:../../projects/basic_tasks/command-interpreter.c **** }
+ 588:../../projects/basic_tasks/command-interpreter.c **** 
+ 589:../../projects/basic_tasks/command-interpreter.c **** int16_t emberSignedCommandArgument(uint8_t argNum)
+ 590:../../projects/basic_tasks/command-interpreter.c **** {
+ 496               	.LM36:
+ 497               	.LFBB7:
+ 498               	/* prologue: frame size=0 */
+ 499 0170 1F93      		push r17
+ 500               	/* prologue end (size=1) */
+ 501 0172 982F      		mov r25,r24
+ 591:../../projects/basic_tasks/command-interpreter.c ****   bool negative = (firstByteOfArg(argNum) == '-');
+ 503               	.LM37:
+ 504 0174 10E0      		ldi r17,lo8(0)
+ 505 0176 E091 0000 		lds r30,commandState+117
+ 506 017a E80F      		add r30,r24
+ 507 017c FF27      		clr r31
+ 508 017e E050      		subi r30,lo8(-(commandState+101))
+ 509 0180 F040      		sbci r31,hi8(-(commandState+101))
+ 510 0182 E081      		ld r30,Z
+ 511 0184 FF27      		clr r31
+ 512 0186 E050      		subi r30,lo8(-(commandState))
+ 513 0188 F040      		sbci r31,hi8(-(commandState))
+ 514 018a 8181      		ldd r24,Z+1
+ 515 018c 8D32      		cpi r24,lo8(45)
+ 516 018e 01F4      		brne .L40
+ 518               	.LM38:
+ 519 0190 11E0      		ldi r17,lo8(1)
+ 520               	.L40:
+ 592:../../projects/basic_tasks/command-interpreter.c ****   int16_t result = (int16_t) stringToUnsignedInt(argNum, negative);
+ 522               	.LM39:
+ 523 0192 612F      		mov r22,r17
+ 524 0194 892F      		mov r24,r25
+ 525 0196 0E94 0000 		call stringToUnsignedInt
+ 526 019a CB01      		movw r24,r22
+ 593:../../projects/basic_tasks/command-interpreter.c ****   return (negative ? -result : result);
+ 528               	.LM40:
+ 529 019c 1123      		tst r17
+ 530 019e 01F0      		breq .L41
+ 531 01a0 9095      		com r25
+ 532 01a2 8195      		neg r24
+ 533 01a4 9F4F      		sbci r25,lo8(-1)
+ 534               	.L41:
+ 535               	/* epilogue: frame size=0 */
+ 536 01a6 1F91      		pop r17
+ 537 01a8 0895      		ret
+ 538               	/* epilogue end (size=2) */
+ 539               	/* function emberSignedCommandArgument size 29 (26) */
+ 545               	.Lscope7:
+ 547               		.stabd	78,0,0
+ 551               	.global	emberStringCommandArgument
+ 553               	emberStringCommandArgument:
+ 554               		.stabd	46,0,0
+ 594:../../projects/basic_tasks/command-interpreter.c **** }
+ 595:../../projects/basic_tasks/command-interpreter.c **** 
+ 596:../../projects/basic_tasks/command-interpreter.c **** uint8_t *emberStringCommandArgument(int8_t argNum, uint8_t *length)
+ 597:../../projects/basic_tasks/command-interpreter.c **** {
+ 556               	.LM41:
+ 557               	.LFBB8:
+ 558               	/* prologue: frame size=0 */
+ 559 01aa CF93      		push r28
+ 560 01ac DF93      		push r29
+ 561               	/* prologue end (size=2) */
+ 562 01ae EB01      		movw r28,r22
+ 598:../../projects/basic_tasks/command-interpreter.c ****   uint8_t tokenNum = argNum + commandState.argOffset;
+ 564               	.LM42:
+ 565 01b0 2091 0000 		lds r18,commandState+117
+ 566 01b4 280F      		add r18,r24
+ 599:../../projects/basic_tasks/command-interpreter.c ****   uint8_t leadingQuote = (argNum < 0 ? 0 : 1);
+ 568               	.LM43:
+ 569 01b6 382F      		mov r19,r24
+ 570 01b8 3095      		com r19
+ 571 01ba 331F      		rol r19
+ 572 01bc 3327      		clr r19
+ 573 01be 331F      		rol r19
+ 600:../../projects/basic_tasks/command-interpreter.c ****   if (length != NULL) {
+ 575               	.LM44:
+ 576 01c0 672B      		or r22,r23
+ 577 01c2 01F0      		breq .L46
+ 578               	.LBB40:
+ 579               	.LBB41:
+ 581               	.LM45:
+ 582 01c4 E22F      		mov r30,r18
+ 583 01c6 FF27      		clr r31
+ 584               	.LBE41:
+ 585               	.LBE40:
+ 601:../../projects/basic_tasks/command-interpreter.c ****     *length = tokenLength(tokenNum) - leadingQuote;
+ 587               	.LM46:
+ 588 01c8 E050      		subi r30,lo8(-(commandState))
+ 589 01ca F040      		sbci r31,hi8(-(commandState))
+ 590 01cc DF01      		movw r26,r30
+ 591 01ce AB59      		subi r26,lo8(-(101))
+ 592 01d0 BF4F      		sbci r27,hi8(-(101))
+ 593 01d2 EA59      		subi r30,lo8(-(102))
+ 594 01d4 FF4F      		sbci r31,hi8(-(102))
+ 595 01d6 8081      		ld r24,Z
+ 596 01d8 9C91      		ld r25,X
+ 597 01da 891B      		sub r24,r25
+ 598 01dc 831B      		sub r24,r19
+ 599 01de 8883      		st Y,r24
+ 600               	.L46:
+ 601 01e0 E22F      		mov r30,r18
+ 602 01e2 FF27      		clr r31
+ 603 01e4 E7FD      		sbrc r30,7
+ 604 01e6 F095      		com r31
+ 605 01e8 E050      		subi r30,lo8(-(commandState+101))
+ 606 01ea F040      		sbci r31,hi8(-(commandState+101))
+ 607 01ec 8081      		ld r24,Z
+ 608 01ee 9927      		clr r25
+ 609 01f0 8050      		subi r24,lo8(-(commandState+1))
+ 610 01f2 9040      		sbci r25,hi8(-(commandState+1))
+ 602:../../projects/basic_tasks/command-interpreter.c ****   }
+ 603:../../projects/basic_tasks/command-interpreter.c ****   return tokenPointer(tokenNum) + leadingQuote;
+ 604:../../projects/basic_tasks/command-interpreter.c **** }
+ 612               	.LM47:
+ 613 01f4 830F      		add r24,r19
+ 614 01f6 911D      		adc r25,__zero_reg__
+ 615               	/* epilogue: frame size=0 */
+ 616 01f8 DF91      		pop r29
+ 617 01fa CF91      		pop r28
+ 618 01fc 0895      		ret
+ 619               	/* epilogue end (size=3) */
+ 620               	/* function emberStringCommandArgument size 42 (37) */
+ 626               	.Lscope8:
+ 628               		.stabd	78,0,0
+ 629               		.data
+ 630               	.LC0:
+ 631 0000 5573 6167 		.string	"Usage:\r\n<int>: 123 or 0x1ABC\r\n<string>: \"foo\" or {0A 1B 2C}\r\n\r"
+ 631      653A 0D0A 
+ 631      3C69 6E74 
+ 631      3E3A 2031 
+ 631      3233 206F 
+ 632               		.text
+ 634               	.global	emberPrintCommandUsageNotes
+ 636               	emberPrintCommandUsageNotes:
+ 637               		.stabd	46,0,0
+ 605:../../projects/basic_tasks/command-interpreter.c **** 
+ 606:../../projects/basic_tasks/command-interpreter.c **** uint8_t emberCopyStringArgument(int8_t argNum,
+ 607:../../projects/basic_tasks/command-interpreter.c ****                               uint8_t *destination,
+ 608:../../projects/basic_tasks/command-interpreter.c ****                               uint8_t maxLength,
+ 609:../../projects/basic_tasks/command-interpreter.c ****                               bool leftPad)
+ 610:../../projects/basic_tasks/command-interpreter.c **** {
+ 611:../../projects/basic_tasks/command-interpreter.c ****   uint8_t padLength;
+ 612:../../projects/basic_tasks/command-interpreter.c ****   uint8_t argLength;
+ 613:../../projects/basic_tasks/command-interpreter.c ****   uint8_t *contents = emberStringCommandArgument(argNum, &argLength);
+ 614:../../projects/basic_tasks/command-interpreter.c ****   if (argLength > maxLength) {
+ 615:../../projects/basic_tasks/command-interpreter.c ****     argLength = maxLength;
+ 616:../../projects/basic_tasks/command-interpreter.c ****   }
+ 617:../../projects/basic_tasks/command-interpreter.c ****   padLength = leftPad ? maxLength - argLength : 0;
+ 618:../../projects/basic_tasks/command-interpreter.c ****   memset(destination, 0, padLength);
+ 619:../../projects/basic_tasks/command-interpreter.c ****   memcpy(destination + padLength, contents, argLength);
+ 620:../../projects/basic_tasks/command-interpreter.c ****   return argLength;
+ 621:../../projects/basic_tasks/command-interpreter.c **** }
+ 622:../../projects/basic_tasks/command-interpreter.c **** 
+ 623:../../projects/basic_tasks/command-interpreter.c **** PGM_P emberCommandErrorNames[] =
+ 624:../../projects/basic_tasks/command-interpreter.c ****   {
+ 625:../../projects/basic_tasks/command-interpreter.c ****     "",
+ 626:../../projects/basic_tasks/command-interpreter.c ****     "Serial port error",
+ 627:../../projects/basic_tasks/command-interpreter.c ****     "No such command",
+ 628:../../projects/basic_tasks/command-interpreter.c ****     "Wrong number of args",
+ 629:../../projects/basic_tasks/command-interpreter.c ****     "Arg out of range",
+ 630:../../projects/basic_tasks/command-interpreter.c ****     "Arg syntax error",
+ 631:../../projects/basic_tasks/command-interpreter.c ****     "Too long",
+ 632:../../projects/basic_tasks/command-interpreter.c ****     "Bad arg type"
+ 633:../../projects/basic_tasks/command-interpreter.c ****   };
+ 634:../../projects/basic_tasks/command-interpreter.c **** 
+ 635:../../projects/basic_tasks/command-interpreter.c **** 
+ 636:../../projects/basic_tasks/command-interpreter.c **** static void printCommandUsage(EmberCommandEntry *entry)
+ 637:../../projects/basic_tasks/command-interpreter.c **** {
+ 638:../../projects/basic_tasks/command-interpreter.c ****   PGM_P arg = entry->argumentTypes;
+ 639:../../projects/basic_tasks/command-interpreter.c ****   printf("%s", entry->name);
+ 640:../../projects/basic_tasks/command-interpreter.c **** 
+ 641:../../projects/basic_tasks/command-interpreter.c ****   if ( entry -> action == NULL ); //printf("...");
+ 642:../../projects/basic_tasks/command-interpreter.c ****   else
+ 643:../../projects/basic_tasks/command-interpreter.c ****     while (*arg) {
+ 644:../../projects/basic_tasks/command-interpreter.c ****       uint8_t c = *arg;
+ 645:../../projects/basic_tasks/command-interpreter.c **** 
+ 646:../../projects/basic_tasks/command-interpreter.c ****       printf(c == 'u' ? " <uint8_t>"
+ 647:../../projects/basic_tasks/command-interpreter.c ****                          : c == 'v' ? " <uint16_t>"
+ 648:../../projects/basic_tasks/command-interpreter.c ****                          : c == 'w' ? " <uint32_t>"
+ 649:../../projects/basic_tasks/command-interpreter.c ****                          : c == 's' ? " <int8_t>"
+ 650:../../projects/basic_tasks/command-interpreter.c ****                          : c == 'b' ? " <string>"
+ 651:../../projects/basic_tasks/command-interpreter.c ****                          : c == 'n' ? " ..."
+ 652:../../projects/basic_tasks/command-interpreter.c ****                          : c == '*' ? " *"
+ 653:../../projects/basic_tasks/command-interpreter.c ****                          : " ?");
+ 654:../../projects/basic_tasks/command-interpreter.c **** 
+ 655:../../projects/basic_tasks/command-interpreter.c **** 
+ 656:../../projects/basic_tasks/command-interpreter.c ****       arg += 1;
+ 657:../../projects/basic_tasks/command-interpreter.c ****     }
+ 658:../../projects/basic_tasks/command-interpreter.c **** 
+ 659:../../projects/basic_tasks/command-interpreter.c ****   if(entry->description) {
+ 660:../../projects/basic_tasks/command-interpreter.c ****     printf(" - %s", entry->description);
+ 661:../../projects/basic_tasks/command-interpreter.c ****   }
+ 662:../../projects/basic_tasks/command-interpreter.c **** 
+ 663:../../projects/basic_tasks/command-interpreter.c ****   printf( "\r\n");
+ 664:../../projects/basic_tasks/command-interpreter.c ****  // emberSerialWaitSend(APP_SERIAL);
+ 665:../../projects/basic_tasks/command-interpreter.c **** }
+ 666:../../projects/basic_tasks/command-interpreter.c **** 
+ 667:../../projects/basic_tasks/command-interpreter.c **** void emberPrintCommandUsage(EmberCommandEntry *entry)
+ 668:../../projects/basic_tasks/command-interpreter.c **** {
+ 669:../../projects/basic_tasks/command-interpreter.c ****   EmberCommandEntry *commandFinger;
+ 670:../../projects/basic_tasks/command-interpreter.c ****   printCommandUsage(entry);
+ 671:../../projects/basic_tasks/command-interpreter.c **** 
+ 672:../../projects/basic_tasks/command-interpreter.c ****   if ( getNestedCommand(entry, &commandFinger) ) {
+ 673:../../projects/basic_tasks/command-interpreter.c ****     for (; commandFinger->name != NULL; commandFinger++) {
+ 674:../../projects/basic_tasks/command-interpreter.c ****       printf("  ");
+ 675:../../projects/basic_tasks/command-interpreter.c ****       printCommandUsage(commandFinger);
+ 676:../../projects/basic_tasks/command-interpreter.c ****     }
+ 677:../../projects/basic_tasks/command-interpreter.c ****   }
+ 678:../../projects/basic_tasks/command-interpreter.c **** }
+ 679:../../projects/basic_tasks/command-interpreter.c **** 
+ 680:../../projects/basic_tasks/command-interpreter.c **** void emberPrintCommandUsageNotes(void)
+ 681:../../projects/basic_tasks/command-interpreter.c **** {
+ 639               	.LM48:
+ 640               	.LFBB9:
+ 641               	/* prologue: frame size=0 */
+ 642               	/* prologue end (size=0) */
+ 682:../../projects/basic_tasks/command-interpreter.c **** 
+ 683:../../projects/basic_tasks/command-interpreter.c **** 	printf( "Usage:\r\n"
+ 644               	.LM49:
+ 645 01fe 80E0      		ldi r24,lo8(.LC0)
+ 646 0200 90E0      		ldi r25,hi8(.LC0)
+ 647 0202 0E94 0000 		call puts
+ 648               	/* epilogue: frame size=0 */
+ 649 0206 0895      		ret
+ 650               	/* epilogue end (size=1) */
+ 651               	/* function emberPrintCommandUsageNotes size 5 (4) */
+ 653               	.Lscope9:
+ 655               		.stabd	78,0,0
+ 656               		.data
+ 657               	.LC1:
+ 658 003f 2573 00   		.string	"%s"
+ 659               	.LC2:
+ 660 0042 203C 7569 		.string	" <uint8_t>"
+ 660      6E74 385F 
+ 660      743E 00
+ 661               	.LC3:
+ 662 004d 203C 7569 		.string	" <uint16_t>"
+ 662      6E74 3136 
+ 662      5F74 3E00 
+ 663               	.LC4:
+ 664 0059 203C 7569 		.string	" <uint32_t>"
+ 664      6E74 3332 
+ 664      5F74 3E00 
+ 665               	.LC5:
+ 666 0065 203C 696E 		.string	" <int8_t>"
+ 666      7438 5F74 
+ 666      3E00 
+ 667               	.LC6:
+ 668 006f 203C 7374 		.string	" <string>"
+ 668      7269 6E67 
+ 668      3E00 
+ 669               	.LC7:
+ 670 0079 202E 2E2E 		.string	" ..."
+ 670      00
+ 671               	.LC8:
+ 672 007e 202A 00   		.string	" *"
+ 673               	.LC9:
+ 674 0081 203F 00   		.string	" ?"
+ 675               	.LC10:
+ 676 0084 202D 2025 		.string	" - %s"
+ 676      7300 
+ 677               	.LC11:
+ 678 008a 0D00      		.string	"\r"
+ 679               		.text
+ 683               	printCommandUsage:
+ 684               		.stabd	46,0,0
+ 686               	.LM50:
+ 687               	.LFBB10:
+ 688               	/* prologue: frame size=0 */
+ 689 0208 2F92      		push r2
+ 690 020a 3F92      		push r3
+ 691 020c 4F92      		push r4
+ 692 020e 5F92      		push r5
+ 693 0210 6F92      		push r6
+ 694 0212 7F92      		push r7
+ 695 0214 8F92      		push r8
+ 696 0216 9F92      		push r9
+ 697 0218 AF92      		push r10
+ 698 021a BF92      		push r11
+ 699 021c CF92      		push r12
+ 700 021e DF92      		push r13
+ 701 0220 EF92      		push r14
+ 702 0222 FF92      		push r15
+ 703 0224 0F93      		push r16
+ 704 0226 1F93      		push r17
+ 705 0228 CF93      		push r28
+ 706 022a DF93      		push r29
+ 707               	/* prologue end (size=18) */
+ 708 022c EC01      		movw r28,r24
+ 710               	.LM51:
+ 711 022e 0C81      		ldd r16,Y+4
+ 712 0230 1D81      		ldd r17,Y+5
+ 714               	.LM52:
+ 715 0232 8881      		ld r24,Y
+ 716 0234 9981      		ldd r25,Y+1
+ 717 0236 9F93      		push r25
+ 718 0238 8F93      		push r24
+ 719 023a 80E0      		ldi r24,lo8(.LC1)
+ 720 023c 90E0      		ldi r25,hi8(.LC1)
+ 721 023e 9F93      		push r25
+ 722 0240 8F93      		push r24
+ 723 0242 0E94 0000 		call printf
+ 725               	.LM53:
+ 726 0246 0F90      		pop __tmp_reg__
+ 727 0248 0F90      		pop __tmp_reg__
+ 728 024a 0F90      		pop __tmp_reg__
+ 729 024c 0F90      		pop __tmp_reg__
+ 730 024e 8A81      		ldd r24,Y+2
+ 731 0250 9B81      		ldd r25,Y+3
+ 732 0252 892B      		or r24,r25
+ 733 0254 01F4      		brne .L52
+ 734 0256 00C0      		rjmp .L53
+ 735               	.L54:
+ 736               	.LBB42:
+ 738               	.LM54:
+ 739 0258 8537      		cpi r24,lo8(117)
+ 740 025a 01F4      		brne .L55
+ 741 025c C701      		movw r24,r14
+ 742 025e 00C0      		rjmp .L57
+ 743               	.L55:
+ 744 0260 8637      		cpi r24,lo8(118)
+ 745 0262 01F4      		brne .L58
+ 746 0264 C601      		movw r24,r12
+ 747 0266 00C0      		rjmp .L57
+ 748               	.L58:
+ 749 0268 8737      		cpi r24,lo8(119)
+ 750 026a 01F4      		brne .L60
+ 751 026c C501      		movw r24,r10
+ 752 026e 00C0      		rjmp .L57
+ 753               	.L60:
+ 754 0270 8337      		cpi r24,lo8(115)
+ 755 0272 01F4      		brne .L62
+ 756 0274 C401      		movw r24,r8
+ 757 0276 00C0      		rjmp .L57
+ 758               	.L62:
+ 759 0278 8236      		cpi r24,lo8(98)
+ 760 027a 01F4      		brne .L64
+ 761 027c C301      		movw r24,r6
+ 762 027e 00C0      		rjmp .L57
+ 763               	.L64:
+ 764 0280 8E36      		cpi r24,lo8(110)
+ 765 0282 01F4      		brne .L66
+ 766 0284 C201      		movw r24,r4
+ 767 0286 00C0      		rjmp .L57
+ 768               	.L66:
+ 769 0288 8A32      		cpi r24,lo8(42)
+ 770 028a 01F4      		brne .L68
+ 771 028c C101      		movw r24,r2
+ 772 028e 00C0      		rjmp .L57
+ 773               	.L68:
+ 774 0290 80E0      		ldi r24,lo8(.LC9)
+ 775 0292 90E0      		ldi r25,hi8(.LC9)
+ 776               	.L57:
+ 777 0294 9F93      		push r25
+ 778 0296 8F93      		push r24
+ 779 0298 0E94 0000 		call printf
+ 781               	.LM55:
+ 782 029c 0F5F      		subi r16,lo8(-(1))
+ 783 029e 1F4F      		sbci r17,hi8(-(1))
+ 784 02a0 0F90      		pop __tmp_reg__
+ 785 02a2 0F90      		pop __tmp_reg__
+ 786 02a4 00C0      		rjmp .L73
+ 787               	.L52:
+ 789               	.LM56:
+ 790 02a6 E0E0      		ldi r30,lo8(.LC8)
+ 791 02a8 2E2E      		mov r2,r30
+ 792 02aa E0E0      		ldi r30,hi8(.LC8)
+ 793 02ac 3E2E      		mov r3,r30
+ 794 02ae 70E0      		ldi r23,lo8(.LC7)
+ 795 02b0 472E      		mov r4,r23
+ 796 02b2 70E0      		ldi r23,hi8(.LC7)
+ 797 02b4 572E      		mov r5,r23
+ 798 02b6 60E0      		ldi r22,lo8(.LC6)
+ 799 02b8 662E      		mov r6,r22
+ 800 02ba 60E0      		ldi r22,hi8(.LC6)
+ 801 02bc 762E      		mov r7,r22
+ 802 02be 50E0      		ldi r21,lo8(.LC5)
+ 803 02c0 852E      		mov r8,r21
+ 804 02c2 50E0      		ldi r21,hi8(.LC5)
+ 805 02c4 952E      		mov r9,r21
+ 806 02c6 40E0      		ldi r20,lo8(.LC4)
+ 807 02c8 A42E      		mov r10,r20
+ 808 02ca 40E0      		ldi r20,hi8(.LC4)
+ 809 02cc B42E      		mov r11,r20
+ 810 02ce 30E0      		ldi r19,lo8(.LC3)
+ 811 02d0 C32E      		mov r12,r19
+ 812 02d2 30E0      		ldi r19,hi8(.LC3)
+ 813 02d4 D32E      		mov r13,r19
+ 814 02d6 20E0      		ldi r18,lo8(.LC2)
+ 815 02d8 E22E      		mov r14,r18
+ 816 02da 20E0      		ldi r18,hi8(.LC2)
+ 817 02dc F22E      		mov r15,r18
+ 818               	.L73:
+ 819               	.LBE42:
+ 821               	.LM57:
+ 822 02de F801      		movw r30,r16
+ 823 02e0 8081      		ld r24,Z
+ 824 02e2 8823      		tst r24
+ 825 02e4 01F0      		breq .+2
+ 826 02e6 00C0      		rjmp .L54
+ 827               	.L53:
+ 829               	.LM58:
+ 830 02e8 8E81      		ldd r24,Y+6
+ 831 02ea 9F81      		ldd r25,Y+7
+ 832 02ec 0097      		sbiw r24,0
+ 833 02ee 01F0      		breq .L70
+ 835               	.LM59:
+ 836 02f0 9F93      		push r25
+ 837 02f2 8F93      		push r24
+ 838 02f4 80E0      		ldi r24,lo8(.LC10)
+ 839 02f6 90E0      		ldi r25,hi8(.LC10)
+ 840 02f8 9F93      		push r25
+ 841 02fa 8F93      		push r24
+ 842 02fc 0E94 0000 		call printf
+ 843 0300 0F90      		pop __tmp_reg__
+ 844 0302 0F90      		pop __tmp_reg__
+ 845 0304 0F90      		pop __tmp_reg__
+ 846 0306 0F90      		pop __tmp_reg__
+ 847               	.L70:
+ 849               	.LM60:
+ 850 0308 80E0      		ldi r24,lo8(.LC11)
+ 851 030a 90E0      		ldi r25,hi8(.LC11)
+ 852 030c 0E94 0000 		call puts
+ 853               	/* epilogue: frame size=0 */
+ 854 0310 DF91      		pop r29
+ 855 0312 CF91      		pop r28
+ 856 0314 1F91      		pop r17
+ 857 0316 0F91      		pop r16
+ 858 0318 FF90      		pop r15
+ 859 031a EF90      		pop r14
+ 860 031c DF90      		pop r13
+ 861 031e CF90      		pop r12
+ 862 0320 BF90      		pop r11
+ 863 0322 AF90      		pop r10
+ 864 0324 9F90      		pop r9
+ 865 0326 8F90      		pop r8
+ 866 0328 7F90      		pop r7
+ 867 032a 6F90      		pop r6
+ 868 032c 5F90      		pop r5
+ 869 032e 4F90      		pop r4
+ 870 0330 3F90      		pop r3
+ 871 0332 2F90      		pop r2
+ 872 0334 0895      		ret
+ 873               	/* epilogue end (size=19) */
+ 874               	/* function printCommandUsage size 151 (114) */
+ 879               	.Lscope10:
+ 881               		.stabd	78,0,0
+ 883               	.global	emberPrintCommandTable
+ 885               	emberPrintCommandTable:
+ 886               		.stabd	46,0,0
+ 684:../../projects/basic_tasks/command-interpreter.c ****                     "<int>: 123 or 0x1ABC\r\n"
+ 685:../../projects/basic_tasks/command-interpreter.c ****                     "<string>: \"foo\" or {0A 1B 2C}\r\n\r\n");
+ 686:../../projects/basic_tasks/command-interpreter.c **** 
+ 687:../../projects/basic_tasks/command-interpreter.c **** }
+ 688:../../projects/basic_tasks/command-interpreter.c **** 
+ 689:../../projects/basic_tasks/command-interpreter.c **** void emberPrintCommandTable(void)
+ 690:../../projects/basic_tasks/command-interpreter.c **** {
+ 888               	.LM61:
+ 889               	.LFBB11:
+ 890               	/* prologue: frame size=0 */
+ 891 0336 CF93      		push r28
+ 892 0338 DF93      		push r29
+ 893               	/* prologue end (size=2) */
+ 691:../../projects/basic_tasks/command-interpreter.c ****   EmberCommandEntry *commandFinger = emberCommandTable;
+ 692:../../projects/basic_tasks/command-interpreter.c ****   emberPrintCommandUsageNotes();
+ 895               	.LM62:
+ 896 033a 0E94 0000 		call emberPrintCommandUsageNotes
+ 897 033e C0E0      		ldi r28,lo8(emberCommandTable)
+ 898 0340 D0E0      		ldi r29,hi8(emberCommandTable)
+ 899 0342 00C0      		rjmp .L75
+ 900               	.L76:
+ 693:../../projects/basic_tasks/command-interpreter.c ****   for (; commandFinger->name != NULL; commandFinger++) {
+ 694:../../projects/basic_tasks/command-interpreter.c ****     printCommandUsage(commandFinger);
+ 902               	.LM63:
+ 903 0344 CE01      		movw r24,r28
+ 904 0346 0E94 0000 		call printCommandUsage
+ 906               	.LM64:
+ 907 034a 2896      		adiw r28,8
+ 908               	.L75:
+ 909 034c 8881      		ld r24,Y
+ 910 034e 9981      		ldd r25,Y+1
+ 911 0350 892B      		or r24,r25
+ 912 0352 01F4      		brne .L76
+ 913               	/* epilogue: frame size=0 */
+ 914 0354 DF91      		pop r29
+ 915 0356 CF91      		pop r28
+ 916 0358 0895      		ret
+ 917               	/* epilogue end (size=3) */
+ 918               	/* function emberPrintCommandTable size 18 (13) */
+ 923               	.Lscope11:
+ 925               		.stabd	78,0,0
+ 926               		.data
+ 927               	.LC12:
+ 928 008c 2020 00   		.string	"  "
+ 929               		.text
+ 932               	.global	emberPrintCommandUsage
+ 934               	emberPrintCommandUsage:
+ 935               		.stabd	46,0,0
+ 937               	.LM65:
+ 938               	.LFBB12:
+ 939               	/* prologue: frame size=2 */
+ 940 035a 0F93      		push r16
+ 941 035c 1F93      		push r17
+ 942 035e CF93      		push r28
+ 943 0360 DF93      		push r29
+ 944 0362 CDB7      		in r28,__SP_L__
+ 945 0364 DEB7      		in r29,__SP_H__
+ 946 0366 2297      		sbiw r28,2
+ 947 0368 0FB6      		in __tmp_reg__,__SREG__
+ 948 036a F894      		cli
+ 949 036c DEBF      		out __SP_H__,r29
+ 950 036e 0FBE      		out __SREG__,__tmp_reg__
+ 951 0370 CDBF      		out __SP_L__,r28
+ 952               	/* prologue end (size=12) */
+ 953 0372 8C01      		movw r16,r24
+ 955               	.LM66:
+ 956 0374 0E94 0000 		call printCommandUsage
+ 958               	.LM67:
+ 959 0378 BE01      		movw r22,r28
+ 960 037a 6F5F      		subi r22,lo8(-(1))
+ 961 037c 7F4F      		sbci r23,hi8(-(1))
+ 962 037e C801      		movw r24,r16
+ 963 0380 0E94 0000 		call getNestedCommand
+ 964 0384 8823      		tst r24
+ 965 0386 01F4      		brne .L80
+ 966 0388 00C0      		rjmp .L83
+ 967               	.L82:
+ 969               	.LM68:
+ 970 038a 1F93      		push r17
+ 971 038c 0F93      		push r16
+ 972 038e 0E94 0000 		call printf
+ 974               	.LM69:
+ 975 0392 8981      		ldd r24,Y+1
+ 976 0394 9A81      		ldd r25,Y+2
+ 977 0396 0E94 0000 		call printCommandUsage
+ 979               	.LM70:
+ 980 039a 8981      		ldd r24,Y+1
+ 981 039c 9A81      		ldd r25,Y+2
+ 982 039e 0896      		adiw r24,8
+ 983 03a0 9A83      		std Y+2,r25
+ 984 03a2 8983      		std Y+1,r24
+ 985 03a4 0F90      		pop __tmp_reg__
+ 986 03a6 0F90      		pop __tmp_reg__
+ 987 03a8 00C0      		rjmp .L84
+ 988               	.L80:
+ 990               	.LM71:
+ 991 03aa 00E0      		ldi r16,lo8(.LC12)
+ 992 03ac 10E0      		ldi r17,hi8(.LC12)
+ 993               	.L84:
+ 995               	.LM72:
+ 996 03ae E981      		ldd r30,Y+1
+ 997 03b0 FA81      		ldd r31,Y+2
+ 998 03b2 8081      		ld r24,Z
+ 999 03b4 9181      		ldd r25,Z+1
+ 1000 03b6 892B      		or r24,r25
+ 1001 03b8 01F4      		brne .L82
+ 1002               	.L83:
+ 1003               	/* epilogue: frame size=2 */
+ 1004 03ba 2296      		adiw r28,2
+ 1005 03bc 0FB6      		in __tmp_reg__,__SREG__
+ 1006 03be F894      		cli
+ 1007 03c0 DEBF      		out __SP_H__,r29
+ 1008 03c2 0FBE      		out __SREG__,__tmp_reg__
+ 1009 03c4 CDBF      		out __SP_L__,r28
+ 1010 03c6 DF91      		pop r29
+ 1011 03c8 CF91      		pop r28
+ 1012 03ca 1F91      		pop r17
+ 1013 03cc 0F91      		pop r16
+ 1014 03ce 0895      		ret
+ 1015               	/* epilogue end (size=11) */
+ 1016               	/* function emberPrintCommandUsage size 59 (36) */
+ 1021               	.Lscope12:
+ 1023               		.stabd	78,0,0
+ 1024               		.data
+ 1025               	.LC13:
+ 1026 008f 2573 0D0A 		.string	"%s\r\n"
+ 1026      00
+ 1027               		.text
+ 1030               	.global	emberCommandErrorHandler
+ 1032               	emberCommandErrorHandler:
+ 1033               		.stabd	46,0,0
+ 695:../../projects/basic_tasks/command-interpreter.c ****   }
+ 696:../../projects/basic_tasks/command-interpreter.c **** }
+ 697:../../projects/basic_tasks/command-interpreter.c **** 
+ 698:../../projects/basic_tasks/command-interpreter.c **** void emberCommandErrorHandler(EmberCommandStatus status)
+ 699:../../projects/basic_tasks/command-interpreter.c **** {
+ 1035               	.LM73:
+ 1036               	.LFBB13:
+ 1037               	/* prologue: frame size=0 */
+ 1038 03d0 AF92      		push r10
+ 1039 03d2 BF92      		push r11
+ 1040 03d4 CF92      		push r12
+ 1041 03d6 DF92      		push r13
+ 1042 03d8 EF92      		push r14
+ 1043 03da FF92      		push r15
+ 1044 03dc 0F93      		push r16
+ 1045 03de 1F93      		push r17
+ 1046 03e0 CF93      		push r28
+ 1047 03e2 DF93      		push r29
+ 1048               	/* prologue end (size=10) */
+ 700:../../projects/basic_tasks/command-interpreter.c ****   printf("%s\r\n", emberCommandErrorNames[status]);
+ 1050               	.LM74:
+ 1051 03e4 E82F      		mov r30,r24
+ 1052 03e6 FF27      		clr r31
+ 1053 03e8 EE0F      		lsl r30
+ 1054 03ea FF1F      		rol r31
+ 1055 03ec E050      		subi r30,lo8(-(emberCommandErrorNames))
+ 1056 03ee F040      		sbci r31,hi8(-(emberCommandErrorNames))
+ 1057 03f0 8081      		ld r24,Z
+ 1058 03f2 9181      		ldd r25,Z+1
+ 1059 03f4 9F93      		push r25
+ 1060 03f6 8F93      		push r24
+ 1061 03f8 80E0      		ldi r24,lo8(.LC13)
+ 1062 03fa 90E0      		ldi r25,hi8(.LC13)
+ 1063 03fc 9F93      		push r25
+ 1064 03fe 8F93      		push r24
+ 1065 0400 0E94 0000 		call printf
+ 701:../../projects/basic_tasks/command-interpreter.c **** 
+ 702:../../projects/basic_tasks/command-interpreter.c ****   if (emberCurrentCommand == NULL) {
+ 1067               	.LM75:
+ 1068 0404 0F90      		pop __tmp_reg__
+ 1069 0406 0F90      		pop __tmp_reg__
+ 1070 0408 0F90      		pop __tmp_reg__
+ 1071 040a 0F90      		pop __tmp_reg__
+ 1072 040c 8091 0000 		lds r24,emberCurrentCommand
+ 1073 0410 9091 0000 		lds r25,(emberCurrentCommand)+1
+ 1074 0414 892B      		or r24,r25
+ 1075 0416 01F4      		brne .L86
+ 703:../../projects/basic_tasks/command-interpreter.c ****     emberPrintCommandTable();
+ 1077               	.LM76:
+ 1078 0418 0E94 0000 		call emberPrintCommandTable
+ 1079 041c 00C0      		rjmp .L95
+ 1080               	.L86:
+ 1081               	.LBB43:
+ 704:../../projects/basic_tasks/command-interpreter.c ****   } else {
+ 705:../../projects/basic_tasks/command-interpreter.c ****     uint8_t *finger;
+ 706:../../projects/basic_tasks/command-interpreter.c ****     uint8_t tokenNum, i;
+ 707:../../projects/basic_tasks/command-interpreter.c ****     emberPrintCommandUsageNotes();
+ 1083               	.LM77:
+ 1084 041e 0E94 0000 		call emberPrintCommandUsageNotes
+ 1085 0422 AA24      		clr r10
+ 1086 0424 BB24      		clr r11
+ 1087 0426 00C0      		rjmp .L89
+ 1088               	.L90:
+ 1089               	.LBB44:
+ 1090               	.LBB45:
+ 1092               	.LM78:
+ 1093 0428 FF27      		clr r31
+ 1094 042a E7FD      		sbrc r30,7
+ 1095 042c F095      		com r31
+ 1096 042e E050      		subi r30,lo8(-(commandState+101))
+ 1097 0430 F040      		sbci r31,hi8(-(commandState+101))
+ 1098 0432 8081      		ld r24,Z
+ 1099 0434 C82F      		mov r28,r24
+ 1100 0436 DD27      		clr r29
+ 1101 0438 C050      		subi r28,lo8(-(commandState+1))
+ 1102 043a D040      		sbci r29,hi8(-(commandState+1))
+ 1103 043c 00E0      		ldi r16,lo8(0)
+ 1104 043e 10E0      		ldi r17,hi8(0)
+ 1105               	.LBE45:
+ 1106               	.LBE44:
+ 708:../../projects/basic_tasks/command-interpreter.c ****     // Reconstruct any parent commands from the buffer.
+ 709:../../projects/basic_tasks/command-interpreter.c ****     for (tokenNum = 0; tokenNum < commandState.argOffset - 1; tokenNum++) {
+ 710:../../projects/basic_tasks/command-interpreter.c ****       finger = tokenPointer(tokenNum);
+ 711:../../projects/basic_tasks/command-interpreter.c ****       for (i = 0; i < tokenLength(tokenNum); i++) {
+ 1108               	.LM79:
+ 1109 0440 C901      		movw r24,r18
+ 1110 0442 8050      		subi r24,lo8(-(commandState))
+ 1111 0444 9040      		sbci r25,hi8(-(commandState))
+ 1112 0446 A6E6      		ldi r26,lo8(102)
+ 1113 0448 CA2E      		mov r12,r26
+ 1114 044a D12C      		mov r13,__zero_reg__
+ 1115 044c C80E      		add r12,r24
+ 1116 044e D91E      		adc r13,r25
+ 1117 0450 F5E6      		ldi r31,lo8(101)
+ 1118 0452 EF2E      		mov r14,r31
+ 1119 0454 F12C      		mov r15,__zero_reg__
+ 1120 0456 E80E      		add r14,r24
+ 1121 0458 F91E      		adc r15,r25
+ 1122 045a 00C0      		rjmp .L91
+ 1123               	.L92:
+ 712:../../projects/basic_tasks/command-interpreter.c ****         printf( "%c", finger[i]);
+ 1125               	.LM80:
+ 1126 045c FE01      		movw r30,r28
+ 1127 045e E20F      		add r30,r18
+ 1128 0460 F11D      		adc r31,__zero_reg__
+ 1129 0462 8081      		ld r24,Z
+ 1130 0464 9927      		clr r25
+ 1131 0466 0E94 0000 		call putchar
+ 1132               	.L91:
+ 1133 046a 202F      		mov r18,r16
+ 1134 046c 0F5F      		subi r16,lo8(-(1))
+ 1135 046e 1F4F      		sbci r17,hi8(-(1))
+ 1137               	.LM81:
+ 1138 0470 F601      		movw r30,r12
+ 1139 0472 8081      		ld r24,Z
+ 1140 0474 F701      		movw r30,r14
+ 1141 0476 9081      		ld r25,Z
+ 1142 0478 891B      		sub r24,r25
+ 1143 047a 2817      		cp r18,r24
+ 1144 047c 00F0      		brlo .L92
+ 713:../../projects/basic_tasks/command-interpreter.c ****       }
+ 714:../../projects/basic_tasks/command-interpreter.c ****       printf(" ");
+ 1146               	.LM82:
+ 1147 047e 80E2      		ldi r24,lo8(32)
+ 1148 0480 90E0      		ldi r25,hi8(32)
+ 1149 0482 0E94 0000 		call putchar
+ 1150 0486 0894      		sec
+ 1151 0488 A11C      		adc r10,__zero_reg__
+ 1152 048a B11C      		adc r11,__zero_reg__
+ 1153               	.L89:
+ 1155               	.LM83:
+ 1156 048c EA2D      		mov r30,r10
+ 1157 048e 2A2D      		mov r18,r10
+ 1158 0490 3327      		clr r19
+ 1159 0492 8091 0000 		lds r24,commandState+117
+ 1160 0496 9927      		clr r25
+ 1161 0498 0197      		sbiw r24,1
+ 1162 049a 2817      		cp r18,r24
+ 1163 049c 3907      		cpc r19,r25
+ 1164 049e 04F0      		brlt .L90
+ 715:../../projects/basic_tasks/command-interpreter.c ****     }
+ 716:../../projects/basic_tasks/command-interpreter.c ****     emberPrintCommandUsage(emberCurrentCommand);
+ 1166               	.LM84:
+ 1167 04a0 8091 0000 		lds r24,emberCurrentCommand
+ 1168 04a4 9091 0000 		lds r25,(emberCurrentCommand)+1
+ 1169 04a8 0E94 0000 		call emberPrintCommandUsage
+ 1170               	.L95:
+ 1171               	.LBE43:
+ 1172               	/* epilogue: frame size=0 */
+ 1173 04ac DF91      		pop r29
+ 1174 04ae CF91      		pop r28
+ 1175 04b0 1F91      		pop r17
+ 1176 04b2 0F91      		pop r16
+ 1177 04b4 FF90      		pop r15
+ 1178 04b6 EF90      		pop r14
+ 1179 04b8 DF90      		pop r13
+ 1180 04ba CF90      		pop r12
+ 1181 04bc BF90      		pop r11
+ 1182 04be AF90      		pop r10
+ 1183 04c0 0895      		ret
+ 1184               	/* epilogue end (size=11) */
+ 1185               	/* function emberCommandErrorHandler size 121 (100) */
+ 1191               	.Lscope13:
+ 1193               		.stabd	78,0,0
+ 1194               		.data
+ 1195               	.LC14:
+ 1196 0094 4361 6D65 		.string	"Came to temp command\r"
+ 1196      2074 6F20 
+ 1196      7465 6D70 
+ 1196      2063 6F6D 
+ 1196      6D61 6E64 
+ 1197               	.LC15:
+ 1198 00aa 4172 6731 		.string	"Arg1:%d  Arg2:%d\n\r"
+ 1198      3A25 6420 
+ 1198      2041 7267 
+ 1198      323A 2564 
+ 1198      0A0D 00
+ 1199               		.text
+ 1201               	.global	printTempCommand
+ 1203               	printTempCommand:
+ 1204               		.stabd	46,0,0
+ 1206               	.LM85:
+ 1207               	.LFBB14:
+ 1208               	/* prologue: frame size=0 */
+ 1209 04c2 AF92      		push r10
+ 1210 04c4 BF92      		push r11
+ 1211 04c6 CF92      		push r12
+ 1212 04c8 DF92      		push r13
+ 1213 04ca EF92      		push r14
+ 1214 04cc FF92      		push r15
+ 1215 04ce 0F93      		push r16
+ 1216 04d0 1F93      		push r17
+ 1217               	/* prologue end (size=8) */
+ 1219               	.LM86:
+ 1220 04d2 80E0      		ldi r24,lo8(0)
+ 1221 04d4 0E94 0000 		call emberUnsignedCommandArgument
+ 1222 04d8 7B01      		movw r14,r22
+ 1223 04da 8C01      		movw r16,r24
+ 1225               	.LM87:
+ 1226 04dc 81E0      		ldi r24,lo8(1)
+ 1227 04de 0E94 0000 		call emberUnsignedCommandArgument
+ 1228 04e2 5B01      		movw r10,r22
+ 1229 04e4 6C01      		movw r12,r24
+ 1231               	.LM88:
+ 1232 04e6 80E0      		ldi r24,lo8(.LC14)
+ 1233 04e8 90E0      		ldi r25,hi8(.LC14)
+ 1234 04ea 0E94 0000 		call puts
+ 1236               	.LM89:
+ 1237 04ee BB24      		clr r11
+ 1238 04f0 BF92      		push r11
+ 1239 04f2 AF92      		push r10
+ 1240 04f4 FF24      		clr r15
+ 1241 04f6 FF92      		push r15
+ 1242 04f8 EF92      		push r14
+ 1243 04fa 80E0      		ldi r24,lo8(.LC15)
+ 1244 04fc 90E0      		ldi r25,hi8(.LC15)
+ 1245 04fe 9F93      		push r25
+ 1246 0500 8F93      		push r24
+ 1247 0502 0E94 0000 		call printf
+ 1248 0506 8DB7      		in r24,__SP_L__
+ 1249 0508 9EB7      		in r25,__SP_H__
+ 1250 050a 0696      		adiw r24,6
+ 1251 050c 0FB6      		in __tmp_reg__,__SREG__
+ 1252 050e F894      		cli
+ 1253 0510 9EBF      		out __SP_H__,r25
+ 1254 0512 0FBE      		out __SREG__,__tmp_reg__
+ 1255 0514 8DBF      		out __SP_L__,r24
+ 1256               	/* epilogue: frame size=0 */
+ 1257 0516 1F91      		pop r17
+ 1258 0518 0F91      		pop r16
+ 1259 051a FF90      		pop r15
+ 1260 051c EF90      		pop r14
+ 1261 051e DF90      		pop r13
+ 1262 0520 CF90      		pop r12
+ 1263 0522 BF90      		pop r11
+ 1264 0524 AF90      		pop r10
+ 1265 0526 0895      		ret
+ 1266               	/* epilogue end (size=9) */
+ 1267               	/* function printTempCommand size 51 (34) */
+ 1269               	.Lscope14:
+ 1271               		.stabd	78,0,0
+ 1277               	.global	emberCopyStringArgument
+ 1279               	emberCopyStringArgument:
+ 1280               		.stabd	46,0,0
+ 1282               	.LM90:
+ 1283               	.LFBB15:
+ 1284               	/* prologue: frame size=1 */
+ 1285 0528 CF92      		push r12
+ 1286 052a DF92      		push r13
+ 1287 052c EF92      		push r14
+ 1288 052e FF92      		push r15
+ 1289 0530 0F93      		push r16
+ 1290 0532 1F93      		push r17
+ 1291 0534 CF93      		push r28
+ 1292 0536 DF93      		push r29
+ 1293 0538 CDB7      		in r28,__SP_L__
+ 1294 053a DEB7      		in r29,__SP_H__
+ 1295 053c 2197      		sbiw r28,1
+ 1296 053e 0FB6      		in __tmp_reg__,__SREG__
+ 1297 0540 F894      		cli
+ 1298 0542 DEBF      		out __SP_H__,r29
+ 1299 0544 0FBE      		out __SREG__,__tmp_reg__
+ 1300 0546 CDBF      		out __SP_L__,r28
+ 1301               	/* prologue end (size=16) */
+ 1302 0548 7B01      		movw r14,r22
+ 1303 054a 042F      		mov r16,r20
+ 1304 054c 122F      		mov r17,r18
+ 1306               	.LM91:
+ 1307 054e BE01      		movw r22,r28
+ 1308 0550 6F5F      		subi r22,lo8(-(1))
+ 1309 0552 7F4F      		sbci r23,hi8(-(1))
+ 1310 0554 0E94 0000 		call emberStringCommandArgument
+ 1311 0558 6C01      		movw r12,r24
+ 1313               	.LM92:
+ 1314 055a 8981      		ldd r24,Y+1
+ 1315 055c 0817      		cp r16,r24
+ 1316 055e 00F4      		brsh .L99
+ 1318               	.LM93:
+ 1319 0560 0983      		std Y+1,r16
+ 1320               	.L99:
+ 1322               	.LM94:
+ 1323 0562 1123      		tst r17
+ 1324 0564 01F4      		brne .L101
+ 1325 0566 00E0      		ldi r16,lo8(0)
+ 1326 0568 00C0      		rjmp .L103
+ 1327               	.L101:
+ 1328 056a 8981      		ldd r24,Y+1
+ 1329 056c 081B      		sub r16,r24
+ 1330               	.L103:
+ 1332               	.LM95:
+ 1333 056e 1127      		clr r17
+ 1334 0570 A801      		movw r20,r16
+ 1335 0572 60E0      		ldi r22,lo8(0)
+ 1336 0574 70E0      		ldi r23,hi8(0)
+ 1337 0576 C701      		movw r24,r14
+ 1338 0578 0E94 0000 		call memset
+ 1340               	.LM96:
+ 1341 057c 4981      		ldd r20,Y+1
+ 1342 057e 5527      		clr r21
+ 1343 0580 B601      		movw r22,r12
+ 1344 0582 C701      		movw r24,r14
+ 1345 0584 800F      		add r24,r16
+ 1346 0586 911F      		adc r25,r17
+ 1347 0588 0E94 0000 		call memcpy
+ 1348 058c 8981      		ldd r24,Y+1
+ 1350               	.LM97:
+ 1351 058e 9927      		clr r25
+ 1352               	/* epilogue: frame size=1 */
+ 1353 0590 2196      		adiw r28,1
+ 1354 0592 0FB6      		in __tmp_reg__,__SREG__
+ 1355 0594 F894      		cli
+ 1356 0596 DEBF      		out __SP_H__,r29
+ 1357 0598 0FBE      		out __SREG__,__tmp_reg__
+ 1358 059a CDBF      		out __SP_L__,r28
+ 1359 059c DF91      		pop r29
+ 1360 059e CF91      		pop r28
+ 1361 05a0 1F91      		pop r17
+ 1362 05a2 0F91      		pop r16
+ 1363 05a4 FF90      		pop r15
+ 1364 05a6 EF90      		pop r14
+ 1365 05a8 DF90      		pop r13
+ 1366 05aa CF90      		pop r12
+ 1367 05ac 0895      		ret
+ 1368               	/* epilogue end (size=15) */
+ 1369               	/* function emberCopyStringArgument size 67 (36) */
+ 1376               	.Lscope15:
+ 1378               		.stabd	78,0,0
+ 1382               	.global	emberSerialWriteData
+ 1384               	emberSerialWriteData:
+ 1385               		.stabd	46,0,0
+ 1387               	.LM98:
+ 1388               	.LFBB16:
+ 1389               	/* prologue: frame size=0 */
+ 1390 05ae 1F93      		push r17
+ 1391 05b0 CF93      		push r28
+ 1392 05b2 DF93      		push r29
+ 1393               	/* prologue end (size=3) */
+ 1394 05b4 EC01      		movw r28,r24
+ 1395 05b6 162F      		mov r17,r22
+ 1396 05b8 00C0      		rjmp .L107
+ 1397               	.L108:
+ 1399               	.LM99:
+ 1400 05ba 6091 0000 		lds r22,__iob+2
+ 1401 05be 7091 0000 		lds r23,(__iob+2)+1
+ 1402 05c2 8991      		ld r24,Y+
+ 1403 05c4 9927      		clr r25
+ 1404 05c6 0E94 0000 		call fputc
+ 1405               	.L107:
+ 1407               	.LM100:
+ 1408 05ca 1150      		subi r17,1
+ 1409 05cc 00F4      		brcc .L108
+ 1411               	.LM101:
+ 1412 05ce 80E0      		ldi r24,lo8(0)
+ 1413 05d0 90E0      		ldi r25,hi8(0)
+ 1414               	/* epilogue: frame size=0 */
+ 1415 05d2 DF91      		pop r29
+ 1416 05d4 CF91      		pop r28
+ 1417 05d6 1F91      		pop r17
+ 1418 05d8 0895      		ret
+ 1419               	/* epilogue end (size=4) */
+ 1420               	/* function emberSerialWriteData size 23 (16) */
+ 1422               	.Lscope16:
+ 1424               		.stabd	78,0,0
+ 1427               	callCommandAction:
+ 1428               		.stabd	46,0,0
+ 1430               	.LM102:
+ 1431               	.LFBB17:
+ 1432               	/* prologue: frame size=2 */
+ 1433 05da 4F92      		push r4
+ 1434 05dc 5F92      		push r5
+ 1435 05de 6F92      		push r6
+ 1436 05e0 7F92      		push r7
+ 1437 05e2 8F92      		push r8
+ 1438 05e4 9F92      		push r9
+ 1439 05e6 AF92      		push r10
+ 1440 05e8 BF92      		push r11
+ 1441 05ea CF92      		push r12
+ 1442 05ec DF92      		push r13
+ 1443 05ee EF92      		push r14
+ 1444 05f0 FF92      		push r15
+ 1445 05f2 0F93      		push r16
+ 1446 05f4 1F93      		push r17
+ 1447 05f6 CF93      		push r28
+ 1448 05f8 DF93      		push r29
+ 1449 05fa CDB7      		in r28,__SP_L__
+ 1450 05fc DEB7      		in r29,__SP_H__
+ 1451 05fe 2297      		sbiw r28,2
+ 1452 0600 0FB6      		in __tmp_reg__,__SREG__
+ 1453 0602 F894      		cli
+ 1454 0604 DEBF      		out __SP_H__,r29
+ 1455 0606 0FBE      		out __SREG__,__tmp_reg__
+ 1456 0608 CDBF      		out __SP_L__,r28
+ 1457               	/* prologue end (size=24) */
+ 1459               	.LM103:
+ 1460 060a 80E0      		ldi r24,lo8(emberCommandTable)
+ 1461 060c 90E0      		ldi r25,hi8(emberCommandTable)
+ 1462 060e 9A83      		std Y+2,r25
+ 1463 0610 8983      		std Y+1,r24
+ 1465               	.LM104:
+ 1466 0612 8091 0000 		lds r24,commandState+113
+ 1467 0616 8823      		tst r24
+ 1468 0618 01F4      		brne .+2
+ 1469 061a 00C0      		rjmp .L112
+ 1471               	.LM105:
+ 1472 061c 8091 0000 		lds r24,emberCommandInterpreter2Configuration
+ 1473 0620 80FF      		sbrs r24,0
+ 1474 0622 00C0      		rjmp .L114
+ 1475 0624 00E0      		ldi r16,lo8(0)
+ 1476 0626 10E0      		ldi r17,hi8(0)
+ 1477 0628 00C0      		rjmp .L116
+ 1478               	.L117:
+ 1479               	.LBB69:
+ 1480               	.LBB70:
+ 1481               	.LBB71:
+ 1482               	.LBB72:
+ 1483               	.LBB73:
+ 1485               	.LM106:
+ 1486 062a E92F      		mov r30,r25
+ 1487 062c FF27      		clr r31
+ 1488               	.LBE73:
+ 1489               	.LBE72:
+ 1491               	.LM107:
+ 1492 062e E050      		subi r30,lo8(-(commandState))
+ 1493 0630 F040      		sbci r31,hi8(-(commandState))
+ 1494 0632 DF01      		movw r26,r30
+ 1495 0634 AB59      		subi r26,lo8(-(101))
+ 1496 0636 BF4F      		sbci r27,hi8(-(101))
+ 1497 0638 EA59      		subi r30,lo8(-(102))
+ 1498 063a FF4F      		sbci r31,hi8(-(102))
+ 1499 063c 6081      		ld r22,Z
+ 1500 063e 8C91      		ld r24,X
+ 1501 0640 681B      		sub r22,r24
+ 1502 0642 E92F      		mov r30,r25
+ 1503 0644 FF27      		clr r31
+ 1504 0646 E7FD      		sbrc r30,7
+ 1505 0648 F095      		com r31
+ 1506 064a E050      		subi r30,lo8(-(commandState+101))
+ 1507 064c F040      		sbci r31,hi8(-(commandState+101))
+ 1508 064e 8081      		ld r24,Z
+ 1509 0650 9927      		clr r25
+ 1510 0652 8050      		subi r24,lo8(-(commandState+1))
+ 1511 0654 9040      		sbci r25,hi8(-(commandState+1))
+ 1512 0656 0E94 0000 		call emberSerialWriteData
+ 1514               	.LM108:
+ 1515 065a 80E2      		ldi r24,lo8(32)
+ 1516 065c 90E0      		ldi r25,hi8(32)
+ 1517 065e 0E94 0000 		call putchar
+ 1518 0662 0F5F      		subi r16,lo8(-(1))
+ 1519 0664 1F4F      		sbci r17,hi8(-(1))
+ 1520               	.L116:
+ 1521 0666 902F      		mov r25,r16
+ 1522               	.LBE71:
+ 1524               	.LM109:
+ 1525 0668 8091 0000 		lds r24,commandState+113
+ 1526 066c 0817      		cp r16,r24
+ 1527 066e 00F0      		brlo .L117
+ 1529               	.LM110:
+ 1530 0670 80E0      		ldi r24,lo8(.LC11)
+ 1531 0672 90E0      		ldi r25,hi8(.LC11)
+ 1532 0674 0E94 0000 		call puts
+ 1533               	.L114:
+ 1534 0678 8824      		clr r8
+ 1535 067a 9924      		clr r9
+ 1536               	.LBE70:
+ 1537               	.LBE69:
+ 1539               	.LM111:
+ 1540 067c 2E01      		movw r4,r28
+ 1541 067e 0894      		sec
+ 1542 0680 411C      		adc r4,__zero_reg__
+ 1543 0682 511C      		adc r5,__zero_reg__
+ 1544               	.L119:
+ 1545               	.LBB75:
+ 1546               	.LBB74:
+ 1548               	.LM112:
+ 1549 0684 B82C      		mov r11,r8
+ 1550               	.LBE74:
+ 1551               	.LBE75:
+ 1553               	.LM113:
+ 1554 0686 4981      		ldd r20,Y+1
+ 1555 0688 5A81      		ldd r21,Y+2
+ 1556               	.LBB76:
+ 1557               	.LBB77:
+ 1558               	.LBB78:
+ 1559               	.LBB79:
+ 1561               	.LM114:
+ 1562 068a E82D      		mov r30,r8
+ 1563 068c FF27      		clr r31
+ 1564 068e E7FD      		sbrc r30,7
+ 1565 0690 F095      		com r31
+ 1566 0692 E050      		subi r30,lo8(-(commandState+101))
+ 1567 0694 F040      		sbci r31,hi8(-(commandState+101))
+ 1568 0696 8081      		ld r24,Z
+ 1569 0698 082F      		mov r16,r24
+ 1570 069a 1127      		clr r17
+ 1571 069c 0050      		subi r16,lo8(-(commandState+1))
+ 1572 069e 1040      		sbci r17,hi8(-(commandState+1))
+ 1573               	.LBE79:
+ 1574               	.LBE78:
+ 1575               	.LBB80:
+ 1576               	.LBB81:
+ 1578               	.LM115:
+ 1579 06a0 E82D      		mov r30,r8
+ 1580 06a2 FF27      		clr r31
+ 1581 06a4 E050      		subi r30,lo8(-(commandState))
+ 1582 06a6 F040      		sbci r31,hi8(-(commandState))
+ 1583 06a8 DF01      		movw r26,r30
+ 1584 06aa AB59      		subi r26,lo8(-(101))
+ 1585 06ac BF4F      		sbci r27,hi8(-(101))
+ 1586 06ae EA59      		subi r30,lo8(-(102))
+ 1587 06b0 FF4F      		sbci r31,hi8(-(102))
+ 1588 06b2 9081      		ld r25,Z
+ 1589 06b4 8C91      		ld r24,X
+ 1590 06b6 981B      		sub r25,r24
+ 1591 06b8 EE24      		clr r14
+ 1592 06ba FF24      		clr r15
+ 1593 06bc AA24      		clr r10
+ 1594               	.LBE81:
+ 1595               	.LBE80:
+ 1596               	.LBB83:
+ 1597               	.LBB84:
+ 1599               	.LM116:
+ 1600 06be 692E      		mov r6,r25
+ 1601 06c0 7724      		clr r7
+ 1602 06c2 00C0      		rjmp .L120
+ 1603               	.L121:
+ 1604               	.LBE84:
+ 1605               	.LBE83:
+ 1606               	.LBB90:
+ 1607               	.LBB82:
+ 1609               	.LM117:
+ 1610 06c4 D801      		movw r26,r16
+ 1611 06c6 F901      		movw r30,r18
+ 1612               	.LBE82:
+ 1613               	.LBE90:
+ 1614               	.LBB91:
+ 1615               	.LBB89:
+ 1617               	.LM118:
+ 1618 06c8 6301      		movw r12,r6
+ 1619 06ca C20E      		add r12,r18
+ 1620 06cc D31E      		adc r13,r19
+ 1621               	.L122:
+ 1623               	.LM119:
+ 1624 06ce 3081      		ld r19,Z
+ 1625 06d0 80E0      		ldi r24,lo8(0)
+ 1626 06d2 3323      		tst r19
+ 1627 06d4 01F4      		brne .L123
+ 1628 06d6 81E0      		ldi r24,lo8(1)
+ 1629               	.L123:
+ 1631               	.LM120:
+ 1632 06d8 EC15      		cp r30,r12
+ 1633 06da FD05      		cpc r31,r13
+ 1634 06dc 01F4      		brne .L124
+ 1635 06de 8823      		tst r24
+ 1636 06e0 01F0      		breq .L126
+ 1637 06e2 00C0      		rjmp .L127
+ 1638               	.L124:
+ 1640               	.LM121:
+ 1641 06e4 8823      		tst r24
+ 1642 06e6 01F0      		breq .L128
+ 1643               	.L126:
+ 1645               	.LM122:
+ 1646 06e8 E114      		cp r14,__zero_reg__
+ 1647 06ea F104      		cpc r15,__zero_reg__
+ 1648 06ec 01F4      		brne .L129
+ 1649 06ee 7A01      		movw r14,r20
+ 1650 06f0 00C0      		rjmp .L131
+ 1651               	.L128:
+ 1653               	.LM123:
+ 1654 06f2 2C91      		ld r18,X
+ 1655               	.LBB85:
+ 1656               	.LBB86:
+ 1658               	.LM124:
+ 1659 06f4 822F      		mov r24,r18
+ 1660 06f6 8154      		subi r24,lo8(-(-65))
+ 1661 06f8 8A31      		cpi r24,lo8(26)
+ 1662 06fa 00F4      		brsh .L132
+ 1664               	.LM125:
+ 1665 06fc 205E      		subi r18,lo8(-(32))
+ 1666               	.L132:
+ 1668               	.LM126:
+ 1669 06fe 622F      		mov r22,r18
+ 1670 0700 7727      		clr r23
+ 1671               	.LBE86:
+ 1672               	.LBE85:
+ 1673               	.LBB87:
+ 1674               	.LBB88:
+ 1676               	.LM127:
+ 1677 0702 832F      		mov r24,r19
+ 1678 0704 8154      		subi r24,lo8(-(-65))
+ 1679 0706 8A31      		cpi r24,lo8(26)
+ 1680 0708 00F4      		brsh .L135
+ 1682               	.LM128:
+ 1683 070a 305E      		subi r19,lo8(-(32))
+ 1684               	.L135:
+ 1686               	.LM129:
+ 1687 070c 232F      		mov r18,r19
+ 1688 070e 3327      		clr r19
+ 1689               	.LBE88:
+ 1690               	.LBE87:
+ 1692               	.LM130:
+ 1693 0710 6217      		cp r22,r18
+ 1694 0712 01F4      		brne .L131
+ 1695               	.LBE89:
+ 1697               	.LM131:
+ 1698 0714 3196      		adiw r30,1
+ 1699 0716 1196      		adiw r26,1
+ 1700 0718 00C0      		rjmp .L122
+ 1701               	.L129:
+ 1702 071a AA24      		clr r10
+ 1703 071c A394      		inc r10
+ 1704               	.L131:
+ 1705               	.LBE91:
+ 1707               	.LM132:
+ 1708 071e 485F      		subi r20,lo8(-(8))
+ 1709 0720 5F4F      		sbci r21,hi8(-(8))
+ 1710               	.L120:
+ 1711 0722 FA01      		movw r30,r20
+ 1712 0724 2081      		ld r18,Z
+ 1713 0726 3181      		ldd r19,Z+1
+ 1714 0728 2115      		cp r18,__zero_reg__
+ 1715 072a 3105      		cpc r19,__zero_reg__
+ 1716 072c 01F4      		brne .L121
+ 1718               	.LM133:
+ 1719 072e AA20      		tst r10
+ 1720 0730 01F0      		breq .L140
+ 1721 0732 EE24      		clr r14
+ 1722 0734 FF24      		clr r15
+ 1723               	.L140:
+ 1724 0736 A701      		movw r20,r14
+ 1725               	.L127:
+ 1726               	.LBE77:
+ 1727               	.LBE76:
+ 1729               	.LM134:
+ 1730 0738 5A83      		std Y+2,r21
+ 1731 073a 4983      		std Y+1,r20
+ 1733               	.LM135:
+ 1734 073c 4115      		cp r20,__zero_reg__
+ 1735 073e 5105      		cpc r21,__zero_reg__
+ 1736 0740 01F4      		brne .L142
+ 1738               	.LM136:
+ 1739 0742 82E0      		ldi r24,lo8(2)
+ 1740 0744 00C0      		rjmp .L178
+ 1741               	.L142:
+ 1743               	.LM137:
+ 1744 0746 5093 0000 		sts (emberCurrentCommand)+1,r21
+ 1745 074a 4093 0000 		sts emberCurrentCommand,r20
+ 1746 074e 7B2C      		mov r7,r11
+ 1747 0750 7394      		inc r7
+ 1749               	.LM138:
+ 1750 0752 8091 0000 		lds r24,commandState+117
+ 1751 0756 8F5F      		subi r24,lo8(-(1))
+ 1752 0758 8093 0000 		sts commandState+117,r24
+ 1754               	.LM139:
+ 1755 075c B201      		movw r22,r4
+ 1756 075e CA01      		movw r24,r20
+ 1757 0760 0E94 0000 		call getNestedCommand
+ 1758 0764 8823      		tst r24
+ 1759 0766 01F0      		breq .L145
+ 1761               	.LM140:
+ 1762 0768 0894      		sec
+ 1763 076a 811C      		adc r8,__zero_reg__
+ 1764 076c 911C      		adc r9,__zero_reg__
+ 1766               	.LM141:
+ 1767 076e 8091 0000 		lds r24,commandState+113
+ 1768 0772 7816      		cp r7,r24
+ 1769 0774 00F4      		brsh .+2
+ 1770 0776 00C0      		rjmp .L119
+ 1771 0778 00C0      		rjmp .L179
+ 1772               	.L145:
+ 1774               	.LM142:
+ 1775 077a E981      		ldd r30,Y+1
+ 1776 077c FA81      		ldd r31,Y+2
+ 1777 077e 0480      		ldd __tmp_reg__,Z+4
+ 1778 0780 F581      		ldd r31,Z+5
+ 1779 0782 E02D      		mov r30,__tmp_reg__
+ 1780 0784 8081      		ld r24,Z
+ 1781 0786 8F33      		cpi r24,lo8(63)
+ 1782 0788 01F4      		brne .+2
+ 1783 078a 00C0      		rjmp .L144
+ 1785               	.LM143:
+ 1786 078c 9924      		clr r9
+ 1787 078e AA24      		clr r10
+ 1788 0790 BB24      		clr r11
+ 1789 0792 00C0      		rjmp .L149
+ 1790               	.L150:
+ 1791               	.LBB92:
+ 1793               	.LM144:
+ 1794 0794 0480      		ldd __tmp_reg__,Z+4
+ 1795 0796 F581      		ldd r31,Z+5
+ 1796 0798 E02D      		mov r30,__tmp_reg__
+ 1797 079a EC0D      		add r30,r12
+ 1798 079c FD1D      		adc r31,r13
+ 1799 079e 9081      		ld r25,Z
+ 1800               	.LBB93:
+ 1801               	.LBB94:
+ 1803               	.LM145:
+ 1804 07a0 E091 0000 		lds r30,commandState+117
+ 1805 07a4 E20F      		add r30,r18
+ 1806 07a6 FF27      		clr r31
+ 1807 07a8 E050      		subi r30,lo8(-(commandState+101))
+ 1808 07aa F040      		sbci r31,hi8(-(commandState+101))
+ 1809 07ac E081      		ld r30,Z
+ 1810 07ae FF27      		clr r31
+ 1811 07b0 E050      		subi r30,lo8(-(commandState))
+ 1812 07b2 F040      		sbci r31,hi8(-(commandState))
+ 1813 07b4 8181      		ldd r24,Z+1
+ 1814               	.LBE94:
+ 1815               	.LBE93:
+ 1817               	.LM146:
+ 1818 07b6 9337      		cpi r25,lo8(115)
+ 1819 07b8 01F0      		breq .L154
+ 1820 07ba 9437      		cpi r25,lo8(116)
+ 1821 07bc 00F4      		brsh .L155
+ 1822 07be 9923      		tst r25
+ 1823 07c0 01F0      		breq .L152
+ 1824 07c2 9236      		cpi r25,lo8(98)
+ 1825 07c4 01F4      		brne .L151
+ 1826 07c6 00C0      		rjmp .L153
+ 1827               	.L155:
+ 1828 07c8 892F      		mov r24,r25
+ 1829 07ca 8557      		subi r24,lo8(-(-117))
+ 1830 07cc 8330      		cpi r24,lo8(3)
+ 1831 07ce 00F4      		brsh .L151
+ 1832               	.L154:
+ 1833               	.LBB95:
+ 1835               	.LM147:
+ 1836 07d0 9537      		cpi r25,lo8(117)
+ 1837 07d2 01F4      		brne .L156
+ 1838 07d4 8FEF      		ldi r24,lo8(255)
+ 1839 07d6 E82E      		mov r14,r24
+ 1840 07d8 F12C      		mov r15,__zero_reg__
+ 1841 07da 012D      		mov r16,__zero_reg__
+ 1842 07dc 112D      		mov r17,__zero_reg__
+ 1843 07de 00C0      		rjmp .L158
+ 1844               	.L156:
+ 1845 07e0 9637      		cpi r25,lo8(118)
+ 1846 07e2 01F4      		brne .L159
+ 1847 07e4 0FEF      		ldi r16,lo8(65535)
+ 1848 07e6 E02E      		mov r14,r16
+ 1849 07e8 0FEF      		ldi r16,hi8(65535)
+ 1850 07ea F02E      		mov r15,r16
+ 1851 07ec 012D      		mov r16,__zero_reg__
+ 1852 07ee 112D      		mov r17,__zero_reg__
+ 1853 07f0 00C0      		rjmp .L158
+ 1854               	.L159:
+ 1855 07f2 9337      		cpi r25,lo8(115)
+ 1856 07f4 01F4      		brne .L161
+ 1857 07f6 1FE7      		ldi r17,lo8(127)
+ 1858 07f8 E12E      		mov r14,r17
+ 1859 07fa F12C      		mov r15,__zero_reg__
+ 1860 07fc 012D      		mov r16,__zero_reg__
+ 1861 07fe 112D      		mov r17,__zero_reg__
+ 1862 0800 00C0      		rjmp .L158
+ 1863               	.L161:
+ 1864 0802 EE24      		clr r14
+ 1865 0804 EA94      		dec r14
+ 1866 0806 FE2C      		mov r15,r14
+ 1867 0808 8701      		movw r16,r14
+ 1868               	.L158:
+ 1870               	.LM148:
+ 1871 080a 61E0      		ldi r22,lo8(1)
+ 1872 080c 822F      		mov r24,r18
+ 1873 080e 0E94 0000 		call stringToUnsignedInt
+ 1874 0812 E616      		cp r14,r22
+ 1875 0814 F706      		cpc r15,r23
+ 1876 0816 0807      		cpc r16,r24
+ 1877 0818 1907      		cpc r17,r25
+ 1878 081a 00F4      		brsh .L163
+ 1880               	.LM149:
+ 1881 081c 84E0      		ldi r24,lo8(4)
+ 1882 081e 00C0      		rjmp .L177
+ 1883               	.L153:
+ 1884               	.LBE95:
+ 1886               	.LM150:
+ 1887 0820 8232      		cpi r24,lo8(34)
+ 1888 0822 01F0      		breq .L163
+ 1889 0824 8B37      		cpi r24,lo8(123)
+ 1890 0826 01F0      		breq .L163
+ 1892               	.LM151:
+ 1893 0828 85E0      		ldi r24,lo8(5)
+ 1894 082a 00C0      		rjmp .L177
+ 1895               	.L152:
+ 1897               	.LM152:
+ 1898 082c 83E0      		ldi r24,lo8(3)
+ 1899 082e 00C0      		rjmp .L177
+ 1900               	.L151:
+ 1902               	.LM153:
+ 1903 0830 87E0      		ldi r24,lo8(7)
+ 1904               	.L177:
+ 1905 0832 8093 0000 		sts commandState+115,r24
+ 1906               	.L163:
+ 1908               	.LM154:
+ 1909 0836 E981      		ldd r30,Y+1
+ 1910 0838 FA81      		ldd r31,Y+2
+ 1911 083a 8481      		ldd r24,Z+4
+ 1912 083c 9581      		ldd r25,Z+5
+ 1913 083e C80E      		add r12,r24
+ 1914 0840 D91E      		adc r13,r25
+ 1915 0842 F601      		movw r30,r12
+ 1916 0844 8181      		ldd r24,Z+1
+ 1917 0846 8A32      		cpi r24,lo8(42)
+ 1918 0848 01F0      		breq .L167
+ 1920               	.LM155:
+ 1921 084a 9394      		inc r9
+ 1922               	.L167:
+ 1923 084c 0894      		sec
+ 1924 084e A11C      		adc r10,__zero_reg__
+ 1925 0850 B11C      		adc r11,__zero_reg__
+ 1927               	.LM156:
+ 1928 0852 8091 0000 		lds r24,commandState+115
+ 1929 0856 8823      		tst r24
+ 1930 0858 01F4      		brne .L144
+ 1931               	.L149:
+ 1933               	.LM157:
+ 1934 085a 2A2D      		mov r18,r10
+ 1935               	.LBE92:
+ 1937               	.LM158:
+ 1938 085c 9A2D      		mov r25,r10
+ 1939 085e 970D      		add r25,r7
+ 1940 0860 8091 0000 		lds r24,commandState+113
+ 1941 0864 E981      		ldd r30,Y+1
+ 1942 0866 FA81      		ldd r31,Y+2
+ 1943 0868 C92C      		mov r12,r9
+ 1944 086a DD24      		clr r13
+ 1945 086c 9817      		cp r25,r24
+ 1946 086e 00F4      		brsh .+2
+ 1947 0870 00C0      		rjmp .L150
+ 1949               	.LM159:
+ 1950 0872 0480      		ldd __tmp_reg__,Z+4
+ 1951 0874 F581      		ldd r31,Z+5
+ 1952 0876 E02D      		mov r30,__tmp_reg__
+ 1953 0878 EC0D      		add r30,r12
+ 1954 087a FD1D      		adc r31,r13
+ 1955 087c 8081      		ld r24,Z
+ 1956 087e 8823      		tst r24
+ 1957 0880 01F0      		breq .L144
+ 1958 0882 8181      		ldd r24,Z+1
+ 1959 0884 8A32      		cpi r24,lo8(42)
+ 1960 0886 01F0      		breq .L144
+ 1961               	.L179:
+ 1963               	.LM160:
+ 1964 0888 83E0      		ldi r24,lo8(3)
+ 1965               	.L178:
+ 1966 088a 8093 0000 		sts commandState+115,r24
+ 1967               	.L144:
+ 1969               	.LM161:
+ 1970 088e 8091 0000 		lds r24,commandState+115
+ 1971 0892 8823      		tst r24
+ 1972 0894 01F4      		brne .L172
+ 1974               	.LM162:
+ 1975 0896 E981      		ldd r30,Y+1
+ 1976 0898 FA81      		ldd r31,Y+2
+ 1977 089a 0280      		ldd __tmp_reg__,Z+2
+ 1978 089c F381      		ldd r31,Z+3
+ 1979 089e E02D      		mov r30,__tmp_reg__
+ 1980 08a0 0995      		icall
+ 1981 08a2 00C0      		rjmp .L112
+ 1982               	.L172:
+ 1984               	.LM163:
+ 1985 08a4 0E94 0000 		call emberCommandErrorHandler
+ 1986               	.L112:
+ 1988               	.LM164:
+ 1989 08a8 0E94 0000 		call emberCommandReaderInit
+ 1990               	/* epilogue: frame size=2 */
+ 1991 08ac 2296      		adiw r28,2
+ 1992 08ae 0FB6      		in __tmp_reg__,__SREG__
+ 1993 08b0 F894      		cli
+ 1994 08b2 DEBF      		out __SP_H__,r29
+ 1995 08b4 0FBE      		out __SREG__,__tmp_reg__
+ 1996 08b6 CDBF      		out __SP_L__,r28
+ 1997 08b8 DF91      		pop r29
+ 1998 08ba CF91      		pop r28
+ 1999 08bc 1F91      		pop r17
+ 2000 08be 0F91      		pop r16
+ 2001 08c0 FF90      		pop r15
+ 2002 08c2 EF90      		pop r14
+ 2003 08c4 DF90      		pop r13
+ 2004 08c6 CF90      		pop r12
+ 2005 08c8 BF90      		pop r11
+ 2006 08ca AF90      		pop r10
+ 2007 08cc 9F90      		pop r9
+ 2008 08ce 8F90      		pop r8
+ 2009 08d0 7F90      		pop r7
+ 2010 08d2 6F90      		pop r6
+ 2011 08d4 5F90      		pop r5
+ 2012 08d6 4F90      		pop r4
+ 2013 08d8 0895      		ret
+ 2014               	/* epilogue end (size=23) */
+ 2015               	/* function callCommandAction size 384 (337) */
+ 2050               	.Lscope17:
+ 2052               		.stabd	78,0,0
+ 2055               	.global	emberSerialReadByte
+ 2057               	emberSerialReadByte:
+ 2058               		.stabd	46,0,0
+ 2060               	.LM165:
+ 2061               	.LFBB18:
+ 2062               	/* prologue: frame size=0 */
+ 2063 08da CF93      		push r28
+ 2064 08dc DF93      		push r29
+ 2065               	/* prologue end (size=2) */
+ 2066 08de EC01      		movw r28,r24
+ 2068               	.LM166:
+ 2069 08e0 81E0      		ldi r24,lo8(1)
+ 2070 08e2 0E94 0000 		call nrk_uart_data_ready
+ 2071 08e6 8823      		tst r24
+ 2072 08e8 01F0      		breq .L181
+ 2074               	.LM167:
+ 2075 08ea 8091 0000 		lds r24,__iob
+ 2076 08ee 9091 0000 		lds r25,(__iob)+1
+ 2077 08f2 0E94 0000 		call fgetc
+ 2079               	.LM168:
+ 2080 08f6 87FD      		sbrc r24,7
+ 2081 08f8 00C0      		rjmp .L181
+ 2083               	.LM169:
+ 2084 08fa 8883      		st Y,r24
+ 2085 08fc 80E0      		ldi r24,lo8(0)
+ 2086 08fe 90E0      		ldi r25,hi8(0)
+ 2087 0900 00C0      		rjmp .L184
+ 2088               	.L181:
+ 2090               	.LM170:
+ 2091 0902 86E2      		ldi r24,lo8(38)
+ 2092 0904 90E0      		ldi r25,hi8(38)
+ 2093               	.L184:
+ 2094               	/* epilogue: frame size=0 */
+ 2095 0906 DF91      		pop r29
+ 2096 0908 CF91      		pop r28
+ 2097 090a 0895      		ret
+ 2098               	/* epilogue end (size=3) */
+ 2099               	/* function emberSerialReadByte size 25 (20) */
+ 2101               	.Lscope18:
+ 2103               		.stabd	78,0,0
+ 2107               	.global	emberProcessCommandString
+ 2109               	emberProcessCommandString:
+ 2110               		.stabd	46,0,0
+ 2112               	.LM171:
+ 2113               	.LFBB19:
+ 2114               	/* prologue: frame size=1 */
+ 2115 090c 8F92      		push r8
+ 2116 090e 9F92      		push r9
+ 2117 0910 BF92      		push r11
+ 2118 0912 CF92      		push r12
+ 2119 0914 DF92      		push r13
+ 2120 0916 EF92      		push r14
+ 2121 0918 FF92      		push r15
+ 2122 091a 0F93      		push r16
+ 2123 091c 1F93      		push r17
+ 2124 091e CF93      		push r28
+ 2125 0920 DF93      		push r29
+ 2126 0922 CDB7      		in r28,__SP_L__
+ 2127 0924 DEB7      		in r29,__SP_H__
+ 2128 0926 2197      		sbiw r28,1
+ 2129 0928 0FB6      		in __tmp_reg__,__SREG__
+ 2130 092a F894      		cli
+ 2131 092c DEBF      		out __SP_H__,r29
+ 2132 092e 0FBE      		out __SREG__,__tmp_reg__
+ 2133 0930 CDBF      		out __SP_L__,r28
+ 2134               	/* prologue end (size=19) */
+ 2135 0932 6C01      		movw r12,r24
+ 2136 0934 E62E      		mov r14,r22
+ 2137 0936 BB24      		clr r11
+ 2138               	.LBB101:
+ 2140               	.LM172:
+ 2141 0938 4E01      		movw r8,r28
+ 2142 093a 0894      		sec
+ 2143 093c 811C      		adc r8,__zero_reg__
+ 2144 093e 911C      		adc r9,__zero_reg__
+ 2145               	.L256:
+ 2147               	.LM173:
+ 2148 0940 C114      		cp r12,__zero_reg__
+ 2149 0942 D104      		cpc r13,__zero_reg__
+ 2150 0944 01F4      		brne .L188
+ 2152               	.LM174:
+ 2153 0946 C401      		movw r24,r8
+ 2154 0948 0E94 0000 		call emberSerialReadByte
+ 2155 094c 8823      		tst r24
+ 2156 094e 01F0      		breq .L191
+ 2157 0950 8632      		cpi r24,lo8(38)
+ 2158 0952 01F0      		breq .L254
+ 2160               	.LM175:
+ 2161 0954 81E0      		ldi r24,lo8(1)
+ 2162 0956 00C0      		rjmp .L252
+ 2163               	.L188:
+ 2165               	.LM176:
+ 2166 0958 EE20      		tst r14
+ 2167 095a 01F4      		brne .L195
+ 2168               	.L254:
+ 2170               	.LM177:
+ 2171 095c 8B2D      		mov r24,r11
+ 2172 095e 9927      		clr r25
+ 2173 0960 00C0      		rjmp .L193
+ 2174               	.L195:
+ 2176               	.LM178:
+ 2177 0962 F601      		movw r30,r12
+ 2178 0964 8191      		ld r24,Z+
+ 2179 0966 6F01      		movw r12,r30
+ 2180 0968 8983      		std Y+1,r24
+ 2182               	.LM179:
+ 2183 096a EA94      		dec r14
+ 2184               	.L191:
+ 2186               	.LM180:
+ 2187 096c 8091 0000 		lds r24,previousCharacter
+ 2188 0970 8D30      		cpi r24,lo8(13)
+ 2189 0972 01F4      		brne .L197
+ 2190 0974 8981      		ldd r24,Y+1
+ 2191 0976 8A30      		cpi r24,lo8(10)
+ 2192 0978 01F4      		brne .L197
+ 2194               	.LM181:
+ 2195 097a 8093 0000 		sts previousCharacter,r24
+ 2196 097e 00C0      		rjmp .L256
+ 2197               	.L197:
+ 2199               	.LM182:
+ 2200 0980 8981      		ldd r24,Y+1
+ 2201 0982 8093 0000 		sts previousCharacter,r24
+ 2203               	.LM183:
+ 2204 0986 8D30      		cpi r24,lo8(13)
+ 2205 0988 01F0      		breq .L251
+ 2206 098a 20E0      		ldi r18,lo8(0)
+ 2207 098c 30E0      		ldi r19,hi8(0)
+ 2208 098e 8A30      		cpi r24,lo8(10)
+ 2209 0990 01F4      		brne .L202
+ 2210               	.L251:
+ 2211 0992 21E0      		ldi r18,lo8(1)
+ 2212 0994 30E0      		ldi r19,hi8(1)
+ 2213               	.L202:
+ 2214 0996 B22E      		mov r11,r18
+ 2216               	.LM184:
+ 2217 0998 FF24      		clr r15
+ 2218 099a 8032      		cpi r24,lo8(32)
+ 2219 099c 01F4      		brne .L204
+ 2220 099e FF24      		clr r15
+ 2221 09a0 F394      		inc r15
+ 2222               	.L204:
+ 2224               	.LM185:
+ 2225 09a2 40E0      		ldi r20,lo8(0)
+ 2226 09a4 8232      		cpi r24,lo8(34)
+ 2227 09a6 01F4      		brne .L205
+ 2228 09a8 41E0      		ldi r20,lo8(1)
+ 2229               	.L205:
+ 2231               	.LM186:
+ 2232 09aa 9091 0000 		lds r25,commandState
+ 2233 09ae 9230      		cpi r25,lo8(2)
+ 2234 09b0 01F0      		breq .L208
+ 2235 09b2 9330      		cpi r25,lo8(3)
+ 2236 09b4 00F4      		brsh .L211
+ 2237 09b6 9923      		tst r25
+ 2238 09b8 01F0      		breq .L206
+ 2239 09ba 9130      		cpi r25,lo8(1)
+ 2240 09bc 01F4      		brne .L256
+ 2241 09be 00C0      		rjmp .L207
+ 2242               	.L211:
+ 2243 09c0 9330      		cpi r25,lo8(3)
+ 2244 09c2 01F0      		breq .L209
+ 2245 09c4 9430      		cpi r25,lo8(4)
+ 2246 09c6 01F0      		breq .+2
+ 2247 09c8 00C0      		rjmp .L256
+ 2248 09ca 00C0      		rjmp .L210
+ 2249               	.L206:
+ 2251               	.LM187:
+ 2252 09cc 2223      		tst r18
+ 2253 09ce 01F0      		breq .+2
+ 2254 09d0 00C0      		rjmp .L250
+ 2256               	.LM188:
+ 2257 09d2 FF20      		tst r15
+ 2258 09d4 01F0      		breq .+2
+ 2259 09d6 00C0      		rjmp .L256
+ 2261               	.LM189:
+ 2262 09d8 4423      		tst r20
+ 2263 09da 01F0      		breq .L215
+ 2265               	.LM190:
+ 2266 09dc 82E0      		ldi r24,lo8(2)
+ 2267 09de 00C0      		rjmp .L253
+ 2268               	.L215:
+ 2270               	.LM191:
+ 2271 09e0 8B37      		cpi r24,lo8(123)
+ 2272 09e2 01F4      		brne .L218
+ 2274               	.LM192:
+ 2275 09e4 83E0      		ldi r24,lo8(3)
+ 2276               	.L253:
+ 2277 09e6 8093 0000 		sts commandState,r24
+ 2278 09ea 00C0      		rjmp .L217
+ 2279               	.L218:
+ 2281               	.LM193:
+ 2282 09ec 81E0      		ldi r24,lo8(1)
+ 2283 09ee 00C0      		rjmp .L253
+ 2284               	.L207:
+ 2286               	.LM194:
+ 2287 09f0 2223      		tst r18
+ 2288 09f2 01F4      		brne .L220
+ 2289 09f4 FF20      		tst r15
+ 2290 09f6 01F4      		brne .L220
+ 2291 09f8 00C0      		rjmp .L217
+ 2292               	.L208:
+ 2294               	.LM195:
+ 2295 09fa 4423      		tst r20
+ 2296 09fc 01F4      		brne .L220
+ 2298               	.LM196:
+ 2299 09fe 2223      		tst r18
+ 2300 0a00 01F4      		brne .+2
+ 2301 0a02 00C0      		rjmp .L217
+ 2302 0a04 00C0      		rjmp .L255
+ 2303               	.L209:
+ 2304               	.LBB102:
+ 2306               	.LM197:
+ 2307 0a06 1091 0000 		lds r17,commandState+116
+ 2308 0a0a 00E0      		ldi r16,lo8(0)
+ 2309 0a0c 1F3F      		cpi r17,lo8(-1)
+ 2310 0a0e 01F0      		breq .L224
+ 2311 0a10 01E0      		ldi r16,lo8(1)
+ 2312               	.L224:
+ 2314               	.LM198:
+ 2315 0a12 8D37      		cpi r24,lo8(125)
+ 2316 0a14 01F4      		brne .L225
+ 2318               	.LM199:
+ 2319 0a16 0023      		tst r16
+ 2320 0a18 01F0      		breq .L220
+ 2321 0a1a 00C0      		rjmp .L255
+ 2322               	.L225:
+ 2323               	.LBB103:
+ 2325               	.LM200:
+ 2326 0a1c 0E94 0000 		call hexToInt
+ 2328               	.LM201:
+ 2329 0a20 8031      		cpi r24,lo8(16)
+ 2330 0a22 00F4      		brsh .L228
+ 2332               	.LM202:
+ 2333 0a24 0023      		tst r16
+ 2334 0a26 01F0      		breq .L230
+ 2336               	.LM203:
+ 2337 0a28 1295      		swap r17
+ 2338 0a2a 107F      		andi r17,0xf0
+ 2339 0a2c 180F      		add r17,r24
+ 2340 0a2e 1983      		std Y+1,r17
+ 2342               	.LM204:
+ 2343 0a30 8FEF      		ldi r24,lo8(-1)
+ 2344 0a32 8093 0000 		sts commandState+116,r24
+ 2345 0a36 00C0      		rjmp .L217
+ 2346               	.L230:
+ 2348               	.LM205:
+ 2349 0a38 8093 0000 		sts commandState+116,r24
+ 2350 0a3c 00C0      		rjmp .L256
+ 2351               	.L228:
+ 2353               	.LM206:
+ 2354 0a3e FF20      		tst r15
+ 2355 0a40 01F0      		breq .+2
+ 2356 0a42 00C0      		rjmp .L256
+ 2357               	.L255:
+ 2359               	.LM207:
+ 2360 0a44 85E0      		ldi r24,lo8(5)
+ 2361               	.L252:
+ 2362 0a46 8093 0000 		sts commandState+115,r24
+ 2363               	.L194:
+ 2364               	.LBE103:
+ 2365               	.LBE102:
+ 2367               	.LM208:
+ 2368 0a4a 84E0      		ldi r24,lo8(4)
+ 2369 0a4c 8093 0000 		sts commandState,r24
+ 2370               	.L210:
+ 2372               	.LM209:
+ 2373 0a50 BB20      		tst r11
+ 2374 0a52 01F4      		brne .+2
+ 2375 0a54 00C0      		rjmp .L256
+ 2377               	.LM210:
+ 2378 0a56 8091 0000 		lds r24,commandState+115
+ 2379 0a5a 8823      		tst r24
+ 2380 0a5c 01F0      		breq .L234
+ 2382               	.LM211:
+ 2383 0a5e 0E94 0000 		call emberCommandErrorHandler
+ 2384               	.L234:
+ 2386               	.LM212:
+ 2387 0a62 0E94 0000 		call emberCommandReaderInit
+ 2388 0a66 00C0      		rjmp .L256
+ 2389               	.L220:
+ 2391               	.LM213:
+ 2392 0a68 E091 0000 		lds r30,commandState+113
+ 2393 0a6c EB30      		cpi r30,lo8(11)
+ 2394 0a6e 01F4      		brne .L236
+ 2396               	.LM214:
+ 2397 0a70 83E0      		ldi r24,lo8(3)
+ 2398 0a72 00C0      		rjmp .L252
+ 2399               	.L236:
+ 2401               	.LM215:
+ 2402 0a74 EF5F      		subi r30,lo8(-(1))
+ 2403 0a76 E093 0000 		sts commandState+113,r30
+ 2405               	.LM216:
+ 2406 0a7a FF27      		clr r31
+ 2407 0a7c E050      		subi r30,lo8(-(commandState+101))
+ 2408 0a7e F040      		sbci r31,hi8(-(commandState+101))
+ 2409 0a80 8091 0000 		lds r24,commandState+114
+ 2410 0a84 8083      		st Z,r24
+ 2412               	.LM217:
+ 2413 0a86 1092 0000 		sts commandState,__zero_reg__
+ 2415               	.LM218:
+ 2416 0a8a BB20      		tst r11
+ 2417 0a8c 01F4      		brne .+2
+ 2418 0a8e 00C0      		rjmp .L256
+ 2419               	.L250:
+ 2421               	.LM219:
+ 2422 0a90 0E94 0000 		call callCommandAction
+ 2423 0a94 00C0      		rjmp .L256
+ 2424               	.L217:
+ 2426               	.LM220:
+ 2427 0a96 2091 0000 		lds r18,commandState+114
+ 2428 0a9a 2436      		cpi r18,lo8(100)
+ 2429 0a9c 01F4      		brne .L239
+ 2431               	.LM221:
+ 2432 0a9e 86E0      		ldi r24,lo8(6)
+ 2433 0aa0 00C0      		rjmp .L252
+ 2434               	.L239:
+ 2436               	.LM222:
+ 2437 0aa2 8091 0000 		lds r24,commandState
+ 2438 0aa6 8130      		cpi r24,lo8(1)
+ 2439 0aa8 01F4      		brne .L241
+ 2441               	.LM223:
+ 2442 0aaa 9981      		ldd r25,Y+1
+ 2443               	.LBB104:
+ 2444               	.LBB105:
+ 2446               	.LM224:
+ 2447 0aac 892F      		mov r24,r25
+ 2448 0aae 8154      		subi r24,lo8(-(-65))
+ 2449 0ab0 8A31      		cpi r24,lo8(26)
+ 2450 0ab2 00F4      		brsh .L243
+ 2452               	.LM225:
+ 2453 0ab4 905E      		subi r25,lo8(-(32))
+ 2454               	.L243:
+ 2456               	.LM226:
+ 2457 0ab6 892F      		mov r24,r25
+ 2458 0ab8 9927      		clr r25
+ 2459               	.LBE105:
+ 2460               	.LBE104:
+ 2462               	.LM227:
+ 2463 0aba 8983      		std Y+1,r24
+ 2464               	.L241:
+ 2466               	.LM228:
+ 2467 0abc E22F      		mov r30,r18
+ 2468 0abe FF27      		clr r31
+ 2469 0ac0 E050      		subi r30,lo8(-(commandState))
+ 2470 0ac2 F040      		sbci r31,hi8(-(commandState))
+ 2471 0ac4 8981      		ldd r24,Y+1
+ 2472 0ac6 8183      		std Z+1,r24
+ 2474               	.LM229:
+ 2475 0ac8 2F5F      		subi r18,lo8(-(1))
+ 2476 0aca 2093 0000 		sts commandState+114,r18
+ 2477 0ace 00C0      		rjmp .L256
+ 2478               	.L193:
+ 2479               	.LBE101:
+ 2480               	/* epilogue: frame size=1 */
+ 2481 0ad0 2196      		adiw r28,1
+ 2482 0ad2 0FB6      		in __tmp_reg__,__SREG__
+ 2483 0ad4 F894      		cli
+ 2484 0ad6 DEBF      		out __SP_H__,r29
+ 2485 0ad8 0FBE      		out __SREG__,__tmp_reg__
+ 2486 0ada CDBF      		out __SP_L__,r28
+ 2487 0adc DF91      		pop r29
+ 2488 0ade CF91      		pop r28
+ 2489 0ae0 1F91      		pop r17
+ 2490 0ae2 0F91      		pop r16
+ 2491 0ae4 FF90      		pop r15
+ 2492 0ae6 EF90      		pop r14
+ 2493 0ae8 DF90      		pop r13
+ 2494 0aea CF90      		pop r12
+ 2495 0aec BF90      		pop r11
+ 2496 0aee 9F90      		pop r9
+ 2497 0af0 8F90      		pop r8
+ 2498 0af2 0895      		ret
+ 2499               	/* epilogue end (size=18) */
+ 2500               	/* function emberProcessCommandString size 244 (207) */
+ 2519               	.Lscope19:
+ 2521               		.stabd	78,0,0
+ 2522               	.global	emberCommandInterpreter2Configuration
+ 2523               	.global	emberCommandInterpreter2Configuration
+ 2524               		.section .bss
+ 2527               	emberCommandInterpreter2Configuration:
+ 2528 0000 00        		.skip 1,0
+ 2529               	.global	printCommands
+ 2530               		.data
+ 2531               	.LC16:
+ 2532 00bd 7465 6D70 		.string	"temp"
+ 2532      00
+ 2533               	.LC17:
+ 2534 00c2 7575 00   		.string	"uu"
+ 2535               	.LC18:
+ 2536 00c5 636F 6D6D 		.string	"command"
+ 2536      616E 6400 
+ 2537               	.LC19:
+ 2538 00cd 00        		.string	""
+ 2541               	printCommands:
+ 2542 00ce 0000      		.word	.LC16
+ 2543 00d0 0000      		.word	pm(printTempCommand)
+ 2544 00d2 0000      		.word	.LC17
+ 2545 00d4 0000      		.skip 2,0
+ 2546 00d6 0000      		.word	.LC18
+ 2547 00d8 0000      		.word	pm(emberPrintCommandTable)
+ 2548 00da 0000      		.word	.LC19
+ 2549 00dc 0000      		.skip 2,0
+ 2550 00de 0000      		.word	0
+ 2551 00e0 0000 0000 		.skip 6,0
+ 2551      0000 
+ 2552               	.global	emberCommandTable
+ 2553               	.LC20:
+ 2554 00e6 7072 696E 		.string	"print"
+ 2554      7400 
+ 2557               	emberCommandTable:
+ 2558 00ec 0000      		.word	.LC20
+ 2559 00ee 0000      		.word	0
+ 2560 00f0 0000      		.word	printCommands
+ 2561 00f2 0000      		.skip 2,0
+ 2562 00f4 0000      		.word	0
+ 2563 00f6 0000      		.word	0
+ 2564 00f8 0000      		.word	0
+ 2565 00fa 0000      		.skip 2,0
+ 2566               	.global	emberCommandErrorNames
+ 2567               	.LC21:
+ 2568 00fc 5365 7269 		.string	"Serial port error"
+ 2568      616C 2070 
+ 2568      6F72 7420 
+ 2568      6572 726F 
+ 2568      7200 
+ 2569               	.LC22:
+ 2570 010e 4E6F 2073 		.string	"No such command"
+ 2570      7563 6820 
+ 2570      636F 6D6D 
+ 2570      616E 6400 
+ 2571               	.LC23:
+ 2572 011e 5772 6F6E 		.string	"Wrong number of args"
+ 2572      6720 6E75 
+ 2572      6D62 6572 
+ 2572      206F 6620 
+ 2572      6172 6773 
+ 2573               	.LC24:
+ 2574 0133 4172 6720 		.string	"Arg out of range"
+ 2574      6F75 7420 
+ 2574      6F66 2072 
+ 2574      616E 6765 
+ 2574      00
+ 2575               	.LC25:
+ 2576 0144 4172 6720 		.string	"Arg syntax error"
+ 2576      7379 6E74 
+ 2576      6178 2065 
+ 2576      7272 6F72 
+ 2576      00
+ 2577               	.LC26:
+ 2578 0155 546F 6F20 		.string	"Too long"
+ 2578      6C6F 6E67 
+ 2578      00
+ 2579               	.LC27:
+ 2580 015e 4261 6420 		.string	"Bad arg type"
+ 2580      6172 6720 
+ 2580      7479 7065 
+ 2580      00
+ 2583               	emberCommandErrorNames:
+ 2584 016b 0000      		.word	.LC19
+ 2585 016d 0000      		.word	.LC21
+ 2586 016f 0000      		.word	.LC22
+ 2587 0171 0000      		.word	.LC23
+ 2588 0173 0000      		.word	.LC24
+ 2589 0175 0000      		.word	.LC25
+ 2590 0177 0000      		.word	.LC26
+ 2591 0179 0000      		.word	.LC27
+ 2592               		.lcomm previousCharacter,1
+ 2593               		.lcomm commandState,118
+ 2594               		.comm _nrk_signal_list,4,1
+ 2595               		.comm emberCurrentCommand,2,1
+ 2604               		.text
+ 2606               	.Letext0:
+ 2607               	/* File "../../projects/basic_tasks/command-interpreter.c": code 1403 = 0x057b (1133), prologues 13
+DEFINED SYMBOLS
+                            *ABS*:00000000 command-interpreter.c
+     /tmp/ccEg36zt.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccEg36zt.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccEg36zt.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccEg36zt.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccEg36zt.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccEg36zt.s:124    .text:00000000 emberCommandReaderInit
+     /tmp/ccEg36zt.s:2592   .bss:00000002 commandState
+                            *COM*:00000002 emberCurrentCommand
+     /tmp/ccEg36zt.s:168    .text:00000028 hexToInt
+     /tmp/ccEg36zt.s:212    .text:00000048 getNestedCommand
+     /tmp/ccEg36zt.s:268    .text:0000007c emberCommandArgumentCount
+     /tmp/ccEg36zt.s:293    .text:0000008a stringToUnsignedInt
+     /tmp/ccEg36zt.s:470    .text:00000168 emberUnsignedCommandArgument
+     /tmp/ccEg36zt.s:493    .text:00000170 emberSignedCommandArgument
+     /tmp/ccEg36zt.s:553    .text:000001aa emberStringCommandArgument
+     /tmp/ccEg36zt.s:636    .text:000001fe emberPrintCommandUsageNotes
+     /tmp/ccEg36zt.s:683    .text:00000208 printCommandUsage
+     /tmp/ccEg36zt.s:885    .text:00000336 emberPrintCommandTable
+     /tmp/ccEg36zt.s:2557   .data:000000ec emberCommandTable
+     /tmp/ccEg36zt.s:934    .text:0000035a emberPrintCommandUsage
+     /tmp/ccEg36zt.s:1032   .text:000003d0 emberCommandErrorHandler
+     /tmp/ccEg36zt.s:2583   .data:0000016b emberCommandErrorNames
+     /tmp/ccEg36zt.s:1203   .text:000004c2 printTempCommand
+     /tmp/ccEg36zt.s:1279   .text:00000528 emberCopyStringArgument
+     /tmp/ccEg36zt.s:1384   .text:000005ae emberSerialWriteData
+     /tmp/ccEg36zt.s:1427   .text:000005da callCommandAction
+     /tmp/ccEg36zt.s:2527   .bss:00000000 emberCommandInterpreter2Configuration
+     /tmp/ccEg36zt.s:2057   .text:000008da emberSerialReadByte
+     /tmp/ccEg36zt.s:2109   .text:0000090c emberProcessCommandString
+                             .bss:00000001 previousCharacter
+     /tmp/ccEg36zt.s:2541   .data:000000ce printCommands
+                            *COM*:00000004 _nrk_signal_list
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__mulsi3
+puts
+printf
+putchar
+memset
+memcpy
+__iob
+fputc
+nrk_uart_data_ready
+fgetc

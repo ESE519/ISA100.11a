@@ -1,0 +1,805 @@
+   1               		.file	"spi_matrix.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.global __do_copy_data
+   8               		.global __do_clear_bss
+  11               		.text
+  12               	.Ltext0:
+ 120               	.global	spiPatternSend
+ 122               	spiPatternSend:
+ 123               		.stabd	46,0,0
+   1:spi_matrix.c  **** 
+   2:spi_matrix.c  **** #include <spi_matrix.h>
+   3:spi_matrix.c  **** 
+   4:spi_matrix.c  **** #include <include.h>
+   5:spi_matrix.c  **** #include <ulib.h>
+   6:spi_matrix.c  **** #include <stdio.h>
+   7:spi_matrix.c  **** //#include <error-def.h>
+   8:spi_matrix.c  **** //#include <command-interpreter.h>
+   9:spi_matrix.c  **** 
+  10:spi_matrix.c  **** MATRIX_TABLE matrixTable[] = {
+  11:spi_matrix.c  **** 		/*
+  12:spi_matrix.c  **** 		{1, {{126,0,191}, {0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},					//1	  	0
+  13:spi_matrix.c  **** 		{2, {{116,0,191}, {92,0,127},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//2		1
+  14:spi_matrix.c  **** 		{2, {{0,84,191}, {0,124,127},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//3		2
+  15:spi_matrix.c  **** 		{2, {{0,28,191}, {0,124,127},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//4		3
+  16:spi_matrix.c  **** 		{2, {{0,92,191}, {0,116,127},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//5		4
+  17:spi_matrix.c  **** 		{2, {{0,126,191}, {0,112,127},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//6		5
+  18:spi_matrix.c  **** 		{2, {{0,4,191}, {0,124,127},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//7		6
+  19:spi_matrix.c  **** 		{2, {{0,124,191}, {0,124,127},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//8		7
+  20:spi_matrix.c  **** 		{2, {{0,28,191}, {0,252,129},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//9		8
+  21:spi_matrix.c  **** 		{5, {{126,0,254}, {66,0,253},{66,0,251},{82,0,247},{114,0,239},{0,0,0},{0,0,0},{0,0,0}}, 0},	//G	
+  22:spi_matrix.c  **** 		{5, {{2,0,254}, {2,0,253},{126,0,251},{2,0,247},{2,0,239},{0,0,0},{0,0,0},{0,0,0}}, 0},	//T				10
+  23:spi_matrix.c  **** 		{5, {{126,0,254}, {64,0,253},{64,0,251},{64,0,247},{64,0,239},{0,0,0},{0,0,0},{0,0,0}}, 0},	//L		
+  24:spi_matrix.c  **** 		{5, {{126,0,254}, {4,0,253},{8,0,251},{16,0,247},{126,0,239},{0,0,0},{0,0,0},{0,0,0}}, 0},	//N			
+  25:spi_matrix.c  **** 		{5, {{126,0,254}, {66,0,253},{66,0,251},{66,0,247},{66,0,239},{0,0,0},{0,0,0},{0,0,0}}, 0},	//C		
+  26:spi_matrix.c  **** 		*/
+  27:spi_matrix.c  **** 		{1, {{126,0,253}, {0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},					//1	  	0
+  28:spi_matrix.c  **** 			{2, {{116,0,253}, {92,0,254},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//2		1
+  29:spi_matrix.c  **** 			{2, {{0,84,253}, {0,124,254},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//3		2
+  30:spi_matrix.c  **** 			{2, {{0,28,253}, {0,124,254},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//4		3
+  31:spi_matrix.c  **** 			{2, {{0,92,253}, {0,116,254},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//5		4
+  32:spi_matrix.c  **** 			{2, {{0,126,253}, {0,112,254},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//6		5
+  33:spi_matrix.c  **** 			{2, {{0,4,253}, {0,124,254},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//7		6
+  34:spi_matrix.c  **** 			{2, {{0,124,253}, {0,124,254},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//8		7
+  35:spi_matrix.c  **** 			{2, {{0,28,253}, {0,252,254},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}}, 0},				//9		8
+  36:spi_matrix.c  **** 			{5, {{126,0,127}, {66,0,191},{66,0,223},{82,0,239},{114,0,247},{0,0,0},{0,0,0},{0,0,0}}, 0},	//G
+  37:spi_matrix.c  **** 			{5, {{2,0,127}, {2,0,191},{126,0,223},{2,0,239},{2,0,247},{0,0,0},{0,0,0},{0,0,0}}, 0},	//T				1
+  38:spi_matrix.c  **** 			{5, {{126,0,127}, {64,0,191},{64,0,223},{64,0,239},{64,0,247},{0,0,0},{0,0,0},{0,0,0}}, 0},	//L	
+  39:spi_matrix.c  **** 			{5, {{126,0,127}, {4,0,191},{8,0,223},{16,0,239},{126,0,247},{0,0,0},{0,0,0},{0,0,0}}, 0},	//N		
+  40:spi_matrix.c  **** 			{5, {{126,0,127}, {66,0,191},{66,0,223},{66,0,239},{66,0,247},{0,0,0},{0,0,0},{0,0,0}}, 0},	//C	
+  41:spi_matrix.c  **** };
+  42:spi_matrix.c  **** 
+  43:spi_matrix.c  **** 
+  44:spi_matrix.c  **** uint8_t charIndex;	//used tp store character Index
+  45:spi_matrix.c  **** uint8_t numIndex;	// used to store the number Index
+  46:spi_matrix.c  **** nrk_time_t displayStartTime;
+  47:spi_matrix.c  **** bool displayNeeded = false;
+  48:spi_matrix.c  **** 
+  49:spi_matrix.c  **** uint8_t toggle = 0;
+  50:spi_matrix.c  **** /*
+  51:spi_matrix.c  ****  void spiSend(void)
+  52:spi_matrix.c  **** {
+  53:spi_matrix.c  **** 	MATRIX_CLEAR();
+  54:spi_matrix.c  **** 	//Send data to the matrix
+  55:spi_matrix.c  **** 	//FASTSPI_TX_WORD(emberUnsignedCommandArgument(0));	//writes 2 bytes to spi
+  56:spi_matrix.c  **** 	//FASTSPI_WAIT()
+  57:spi_matrix.c  **** 	FASTSPI_TX(emberUnsignedCommandArgument(0));
+  58:spi_matrix.c  **** 	FASTSPI_TX(emberUnsignedCommandArgument(1));
+  59:spi_matrix.c  **** 	FASTSPI_TX(emberUnsignedCommandArgument(2));
+  60:spi_matrix.c  **** 
+  61:spi_matrix.c  **** 	//Make the shift register output the data that we send
+  62:spi_matrix.c  **** 	MATRIX_DISPLAY();
+  63:spi_matrix.c  **** }
+  64:spi_matrix.c  **** */
+  65:spi_matrix.c  **** void spiPatternSend(uint8_t p1, uint8_t p2,uint8_t p3){
+ 125               	.LM0:
+ 126               	.LFBB1:
+ 127               	/* prologue: frame size=0 */
+ 128               	/* prologue end (size=0) */
+  66:spi_matrix.c  **** 
+  67:spi_matrix.c  **** 	MATRIX_CLEAR();
+ 130               	.LM1:
+ 131 0000 8C98      		cbi 49-0x20,4
+ 132 0002 8C9A      		sbi 49-0x20,4
+  68:spi_matrix.c  **** 	//Send data to the matrix
+  69:spi_matrix.c  **** 	//FASTSPI_TX_WORD(emberUnsignedCommandArgument(0));	//writes 2 bytes to spi
+  70:spi_matrix.c  **** 	//FASTSPI_WAIT()
+  71:spi_matrix.c  **** 	FASTSPI_TX(p1);
+ 134               	.LM2:
+ 135 0004 8EBD      		out 78-0x20,r24
+ 136               	.L2:
+ 138               	.LM3:
+ 139 0006 0DB4      		in __tmp_reg__,77-0x20
+ 140 0008 07FE      		sbrs __tmp_reg__,7
+ 141 000a 00C0      		rjmp .L2
+  72:spi_matrix.c  **** 	FASTSPI_TX(p2);
+ 143               	.LM4:
+ 144 000c 6EBD      		out 78-0x20,r22
+ 145               	.L4:
+ 146 000e 0DB4      		in __tmp_reg__,77-0x20
+ 147 0010 07FE      		sbrs __tmp_reg__,7
+ 148 0012 00C0      		rjmp .L4
+  73:spi_matrix.c  **** 	FASTSPI_TX(p3);
+ 150               	.LM5:
+ 151 0014 4EBD      		out 78-0x20,r20
+ 152               	.L6:
+ 153 0016 0DB4      		in __tmp_reg__,77-0x20
+ 154 0018 07FE      		sbrs __tmp_reg__,7
+ 155 001a 00C0      		rjmp .L6
+  74:spi_matrix.c  **** 
+  75:spi_matrix.c  **** 	//Make the shift register output the data that we send
+  76:spi_matrix.c  **** 	MATRIX_DISPLAY();
+ 157               	.LM6:
+ 158 001c 8D9A      		sbi 49-0x20,5
+ 159 001e 8D98      		cbi 49-0x20,5
+ 160               	/* epilogue: frame size=0 */
+ 161 0020 0895      		ret
+ 162               	/* epilogue end (size=1) */
+ 163               	/* function spiPatternSend size 17 (16) */
+ 165               	.Lscope1:
+ 167               		.stabd	78,0,0
+ 169               	.global	setMatrix
+ 171               	setMatrix:
+ 172               		.stabd	46,0,0
+  77:spi_matrix.c  **** }
+  78:spi_matrix.c  **** 
+  79:spi_matrix.c  **** 
+  80:spi_matrix.c  **** 
+  81:spi_matrix.c  **** void setNewDisplay(uint8_t cIndex, uint8_t nIndex){
+  82:spi_matrix.c  **** 
+  83:spi_matrix.c  **** 	//the indexes should be within bounds to avoid accessing weird parts of memory
+  84:spi_matrix.c  **** 
+  85:spi_matrix.c  **** 	if(nIndex<9) numIndex = nIndex;
+  86:spi_matrix.c  **** 	if (cIndex > 8 && cIndex < 14) charIndex = cIndex;
+  87:spi_matrix.c  **** 	 nrk_time_get(&displayStartTime);
+  88:spi_matrix.c  **** 	 displayNeeded = true;
+  89:spi_matrix.c  **** 
+  90:spi_matrix.c  **** }
+  91:spi_matrix.c  **** 
+  92:spi_matrix.c  **** void setMatrix(){
+ 174               	.LM7:
+ 175               	.LFBB2:
+ 176               	/* prologue: frame size=8 */
+ 177 0022 0F93      		push r16
+ 178 0024 1F93      		push r17
+ 179 0026 CF93      		push r28
+ 180 0028 DF93      		push r29
+ 181 002a CDB7      		in r28,__SP_L__
+ 182 002c DEB7      		in r29,__SP_H__
+ 183 002e 2897      		sbiw r28,8
+ 184 0030 0FB6      		in __tmp_reg__,__SREG__
+ 185 0032 F894      		cli
+ 186 0034 DEBF      		out __SP_H__,r29
+ 187 0036 0FBE      		out __SREG__,__tmp_reg__
+ 188 0038 CDBF      		out __SP_L__,r28
+ 189               	/* prologue end (size=12) */
+  93:spi_matrix.c  **** 
+  94:spi_matrix.c  **** 	nrk_time_t currentTime;
+  95:spi_matrix.c  **** 	  //Do the display thing
+  96:spi_matrix.c  **** if (displayNeeded == true){
+ 191               	.LM8:
+ 192 003a 8091 0000 		lds r24,displayNeeded
+ 193 003e 8823      		tst r24
+ 194 0040 01F4      		brne .+2
+ 195 0042 00C0      		rjmp .L25
+  97:spi_matrix.c  **** 	putchar('p');
+ 197               	.LM9:
+ 198 0044 6091 0000 		lds r22,__iob+2
+ 199 0048 7091 0000 		lds r23,(__iob+2)+1
+ 200 004c 80E7      		ldi r24,lo8(112)
+ 201 004e 90E0      		ldi r25,hi8(112)
+ 202 0050 0E94 0000 		call fputc
+  98:spi_matrix.c  **** 	   		if (toggle <= 2){
+ 204               	.LM10:
+ 205 0054 8091 0000 		lds r24,toggle
+ 206 0058 8330      		cpi r24,lo8(3)
+ 207 005a 00F4      		brsh .L18
+  99:spi_matrix.c  **** 			spiPatternSend(matrixTable[charIndex].pattern[matrixTable[charIndex].currentIndex][0],matrixTabl
+ 209               	.LM11:
+ 210 005c 8091 0000 		lds r24,charIndex
+ 211 0060 9927      		clr r25
+ 212 0062 0AE1      		ldi r16,lo8(26)
+ 213 0064 10E0      		ldi r17,hi8(26)
+ 214 0066 809F      		mul r24,r16
+ 215 0068 A001      		movw r20,r0
+ 216 006a 819F      		mul r24,r17
+ 217 006c 500D      		add r21,r0
+ 218 006e 909F      		mul r25,r16
+ 219 0070 500D      		add r21,r0
+ 220 0072 1124      		clr r1
+ 221 0074 FA01      		movw r30,r20
+ 222 0076 E050      		subi r30,lo8(-(matrixTable))
+ 223 0078 F040      		sbci r31,hi8(-(matrixTable))
+ 224 007a 818D      		ldd r24,Z+25
+ 225 007c 9927      		clr r25
+ 226 007e 9C01      		movw r18,r24
+ 227 0080 2F5F      		subi r18,lo8(-(1))
+ 228 0082 3F4F      		sbci r19,hi8(-(1))
+ 229 0084 D901      		movw r26,r18
+ 230 0086 AA0F      		lsl r26
+ 231 0088 BB1F      		rol r27
+ 232 008a A20F      		add r26,r18
+ 233 008c B31F      		adc r27,r19
+ 234 008e A40F      		add r26,r20
+ 235 0090 B51F      		adc r27,r21
+ 236 0092 A050      		subi r26,lo8(-(matrixTable))
+ 237 0094 B040      		sbci r27,hi8(-(matrixTable))
+ 238 0096 FC01      		movw r30,r24
+ 239 0098 EE0F      		lsl r30
+ 240 009a FF1F      		rol r31
+ 241 009c E80F      		add r30,r24
+ 242 009e F91F      		adc r31,r25
+ 243 00a0 E40F      		add r30,r20
+ 244 00a2 F51F      		adc r31,r21
+ 245 00a4 E050      		subi r30,lo8(-(matrixTable))
+ 246 00a6 F040      		sbci r31,hi8(-(matrixTable))
+ 247 00a8 4C91      		ld r20,X
+ 248 00aa 6281      		ldd r22,Z+2
+ 249 00ac 8181      		ldd r24,Z+1
+ 250 00ae 0E94 0000 		call spiPatternSend
+ 100:spi_matrix.c  **** 			toggle++ ;//= !toggle;
+ 252               	.LM12:
+ 253 00b2 8091 0000 		lds r24,toggle
+ 254 00b6 8F5F      		subi r24,lo8(-(1))
+ 255 00b8 8093 0000 		sts toggle,r24
+ 101:spi_matrix.c  **** 			matrixTable[charIndex].currentIndex++;
+ 257               	.LM13:
+ 258 00bc 8091 0000 		lds r24,charIndex
+ 259 00c0 00C0      		rjmp .L28
+ 260               	.L18:
+ 102:spi_matrix.c  **** 			if (matrixTable[charIndex].currentIndex >= matrixTable[charIndex].size) matrixTable[charIndex].c
+ 103:spi_matrix.c  **** 
+ 104:spi_matrix.c  **** 	}
+ 105:spi_matrix.c  **** 	else {
+ 106:spi_matrix.c  **** 			spiPatternSend(matrixTable[numIndex].pattern[matrixTable[numIndex].currentIndex][0],matrixTable[
+ 262               	.LM14:
+ 263 00c2 8091 0000 		lds r24,numIndex
+ 264 00c6 9927      		clr r25
+ 265 00c8 0AE1      		ldi r16,lo8(26)
+ 266 00ca 10E0      		ldi r17,hi8(26)
+ 267 00cc 809F      		mul r24,r16
+ 268 00ce A001      		movw r20,r0
+ 269 00d0 819F      		mul r24,r17
+ 270 00d2 500D      		add r21,r0
+ 271 00d4 909F      		mul r25,r16
+ 272 00d6 500D      		add r21,r0
+ 273 00d8 1124      		clr r1
+ 274 00da FA01      		movw r30,r20
+ 275 00dc E050      		subi r30,lo8(-(matrixTable))
+ 276 00de F040      		sbci r31,hi8(-(matrixTable))
+ 277 00e0 818D      		ldd r24,Z+25
+ 278 00e2 9927      		clr r25
+ 279 00e4 9C01      		movw r18,r24
+ 280 00e6 2F5F      		subi r18,lo8(-(1))
+ 281 00e8 3F4F      		sbci r19,hi8(-(1))
+ 282 00ea D901      		movw r26,r18
+ 283 00ec AA0F      		lsl r26
+ 284 00ee BB1F      		rol r27
+ 285 00f0 A20F      		add r26,r18
+ 286 00f2 B31F      		adc r27,r19
+ 287 00f4 A40F      		add r26,r20
+ 288 00f6 B51F      		adc r27,r21
+ 289 00f8 A050      		subi r26,lo8(-(matrixTable))
+ 290 00fa B040      		sbci r27,hi8(-(matrixTable))
+ 291 00fc FC01      		movw r30,r24
+ 292 00fe EE0F      		lsl r30
+ 293 0100 FF1F      		rol r31
+ 294 0102 E80F      		add r30,r24
+ 295 0104 F91F      		adc r31,r25
+ 296 0106 E40F      		add r30,r20
+ 297 0108 F51F      		adc r31,r21
+ 298 010a E050      		subi r30,lo8(-(matrixTable))
+ 299 010c F040      		sbci r31,hi8(-(matrixTable))
+ 300 010e 4C91      		ld r20,X
+ 301 0110 6281      		ldd r22,Z+2
+ 302 0112 8181      		ldd r24,Z+1
+ 303 0114 0E94 0000 		call spiPatternSend
+ 107:spi_matrix.c  **** 			toggle = 0;//!toggle;
+ 305               	.LM15:
+ 306 0118 1092 0000 		sts toggle,__zero_reg__
+ 108:spi_matrix.c  **** 			matrixTable[numIndex].currentIndex++;
+ 308               	.LM16:
+ 309 011c 8091 0000 		lds r24,numIndex
+ 310               	.L28:
+ 311 0120 9927      		clr r25
+ 312 0122 809F      		mul r24,r16
+ 313 0124 F001      		movw r30,r0
+ 314 0126 819F      		mul r24,r17
+ 315 0128 F00D      		add r31,r0
+ 316 012a 909F      		mul r25,r16
+ 317 012c F00D      		add r31,r0
+ 318 012e 1124      		clr r1
+ 319 0130 E050      		subi r30,lo8(-(matrixTable))
+ 320 0132 F040      		sbci r31,hi8(-(matrixTable))
+ 321 0134 818D      		ldd r24,Z+25
+ 322 0136 8F5F      		subi r24,lo8(-(1))
+ 323 0138 818F      		std Z+25,r24
+ 109:spi_matrix.c  **** 			if (matrixTable[numIndex].currentIndex >= matrixTable[numIndex].size) matrixTable[numIndex].curr
+ 325               	.LM17:
+ 326 013a 9081      		ld r25,Z
+ 327 013c 8917      		cp r24,r25
+ 328 013e 00F0      		brlo .L20
+ 329 0140 118E      		std Z+25,__zero_reg__
+ 330               	.L20:
+ 110:spi_matrix.c  **** 	}
+ 111:spi_matrix.c  **** 	   			 nrk_time_get(&currentTime);
+ 332               	.LM18:
+ 333 0142 CE01      		movw r24,r28
+ 334 0144 0196      		adiw r24,1
+ 335 0146 0E94 0000 		call nrk_time_get
+ 112:spi_matrix.c  **** 	   			 if (currentTime.secs - displayStartTime.secs > DISPLAY_INTERVAL_SECS){
+ 337               	.LM19:
+ 338 014a 8981      		ldd r24,Y+1
+ 339 014c 9A81      		ldd r25,Y+2
+ 340 014e AB81      		ldd r26,Y+3
+ 341 0150 BC81      		ldd r27,Y+4
+ 342 0152 2091 0000 		lds r18,displayStartTime
+ 343 0156 3091 0000 		lds r19,(displayStartTime)+1
+ 344 015a 4091 0000 		lds r20,(displayStartTime)+2
+ 345 015e 5091 0000 		lds r21,(displayStartTime)+3
+ 346 0162 821B      		sub r24,r18
+ 347 0164 930B      		sbc r25,r19
+ 348 0166 A40B      		sbc r26,r20
+ 349 0168 B50B      		sbc r27,r21
+ 350 016a 0597      		sbiw r24,5
+ 351 016c A105      		cpc r26,__zero_reg__
+ 352 016e B105      		cpc r27,__zero_reg__
+ 353 0170 00F0      		brlo .L23
+ 113:spi_matrix.c  **** 	   				MATRIX_CLEAR();
+ 355               	.LM20:
+ 356 0172 8C98      		cbi 49-0x20,4
+ 357 0174 8C9A      		sbi 49-0x20,4
+ 114:spi_matrix.c  **** 	   				 displayNeeded = false;
+ 359               	.LM21:
+ 360 0176 1092 0000 		sts displayNeeded,__zero_reg__
+ 361               	.L23:
+ 115:spi_matrix.c  **** 	   			 }
+ 116:spi_matrix.c  **** 	   			putchar('q');
+ 363               	.LM22:
+ 364 017a 6091 0000 		lds r22,__iob+2
+ 365 017e 7091 0000 		lds r23,(__iob+2)+1
+ 366 0182 81E7      		ldi r24,lo8(113)
+ 367 0184 90E0      		ldi r25,hi8(113)
+ 368 0186 0E94 0000 		call fputc
+ 369               	.L25:
+ 370               	/* epilogue: frame size=8 */
+ 371 018a 2896      		adiw r28,8
+ 372 018c 0FB6      		in __tmp_reg__,__SREG__
+ 373 018e F894      		cli
+ 374 0190 DEBF      		out __SP_H__,r29
+ 375 0192 0FBE      		out __SREG__,__tmp_reg__
+ 376 0194 CDBF      		out __SP_L__,r28
+ 377 0196 DF91      		pop r29
+ 378 0198 CF91      		pop r28
+ 379 019a 1F91      		pop r17
+ 380 019c 0F91      		pop r16
+ 381 019e 0895      		ret
+ 382               	/* epilogue end (size=11) */
+ 383               	/* function setMatrix size 192 (169) */
+ 388               	.Lscope2:
+ 390               		.stabd	78,0,0
+ 394               	.global	setNewDisplay
+ 396               	setNewDisplay:
+ 397               		.stabd	46,0,0
+ 399               	.LM23:
+ 400               	.LFBB3:
+ 401               	/* prologue: frame size=0 */
+ 402               	/* prologue end (size=0) */
+ 403 01a0 982F      		mov r25,r24
+ 405               	.LM24:
+ 406 01a2 6930      		cpi r22,lo8(9)
+ 407 01a4 00F4      		brsh .L30
+ 409               	.LM25:
+ 410 01a6 6093 0000 		sts numIndex,r22
+ 411               	.L30:
+ 413               	.LM26:
+ 414 01aa 892F      		mov r24,r25
+ 415 01ac 8950      		subi r24,lo8(-(-9))
+ 416 01ae 8530      		cpi r24,lo8(5)
+ 417 01b0 00F4      		brsh .L32
+ 418 01b2 9093 0000 		sts charIndex,r25
+ 419               	.L32:
+ 421               	.LM27:
+ 422 01b6 80E0      		ldi r24,lo8(displayStartTime)
+ 423 01b8 90E0      		ldi r25,hi8(displayStartTime)
+ 424 01ba 0E94 0000 		call nrk_time_get
+ 426               	.LM28:
+ 427 01be 81E0      		ldi r24,lo8(1)
+ 428 01c0 8093 0000 		sts displayNeeded,r24
+ 429               	/* epilogue: frame size=0 */
+ 430 01c4 0895      		ret
+ 431               	/* epilogue end (size=1) */
+ 432               	/* function setNewDisplay size 19 (18) */
+ 434               	.Lscope3:
+ 436               		.stabd	78,0,0
+ 437               	.global	matrixTable
+ 438               		.data
+ 441               	matrixTable:
+ 442 0000 01        		.byte	1
+ 443 0001 7E        		.byte	126
+ 444 0002 00        		.byte	0
+ 445 0003 FD        		.byte	-3
+ 446 0004 00        		.byte	0
+ 447 0005 00        		.byte	0
+ 448 0006 00        		.byte	0
+ 449 0007 00        		.byte	0
+ 450 0008 00        		.byte	0
+ 451 0009 00        		.byte	0
+ 452 000a 00        		.byte	0
+ 453 000b 00        		.byte	0
+ 454 000c 00        		.byte	0
+ 455 000d 00        		.byte	0
+ 456 000e 00        		.byte	0
+ 457 000f 00        		.byte	0
+ 458 0010 00        		.byte	0
+ 459 0011 00        		.byte	0
+ 460 0012 00        		.byte	0
+ 461 0013 00        		.byte	0
+ 462 0014 00        		.byte	0
+ 463 0015 00        		.byte	0
+ 464 0016 00        		.byte	0
+ 465 0017 00        		.byte	0
+ 466 0018 00        		.byte	0
+ 467 0019 00        		.byte	0
+ 468 001a 02        		.byte	2
+ 469 001b 74        		.byte	116
+ 470 001c 00        		.byte	0
+ 471 001d FD        		.byte	-3
+ 472 001e 5C        		.byte	92
+ 473 001f 00        		.byte	0
+ 474 0020 FE        		.byte	-2
+ 475 0021 00        		.byte	0
+ 476 0022 00        		.byte	0
+ 477 0023 00        		.byte	0
+ 478 0024 00        		.byte	0
+ 479 0025 00        		.byte	0
+ 480 0026 00        		.byte	0
+ 481 0027 00        		.byte	0
+ 482 0028 00        		.byte	0
+ 483 0029 00        		.byte	0
+ 484 002a 00        		.byte	0
+ 485 002b 00        		.byte	0
+ 486 002c 00        		.byte	0
+ 487 002d 00        		.byte	0
+ 488 002e 00        		.byte	0
+ 489 002f 00        		.byte	0
+ 490 0030 00        		.byte	0
+ 491 0031 00        		.byte	0
+ 492 0032 00        		.byte	0
+ 493 0033 00        		.byte	0
+ 494 0034 02        		.byte	2
+ 495 0035 00        		.byte	0
+ 496 0036 54        		.byte	84
+ 497 0037 FD        		.byte	-3
+ 498 0038 00        		.byte	0
+ 499 0039 7C        		.byte	124
+ 500 003a FE        		.byte	-2
+ 501 003b 00        		.byte	0
+ 502 003c 00        		.byte	0
+ 503 003d 00        		.byte	0
+ 504 003e 00        		.byte	0
+ 505 003f 00        		.byte	0
+ 506 0040 00        		.byte	0
+ 507 0041 00        		.byte	0
+ 508 0042 00        		.byte	0
+ 509 0043 00        		.byte	0
+ 510 0044 00        		.byte	0
+ 511 0045 00        		.byte	0
+ 512 0046 00        		.byte	0
+ 513 0047 00        		.byte	0
+ 514 0048 00        		.byte	0
+ 515 0049 00        		.byte	0
+ 516 004a 00        		.byte	0
+ 517 004b 00        		.byte	0
+ 518 004c 00        		.byte	0
+ 519 004d 00        		.byte	0
+ 520 004e 02        		.byte	2
+ 521 004f 00        		.byte	0
+ 522 0050 1C        		.byte	28
+ 523 0051 FD        		.byte	-3
+ 524 0052 00        		.byte	0
+ 525 0053 7C        		.byte	124
+ 526 0054 FE        		.byte	-2
+ 527 0055 00        		.byte	0
+ 528 0056 00        		.byte	0
+ 529 0057 00        		.byte	0
+ 530 0058 00        		.byte	0
+ 531 0059 00        		.byte	0
+ 532 005a 00        		.byte	0
+ 533 005b 00        		.byte	0
+ 534 005c 00        		.byte	0
+ 535 005d 00        		.byte	0
+ 536 005e 00        		.byte	0
+ 537 005f 00        		.byte	0
+ 538 0060 00        		.byte	0
+ 539 0061 00        		.byte	0
+ 540 0062 00        		.byte	0
+ 541 0063 00        		.byte	0
+ 542 0064 00        		.byte	0
+ 543 0065 00        		.byte	0
+ 544 0066 00        		.byte	0
+ 545 0067 00        		.byte	0
+ 546 0068 02        		.byte	2
+ 547 0069 00        		.byte	0
+ 548 006a 5C        		.byte	92
+ 549 006b FD        		.byte	-3
+ 550 006c 00        		.byte	0
+ 551 006d 74        		.byte	116
+ 552 006e FE        		.byte	-2
+ 553 006f 00        		.byte	0
+ 554 0070 00        		.byte	0
+ 555 0071 00        		.byte	0
+ 556 0072 00        		.byte	0
+ 557 0073 00        		.byte	0
+ 558 0074 00        		.byte	0
+ 559 0075 00        		.byte	0
+ 560 0076 00        		.byte	0
+ 561 0077 00        		.byte	0
+ 562 0078 00        		.byte	0
+ 563 0079 00        		.byte	0
+ 564 007a 00        		.byte	0
+ 565 007b 00        		.byte	0
+ 566 007c 00        		.byte	0
+ 567 007d 00        		.byte	0
+ 568 007e 00        		.byte	0
+ 569 007f 00        		.byte	0
+ 570 0080 00        		.byte	0
+ 571 0081 00        		.byte	0
+ 572 0082 02        		.byte	2
+ 573 0083 00        		.byte	0
+ 574 0084 7E        		.byte	126
+ 575 0085 FD        		.byte	-3
+ 576 0086 00        		.byte	0
+ 577 0087 70        		.byte	112
+ 578 0088 FE        		.byte	-2
+ 579 0089 00        		.byte	0
+ 580 008a 00        		.byte	0
+ 581 008b 00        		.byte	0
+ 582 008c 00        		.byte	0
+ 583 008d 00        		.byte	0
+ 584 008e 00        		.byte	0
+ 585 008f 00        		.byte	0
+ 586 0090 00        		.byte	0
+ 587 0091 00        		.byte	0
+ 588 0092 00        		.byte	0
+ 589 0093 00        		.byte	0
+ 590 0094 00        		.byte	0
+ 591 0095 00        		.byte	0
+ 592 0096 00        		.byte	0
+ 593 0097 00        		.byte	0
+ 594 0098 00        		.byte	0
+ 595 0099 00        		.byte	0
+ 596 009a 00        		.byte	0
+ 597 009b 00        		.byte	0
+ 598 009c 02        		.byte	2
+ 599 009d 00        		.byte	0
+ 600 009e 04        		.byte	4
+ 601 009f FD        		.byte	-3
+ 602 00a0 00        		.byte	0
+ 603 00a1 7C        		.byte	124
+ 604 00a2 FE        		.byte	-2
+ 605 00a3 00        		.byte	0
+ 606 00a4 00        		.byte	0
+ 607 00a5 00        		.byte	0
+ 608 00a6 00        		.byte	0
+ 609 00a7 00        		.byte	0
+ 610 00a8 00        		.byte	0
+ 611 00a9 00        		.byte	0
+ 612 00aa 00        		.byte	0
+ 613 00ab 00        		.byte	0
+ 614 00ac 00        		.byte	0
+ 615 00ad 00        		.byte	0
+ 616 00ae 00        		.byte	0
+ 617 00af 00        		.byte	0
+ 618 00b0 00        		.byte	0
+ 619 00b1 00        		.byte	0
+ 620 00b2 00        		.byte	0
+ 621 00b3 00        		.byte	0
+ 622 00b4 00        		.byte	0
+ 623 00b5 00        		.byte	0
+ 624 00b6 02        		.byte	2
+ 625 00b7 00        		.byte	0
+ 626 00b8 7C        		.byte	124
+ 627 00b9 FD        		.byte	-3
+ 628 00ba 00        		.byte	0
+ 629 00bb 7C        		.byte	124
+ 630 00bc FE        		.byte	-2
+ 631 00bd 00        		.byte	0
+ 632 00be 00        		.byte	0
+ 633 00bf 00        		.byte	0
+ 634 00c0 00        		.byte	0
+ 635 00c1 00        		.byte	0
+ 636 00c2 00        		.byte	0
+ 637 00c3 00        		.byte	0
+ 638 00c4 00        		.byte	0
+ 639 00c5 00        		.byte	0
+ 640 00c6 00        		.byte	0
+ 641 00c7 00        		.byte	0
+ 642 00c8 00        		.byte	0
+ 643 00c9 00        		.byte	0
+ 644 00ca 00        		.byte	0
+ 645 00cb 00        		.byte	0
+ 646 00cc 00        		.byte	0
+ 647 00cd 00        		.byte	0
+ 648 00ce 00        		.byte	0
+ 649 00cf 00        		.byte	0
+ 650 00d0 02        		.byte	2
+ 651 00d1 00        		.byte	0
+ 652 00d2 1C        		.byte	28
+ 653 00d3 FD        		.byte	-3
+ 654 00d4 00        		.byte	0
+ 655 00d5 FC        		.byte	-4
+ 656 00d6 FE        		.byte	-2
+ 657 00d7 00        		.byte	0
+ 658 00d8 00        		.byte	0
+ 659 00d9 00        		.byte	0
+ 660 00da 00        		.byte	0
+ 661 00db 00        		.byte	0
+ 662 00dc 00        		.byte	0
+ 663 00dd 00        		.byte	0
+ 664 00de 00        		.byte	0
+ 665 00df 00        		.byte	0
+ 666 00e0 00        		.byte	0
+ 667 00e1 00        		.byte	0
+ 668 00e2 00        		.byte	0
+ 669 00e3 00        		.byte	0
+ 670 00e4 00        		.byte	0
+ 671 00e5 00        		.byte	0
+ 672 00e6 00        		.byte	0
+ 673 00e7 00        		.byte	0
+ 674 00e8 00        		.byte	0
+ 675 00e9 00        		.byte	0
+ 676 00ea 05        		.byte	5
+ 677 00eb 7E        		.byte	126
+ 678 00ec 00        		.byte	0
+ 679 00ed 7F        		.byte	127
+ 680 00ee 42        		.byte	66
+ 681 00ef 00        		.byte	0
+ 682 00f0 BF        		.byte	-65
+ 683 00f1 42        		.byte	66
+ 684 00f2 00        		.byte	0
+ 685 00f3 DF        		.byte	-33
+ 686 00f4 52        		.byte	82
+ 687 00f5 00        		.byte	0
+ 688 00f6 EF        		.byte	-17
+ 689 00f7 72        		.byte	114
+ 690 00f8 00        		.byte	0
+ 691 00f9 F7        		.byte	-9
+ 692 00fa 00        		.byte	0
+ 693 00fb 00        		.byte	0
+ 694 00fc 00        		.byte	0
+ 695 00fd 00        		.byte	0
+ 696 00fe 00        		.byte	0
+ 697 00ff 00        		.byte	0
+ 698 0100 00        		.byte	0
+ 699 0101 00        		.byte	0
+ 700 0102 00        		.byte	0
+ 701 0103 00        		.byte	0
+ 702 0104 05        		.byte	5
+ 703 0105 02        		.byte	2
+ 704 0106 00        		.byte	0
+ 705 0107 7F        		.byte	127
+ 706 0108 02        		.byte	2
+ 707 0109 00        		.byte	0
+ 708 010a BF        		.byte	-65
+ 709 010b 7E        		.byte	126
+ 710 010c 00        		.byte	0
+ 711 010d DF        		.byte	-33
+ 712 010e 02        		.byte	2
+ 713 010f 00        		.byte	0
+ 714 0110 EF        		.byte	-17
+ 715 0111 02        		.byte	2
+ 716 0112 00        		.byte	0
+ 717 0113 F7        		.byte	-9
+ 718 0114 00        		.byte	0
+ 719 0115 00        		.byte	0
+ 720 0116 00        		.byte	0
+ 721 0117 00        		.byte	0
+ 722 0118 00        		.byte	0
+ 723 0119 00        		.byte	0
+ 724 011a 00        		.byte	0
+ 725 011b 00        		.byte	0
+ 726 011c 00        		.byte	0
+ 727 011d 00        		.byte	0
+ 728 011e 05        		.byte	5
+ 729 011f 7E        		.byte	126
+ 730 0120 00        		.byte	0
+ 731 0121 7F        		.byte	127
+ 732 0122 40        		.byte	64
+ 733 0123 00        		.byte	0
+ 734 0124 BF        		.byte	-65
+ 735 0125 40        		.byte	64
+ 736 0126 00        		.byte	0
+ 737 0127 DF        		.byte	-33
+ 738 0128 40        		.byte	64
+ 739 0129 00        		.byte	0
+ 740 012a EF        		.byte	-17
+ 741 012b 40        		.byte	64
+ 742 012c 00        		.byte	0
+ 743 012d F7        		.byte	-9
+ 744 012e 00        		.byte	0
+ 745 012f 00        		.byte	0
+ 746 0130 00        		.byte	0
+ 747 0131 00        		.byte	0
+ 748 0132 00        		.byte	0
+ 749 0133 00        		.byte	0
+ 750 0134 00        		.byte	0
+ 751 0135 00        		.byte	0
+ 752 0136 00        		.byte	0
+ 753 0137 00        		.byte	0
+ 754 0138 05        		.byte	5
+ 755 0139 7E        		.byte	126
+ 756 013a 00        		.byte	0
+ 757 013b 7F        		.byte	127
+ 758 013c 04        		.byte	4
+ 759 013d 00        		.byte	0
+ 760 013e BF        		.byte	-65
+ 761 013f 08        		.byte	8
+ 762 0140 00        		.byte	0
+ 763 0141 DF        		.byte	-33
+ 764 0142 10        		.byte	16
+ 765 0143 00        		.byte	0
+ 766 0144 EF        		.byte	-17
+ 767 0145 7E        		.byte	126
+ 768 0146 00        		.byte	0
+ 769 0147 F7        		.byte	-9
+ 770 0148 00        		.byte	0
+ 771 0149 00        		.byte	0
+ 772 014a 00        		.byte	0
+ 773 014b 00        		.byte	0
+ 774 014c 00        		.byte	0
+ 775 014d 00        		.byte	0
+ 776 014e 00        		.byte	0
+ 777 014f 00        		.byte	0
+ 778 0150 00        		.byte	0
+ 779 0151 00        		.byte	0
+ 780 0152 05        		.byte	5
+ 781 0153 7E        		.byte	126
+ 782 0154 00        		.byte	0
+ 783 0155 7F        		.byte	127
+ 784 0156 42        		.byte	66
+ 785 0157 00        		.byte	0
+ 786 0158 BF        		.byte	-65
+ 787 0159 42        		.byte	66
+ 788 015a 00        		.byte	0
+ 789 015b DF        		.byte	-33
+ 790 015c 42        		.byte	66
+ 791 015d 00        		.byte	0
+ 792 015e EF        		.byte	-17
+ 793 015f 42        		.byte	66
+ 794 0160 00        		.byte	0
+ 795 0161 F7        		.byte	-9
+ 796 0162 00        		.byte	0
+ 797 0163 00        		.byte	0
+ 798 0164 00        		.byte	0
+ 799 0165 00        		.byte	0
+ 800 0166 00        		.byte	0
+ 801 0167 00        		.byte	0
+ 802 0168 00        		.byte	0
+ 803 0169 00        		.byte	0
+ 804 016a 00        		.byte	0
+ 805 016b 00        		.byte	0
+ 806               	.global	displayNeeded
+ 807               	.global	displayNeeded
+ 808               		.section .bss
+ 811               	displayNeeded:
+ 812 0000 00        		.skip 1,0
+ 813               	.global	toggle
+ 814               	.global	toggle
+ 817               	toggle:
+ 818 0001 00        		.skip 1,0
+ 819               		.comm _nrk_signal_list,4,1
+ 820               		.comm charIndex,1,1
+ 821               		.comm numIndex,1,1
+ 822               		.comm displayStartTime,8,1
+ 830               		.text
+ 832               	.Letext0:
+ 833               	/* File "spi_matrix.c": code  228 = 0x00e4 ( 203), prologues  12, epilogues  13 */
+DEFINED SYMBOLS
+                            *ABS*:00000000 spi_matrix.c
+     /tmp/ccaVbJ2E.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccaVbJ2E.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccaVbJ2E.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccaVbJ2E.s:5      *ABS*:00000000 __tmp_reg__
+     /tmp/ccaVbJ2E.s:6      *ABS*:00000001 __zero_reg__
+     /tmp/ccaVbJ2E.s:122    .text:00000000 spiPatternSend
+     /tmp/ccaVbJ2E.s:171    .text:00000022 setMatrix
+     /tmp/ccaVbJ2E.s:811    .bss:00000000 displayNeeded
+     /tmp/ccaVbJ2E.s:817    .bss:00000001 toggle
+                            *COM*:00000001 charIndex
+     /tmp/ccaVbJ2E.s:441    .data:00000000 matrixTable
+                            *COM*:00000001 numIndex
+                            *COM*:00000008 displayStartTime
+     /tmp/ccaVbJ2E.s:396    .text:000001a0 setNewDisplay
+                            *COM*:00000004 _nrk_signal_list
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__iob
+fputc
+nrk_time_get

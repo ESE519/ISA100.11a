@@ -16,4 +16,5 @@ dlmo.o dlmo.d : ../../../src/net/isa/dlmo.c \
   ../../../src/kernel/include/nrk_task.h \
   ../../../src/kernel/hal/include/nrk_timer.h \
   ../../../src/kernel/include/nrk_error.h \
-  ../../../src/net/isa/isa_error.h ../../../src/net/isa/dlmo.h
+  ../../../src/net/isa/isa_error.h ../../../src/net/isa/dmo.h \
+  ../../../src/net/isa/dlmo.h ../../../src/net/isa/isa_messagetypes.h
